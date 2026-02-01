@@ -1,9 +1,9 @@
 use axum::{
+    Router,
     extract::State,
     http::StatusCode,
     response::{IntoResponse, Json},
     routing::post,
-    Router,
 };
 use serde_json::json;
 use std::env;
@@ -37,10 +37,13 @@ pub async fn chat_handler(
 }
 
 pub async fn health_handler() -> impl IntoResponse {
-    (StatusCode::OK, Json(json!({
-        "status": "ok",
-        "service": "glm-api-server"
-    })))
+    (
+        StatusCode::OK,
+        Json(json!({
+            "status": "ok",
+            "service": "glm-api-server"
+        })),
+    )
 }
 
 pub async fn citrus_analyze_handler(
@@ -49,7 +52,11 @@ pub async fn citrus_analyze_handler(
 ) -> impl IntoResponse {
     // Delegate to unified analyze method on client which returns JSON-like Value
     // 期望 client 提供 `exec_analyze_citrus(message, image)` returning `Result<serde_json::Value, _>`
-    match state.client.exec_analyze_citrus(request.message, request.image).await {
+    match state
+        .client
+        .exec_analyze_citrus(request.message, request.image)
+        .await
+    {
         Ok(json_val) => (StatusCode::OK, Json(json_val)),
         Err(e) => {
             let error_response = json!({
@@ -62,8 +69,7 @@ pub async fn citrus_analyze_handler(
 }
 
 pub fn create_router() -> Router {
-    let api_key = env::var("GLM_API_KEY")
-        .expect("请设置环境变量 GLM_API_KEY");
+    let api_key = env::var("GLM_API_KEY").expect("请设置环境变量 GLM_API_KEY");
 
     let client = GlmClient::new(api_key);
     let state = AppState { client };
@@ -92,7 +98,5 @@ pub async fn run_server(addr: SocketAddr) {
 
     tracing::info!("GLM API 服务器正在监听: {}", addr);
 
-    axum::serve(listener, app)
-        .await
-        .expect("服务器运行失败");
+    axum::serve(listener, app).await.expect("服务器运行失败");
 }

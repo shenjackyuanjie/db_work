@@ -69,22 +69,46 @@ pub struct ChatApiRequest {
     pub temperature: Option<f64>,
     pub top_p: Option<f64>,
     pub max_tokens: Option<u32>,
-    /// 结构化输出格式，可选值为 "json_object" 或 null
-    /// 设置为 "json_object" 时，模型将返回 JSON 格式的结构化数据
-    pub response_format: Option<String>,
 }
 
-// 柑橘分析结构化输出
+// 柑橘分析结构化输出（新 schema）
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CitrusAnalysisResult {
-    pub is_leaf: bool,           // 是否叶子
-    pub is_citrus: bool,         // 是否柑橘
-    pub disease_info: Option<DiseaseInfo>,  // 病害信息
+    /// 是否为柑橘叶片
+    pub is_citrus_leaf: bool,
+    /// 识别的柑橘类型（非柑橘时为 "非柑橘"）
+    pub citrus_type: CitrusType,
+    /// 病害分析
+    pub disease_analysis: DiseaseAnalysis,
+    /// 图片质量告警（如：模糊/过暗/遮挡/反光/主体过小 等；无则可为空字符串）
+    pub image_quality_warning: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct DiseaseInfo {
-    pub has_disease: bool,       // 是否有病
-    pub severity: Option<String>, // 病症程度
-    pub solution: Option<String>, // 可能解决方案
+pub struct DiseaseAnalysis {
+    pub is_healthy: bool,
+    pub disease_name: String,
+    pub severity: Severity,
+    /// 置信度 0~1
+    pub confidence: f64,
+    pub treatment_suggestion: String,
+    pub preventive_measures: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum CitrusType {
+    脐橙,
+    砂糖橘,
+    柚子,
+    柠檬,
+    其他,
+    非柑橘,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Severity {
+    健康,
+    轻度,
+    中度,
+    重度,
 }

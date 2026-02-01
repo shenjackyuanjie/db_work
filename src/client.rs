@@ -1,5 +1,5 @@
-use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use crate::models::{ChatMessage, ChatRequest, ChatResponse, ResponseFormat};
+use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde_json::{json, Value};
 use std::time::Instant;
 
@@ -37,7 +37,7 @@ impl ChatOptions {
         self
     }
 
-    pub fn with_system_message(mut self, _message: &str) -> Self {
+    pub fn with_system_message(self, _message: &str) -> Self {
         // 标记需要 system message，实际内容在调用时处理
         self
     }
@@ -99,7 +99,7 @@ impl GlmClient {
         Self {
             api_key,
             base_url: "https://open.bigmodel.cn/api/paas/v4/chat/completions".to_string(),
-            model: "glm-4.6v-flash".to_string(),
+            model: "glm-4.6v".to_string(),
         }
     }
 
@@ -110,7 +110,10 @@ impl GlmClient {
     }
 
     /// 底层 API 调用
-    pub async fn chat_completions(&self, request: &ChatRequest) -> Result<ChatResponse, Box<dyn std::error::Error>> {
+    pub async fn chat_completions(
+        &self,
+        request: &ChatRequest,
+    ) -> anyhow::Result<ChatResponse> {
         let client = reqwest::Client::new();
 
         let response = client
@@ -124,7 +127,7 @@ impl GlmClient {
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await?;
-            return Err(format!("API request failed with status {}: {}", status, error_text).into());
+            anyhow::bail!("API request failed with status {}: {}", status, error_text);
         }
 
         let chat_response: ChatResponse = response.json().await?;
@@ -132,11 +135,14 @@ impl GlmClient {
     }
 
     /// 简化的聊天接口（统一 CLI 和 Server 的调用方式）
-    pub async fn chat(&self, request: SimpleChatRequest) -> Result<SimpleChatResponse, Box<dyn std::error::Error>> {
+    pub async fn chat(
+        &self,
+        request: SimpleChatRequest,
+    ) -> anyhow::Result<SimpleChatResponse> {
         let content = crate::utils::build_message_content(&request.message, request.image.as_ref());
 
         let mut messages = Vec::new();
-        
+
         // 添加 system message（如果有）
         if let Some(system) = request.system_message {
             messages.push(ChatMessage {
@@ -160,8 +166,9 @@ impl GlmClient {
         };
 
         let response = self.chat_completions(&chat_request).await?;
-        
-        let content = response.choices
+
+        let content = response
+            .choices
             .first()
             .map(|choice| match &choice.message.content {
                 serde_json::Value::String(s) => s.clone(),
@@ -188,7 +195,10 @@ impl GlmClient {
     }
 
     /// 从 HTTP API 风格的 ChatApiRequest 统一执行聊天并返回 SimpleChatResponse（供 CLI 使用，保留原有调试字段）
-    pub async fn exec_chat_from_api(&self, api_req: crate::models::ChatApiRequest) -> Result<SimpleChatResponse, Box<dyn std::error::Error>> {
+    pub async fn exec_chat_from_api(
+        &self,
+        api_req: crate::models::ChatApiRequest,
+    ) -> anyhow::Result<SimpleChatResponse> {
         // 构建 ChatOptions
         let mut options = ChatOptions::new();
         if let Some(t) = api_req.temperature {
@@ -200,11 +210,7 @@ impl GlmClient {
         if let Some(m) = api_req.max_tokens {
             options = options.max_tokens(m);
         }
-        if let Some(ref fmt) = api_req.response_format {
-            if fmt == "json_object" {
-                options = options.json_response();
-            }
-        }
+        options = options.json_response();
 
         let request = SimpleChatRequest {
             message: api_req.message,
@@ -218,7 +224,10 @@ impl GlmClient {
     }
 
     /// 供 server 使用的包装方法：接受 ChatApiRequest，返回 serde_json::Value（id/model/message/usage + metrics）
-    pub async fn exec_chat_api(&self, api_req: crate::models::ChatApiRequest) -> Result<Value, Box<dyn std::error::Error>> {
+    pub async fn exec_chat_api(
+        &self,
+        api_req: crate::models::ChatApiRequest,
+    ) -> anyhow::Result<Value> {
         let start_time = Instant::now();
         let resp = self.exec_chat_from_api(api_req).await?;
         let duration = start_time.elapsed();
@@ -244,34 +253,60 @@ impl GlmClient {
         Ok(json_val)
     }
 
-    /// 供 server 使用：执行柑橘分析并返回 JSON 值
-    pub async fn exec_analyze_citrus(&self, message: String, image: Option<String>) -> Result<Value, Box<dyn std::error::Error>> {
-        match self.analyze_citrus(message, image).await {
-            Ok(analysis) => Ok(json!({
-                "success": true,
-                "data": analysis,
-            })),
-            Err(e) => Err(e),
-        }
+    /// 供 server/cli 使用：执行柑橘分析并返回 JSON 值（success/data + usage + metrics）
+    pub async fn exec_analyze_citrus(
+        &self,
+        message: String,
+        image: Option<String>,
+    ) -> anyhow::Result<Value> {
+        let start_time = Instant::now();
+
+        let request = self.build_citrus_request(message, image);
+        let resp = self.chat(request).await?;
+
+        let duration = start_time.elapsed();
+        let total_tokens = resp.usage.total_tokens as f64;
+        let tps = if duration.as_secs_f64() > 0.0 {
+            total_tokens / duration.as_secs_f64()
+        } else {
+            0.0
+        };
+
+        let analysis: crate::models::CitrusAnalysisResult = serde_json::from_str(&resp.content)
+            .map_err(|e| anyhow::anyhow!("无法解析模型返回的JSON: {}, raw: {}", e, resp.content))?;
+
+        Ok(json!({
+            "success": true,
+            "data": analysis,
+            "usage": resp.usage,
+            "metrics": {
+                "duration_secs": duration.as_secs_f64(),
+                "tokens_per_sec": tps
+            }
+        }))
     }
 
-    /// 柑橘分析专用接口
-    pub async fn analyze_citrus(
-        &self, 
-        message: impl Into<String>, 
-        image: Option<impl Into<String>>
-    ) -> Result<crate::models::CitrusAnalysisResult, Box<dyn std::error::Error>> {
+    /// 构建柑橘分析用的请求（供 exec_analyze_citrus / analyze_citrus 复用）
+    fn build_citrus_request(
+        &self,
+        message: impl Into<String>,
+        image: Option<impl Into<String>>,
+    ) -> SimpleChatRequest {
         const CITRUS_SYSTEM_MESSAGE: &str = r#"你是柑橘方面专家。
 
-请分析用户上传的图片，并按JSON格式返回以下结构，不要返回其他内容：
+请分析用户上传的图片，并严格按JSON格式返回以下结构，不要返回其他内容、不要使用Markdown代码块、不要添加额外字段：
 {
-    "is_leaf": true/false,      // 识别是否叶子
-    "is_citrus": true/false,    // 识别是否柑橘
-    "disease_info": {           // 如有病则填写，无病则为null
-        "has_disease": true/false,
-        "severity": "轻/中/重或具体描述",  // 病症程度
-        "solution": "可能的解决方案"        // 可能解决方案
-    }
+  "is_citrus_leaf": true/false,                     // 是否为柑橘叶片
+  "citrus_type": "脐橙|砂糖橘|柚子|柠檬|其他|非柑橘",  // 非柑橘时必须为 "非柑橘"
+  "disease_analysis": {
+    "is_healthy": true/false,                       // 健康则为 true
+    "disease_name": "string",                       // 健康时填空字符串
+    "severity": "健康|轻度|中度|重度",                // 健康时必须为 "健康"
+    "confidence": 0~1,                              // 置信度，0 到 1 的小数
+    "treatment_suggestion": "string",               // 健康时给出日常养护建议
+    "preventive_measures": "string"                 // 预防措施
+  },
+  "image_quality_warning": "string"                 // 图片质量告警；无则填空字符串
 }"#;
 
         let request = SimpleChatRequest::new(message)
@@ -279,20 +314,30 @@ impl GlmClient {
                 ChatOptions::new()
                     .temperature(0.1)
                     .top_p(0.9)
-                    .json_response()
+                    .json_response(),
             )
             .with_system(CITRUS_SYSTEM_MESSAGE);
 
-        let request = match image {
+        match image {
             Some(img) => request.with_image(img),
             None => request,
-        };
+        }
+    }
+
+    /// 柑橘分析专用接口（结构化返回）
+    pub async fn analyze_citrus(
+        &self,
+        message: impl Into<String>,
+        image: Option<impl Into<String>>,
+    ) -> anyhow::Result<crate::models::CitrusAnalysisResult> {
+        let request = self.build_citrus_request(message, image);
 
         let response = self.chat(request).await?;
-        
-        let result: crate::models::CitrusAnalysisResult = serde_json::from_str(&response.content)
-            .map_err(|e| format!("无法解析模型返回的JSON: {}, raw: {}", e, response.content))?;
-        
+
+        let result: crate::models::CitrusAnalysisResult =
+            serde_json::from_str(&response.content)
+                .map_err(|e| anyhow::anyhow!("无法解析模型返回的JSON: {}, raw: {}", e, response.content))?;
+
         Ok(result)
     }
 }
