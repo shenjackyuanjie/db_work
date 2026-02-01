@@ -10,9 +10,8 @@ use std::env;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 
-
 use crate::client::GlmClient;
-use crate::models::{ChatApiRequest, ChatRequest, ChatMessage};
+use crate::models::ChatApiRequest;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -23,42 +22,11 @@ pub async fn chat_handler(
     State(state): State<AppState>,
     Json(request): Json<ChatApiRequest>,
 ) -> impl IntoResponse {
-    let content = crate::utils::build_message_content(&request.message, request.image.as_ref());
-
-    let chat_request = ChatRequest {
-        model: "glm-4.6v-flash".to_string(),
-        messages: vec![
-            ChatMessage {
-                role: "user".to_string(),
-                content,
-            },
-        ],
-        temperature: request.temperature,
-        top_p: request.top_p,
-        max_tokens: request.max_tokens,
-    };
-
-    match state.client.chat_completions(&chat_request).await {
-        Ok(response) => {
-            let assistant_reply = response.choices
-                .first()
-                .map(|choice| {
-                    match &choice.message.content {
-                        serde_json::Value::String(s) => s.clone(),
-                        _ => choice.message.content.to_string(),
-                    }
-                })
-                .unwrap_or_else(|| "无法解析响应".to_string());
-
-            let result = json!({
-                "id": response.id,
-                "model": response.model,
-                "message": assistant_reply,
-                "usage": response.usage,
-            });
-
-            (StatusCode::OK, Json(result))
-        }
+    // 使用统一的客户端执行方法，将构建/调用逻辑下沉到 client 中
+    // 期望 client 提供 `exec_chat_api` 方法，返回 `Result<serde_json::Value, _>`，
+    // 包含与之前一致的字段：id, model, message, usage
+    match state.client.exec_chat_api(request).await {
+        Ok(json_val) => (StatusCode::OK, Json(json_val)),
         Err(e) => {
             let error_response = json!({
                 "error": e.to_string(),
@@ -75,6 +43,24 @@ pub async fn health_handler() -> impl IntoResponse {
     })))
 }
 
+pub async fn citrus_analyze_handler(
+    State(state): State<AppState>,
+    Json(request): Json<ChatApiRequest>,
+) -> impl IntoResponse {
+    // Delegate to unified analyze method on client which returns JSON-like Value
+    // 期望 client 提供 `exec_analyze_citrus(message, image)` returning `Result<serde_json::Value, _>`
+    match state.client.exec_analyze_citrus(request.message, request.image).await {
+        Ok(json_val) => (StatusCode::OK, Json(json_val)),
+        Err(e) => {
+            let error_response = json!({
+                "success": false,
+                "error": e.to_string(),
+            });
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+        }
+    }
+}
+
 pub fn create_router() -> Router {
     let api_key = env::var("GLM_API_KEY")
         .expect("请设置环境变量 GLM_API_KEY");
@@ -85,6 +71,7 @@ pub fn create_router() -> Router {
     Router::new()
         .route("/health", axum::routing::get(health_handler))
         .route("/chat", post(chat_handler))
+        .route("/citrus/analyze", post(citrus_analyze_handler))
         .with_state(state)
         .layer(
             CorsLayer::new()

@@ -4,7 +4,6 @@ mod utils;
 mod server;
 
 use clap::{Parser, Subcommand};
-use std::time::Instant;
 
 #[derive(Debug, Parser)]
 #[command(name = "glm-api")]
@@ -49,46 +48,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let client = client::GlmClient::new(api_key);
 
-            let content = utils::build_message_content(&message, image.as_ref());
-
-            let request = models::ChatRequest {
-                model: "glm-4.6v-flash".to_string(),
-                messages: vec![
-                    models::ChatMessage {
-                        role: "user".to_string(),
-                        content,
-                    },
-                ],
+            // 使用统一的 ChatApiRequest，走与 server /chat 相同的 JSON 输出结构（exec_chat_api）
+            let chat_api_request = crate::models::ChatApiRequest {
+                message,
+                image,
                 temperature: Some(0.7),
                 top_p: Some(0.9),
                 max_tokens: None,
+                response_format: None,
             };
 
-            let start_time = Instant::now();
-            match client.chat_completions(&request).await {
-                Ok(response) => {
-                    let duration = start_time.elapsed();
-                    let tps = response.usage.total_tokens as f64 / duration.as_secs_f64();
-
-                    println!("Response ID: {}", response.id);
-                    println!("Model: {}", response.model);
-                    println!("\nAssistant回复:");
-
-                    for choice in &response.choices {
-                        let content_str = match &choice.message.content {
-                            serde_json::Value::String(s) => s.clone(),
-                            _ => choice.message.content.to_string(),
-                        };
-                        println!("[{}]: {}", choice.message.role, content_str);
+            match client.exec_chat_api(chat_api_request).await {
+                Ok(json_val) => {
+                    // CLI 输出可读格式：先打印性能与 token，再 pretty JSON（保持与 server 同构）
+                    if let Some(m) = json_val.get("metrics") {
+                        if let Some(d) = m.get("duration_secs").and_then(|v| v.as_f64()) {
+                            println!("性能指标:");
+                            println!("  请求耗时: {:.2} 秒", d);
+                        }
+                        if let Some(tps) = m.get("tokens_per_sec").and_then(|v| v.as_f64()) {
+                            println!("  Token/s: {:.2}", tps);
+                        }
                     }
 
-                    println!("\n性能指标:");
-                    println!("  请求耗时: {:.2} 秒", duration.as_secs_f64());
-                    println!("  Token/s: {:.2}", tps);
-                    println!("\nToken使用情况:");
-                    println!("  Prompt tokens: {}", response.usage.prompt_tokens);
-                    println!("  Completion tokens: {}", response.usage.completion_tokens);
-                    println!("  Total tokens: {}", response.usage.total_tokens);
+                    if let Some(u) = json_val.get("usage") {
+                        println!("\nToken使用情况:");
+                        if let Some(v) = u.get("prompt_tokens") {
+                            println!("  Prompt tokens: {}", v);
+                        }
+                        if let Some(v) = u.get("completion_tokens") {
+                            println!("  Completion tokens: {}", v);
+                        }
+                        if let Some(v) = u.get("total_tokens") {
+                            println!("  Total tokens: {}", v);
+                        }
+                    }
+
+                    println!("\nJSON:");
+                    println!("{}", serde_json::to_string_pretty(&json_val)?);
                 }
                 Err(e) => {
                     eprintln!("请求失败: {}", e);
