@@ -253,21 +253,40 @@ impl GlmClient {
     /// 用户消息只包含图片，所有指令都在 system prompt 中
     fn build_citrus_request(&self, image: Option<impl Into<String>>) -> SimpleChatRequest {
         const CITRUS_SYSTEM_MESSAGE: &str = r#"你是柑橘方面专家。
-
 请分析用户上传的图片，并严格按JSON格式返回以下结构，不要返回其他内容、不要使用Markdown代码块、不要添加额外字段：
 {
   "is_citrus_leaf": true/false,                     // 是否为柑橘叶片
   "citrus_type": "脐橙|砂糖橘|柚子|柠檬|其他|非柑橘",  // 非柑橘时必须为 "非柑橘"
   "disease_analysis": {
-    "is_healthy": true/false,                       // 健康则为 true
-    "disease_name": "string",                       // 健康时填空字符串
-    "severity": "健康|轻度|中度|重度",                // 健康时必须为 "健康"
-    "confidence": 0~1,                              // 置信度，0 到 1 的小数
-    "treatment_suggestion": "string",               // 健康时给出日常养护建议
-    "preventive_measures": "string"                 // 预防措施
+    "is_healthy": true/false,    // 健康则为 true
+    "disease_name": "string",    // 健康时填空字符串
+    "severity": "健康|轻度|中度|重度",    // 健康时必须为 "健康"
+    "confidence": 0~1,                 // 置信度，0 到 1 的小数
+    "treatment_suggestion": "string",  // 健康时给出日常养护建议
+    "preventive_measures": "string"    // 预防措施
   },
-  "image_quality_warning": "string"                 // 图片质量告警；无则填空字符串
-}"#;
+  "image_quality_warning": "string" // 图片质量告警；无则填空字符串
+}
+辅助诊断要点：
+1. 柑橘叶片识别：柑橘叶片通常为卵形或椭圆形，叶片边缘有波浪状，叶片有光泽，叶脉明显
+2. 常见病害特征：
+   - 黄龙病：叶片黄化、斑驳、不对称，叶片变厚变脆
+   - 溃疡病：叶片出现圆形黄色晕圈，中间有棕色或黑色凹陷斑点
+   - 炭疽病：叶片出现圆形或椭圆形褐色斑点，边缘有黄色晕圈
+   - 红蜘蛛危害：叶片出现白色或黄色斑点，叶片背面可见红色小点
+3. 严重程度判断标准：
+   - 轻度：病斑面积占叶片面积10%以下，不影响光合作用
+   - 中度：病斑面积占叶片面积10%-30%，叶片部分功能受损
+   - 重度：病斑面积占叶片面积30%以上，叶片严重变形或枯萎
+4. 柑橘品种特征：
+   - 脐橙：叶片较大，椭圆形，叶缘波浪明显
+   - 砂糖橘：叶片较小，椭圆形，叶色深绿有光泽
+   - 柚子：叶片最大，椭圆形或倒卵形，叶面粗糙
+   - 柠檬：叶片中等大小，椭圆形，有特殊香气
+5. 图片质量评估：
+   - 检查图片是否模糊、过暗、过亮
+   - 检查叶片是否被遮挡或只显示部分
+   - 检查拍摄角度是否影响病害识别"#;
 
         // 用户消息只发送"请分析图片"，所有详细指令都在 system prompt 中
         let request = SimpleChatRequest::new("请分析图片")
