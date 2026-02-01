@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 import argparse
 import base64
+import io
 import mimetypes
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import requests
+from PIL import Image
 
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tif", ".tiff"}
+
+# 并发数量控制：默认 5
+CONCURRENCY = 5
 
 
 def iter_images(folder: Path):
@@ -18,6 +24,11 @@ def iter_images(folder: Path):
 
 
 def to_data_url(path: Path) -> str:
+    """
+    将图片转为 data URL。
+    发送前如果图片尺寸任一边 > max_size，则等比例缩放到长宽都 <= max_size。
+    有缩放时使用 Pillow 重新编码为 PNG（避免不同格式的编码/压缩差异带来的不确定性）。
+    """
     mime, _ = mimetypes.guess_type(str(path))
     if not mime:
         # fallback
@@ -31,51 +42,129 @@ def to_data_url(path: Path) -> str:
             mime = "image/webp"
         else:
             mime = "application/octet-stream"
+    max_size = 512
+    with Image.open(path) as im:
+        w, h = im.size
+        if w > max_size or h > max_size:
+            print(f"缩放: {path.name} 从 {w}x{h} 到 ", end="")
+            im.thumbnail((max_size, max_size), resample=Image.Resampling.LANCZOS)
+            print(f"{im.size[0]}x{im.size[1]}")
 
-    raw = path.read_bytes()
+            out = io.BytesIO()
+            im.save(out, format="PNG")
+            raw = out.getvalue()
+            mime = "image/png"
+        else:
+            raw = path.read_bytes()
+
     b64 = base64.b64encode(raw).decode("ascii")
     return f"data:{mime};base64,{b64}"
 
-
 def parse_disease_result(result_json: dict) -> tuple[bool, str]:
     """
-    解析后端返回的诊断结果
+    解析后端返回的诊断结果（/citrus/analyze）
+    后端结构（CitrusAnalysisResponse）:
+      {
+        "success": bool,
+        "data": {
+          "is_citrus_leaf": bool,
+          "citrus_type": "...",
+          "disease_analysis": {
+            "is_healthy": bool,
+            "disease_name": str,
+            "severity": "...",
+            "confidence": float,  # 0~1
+            "treatment_suggestion": str,
+            "preventive_measures": str
+          },
+          "image_quality_warning": str
+        },
+        "usage": {...},
+        "metrics": {...}
+      }
+
     返回: (is_hlb, diagnosis_info) - 是否为黄龙病，诊断信息字符串
     """
-    # /citrus/analyze 返回结构：{"success": true/false, "data": {...}, ...}
-    data = result_json.get("data") if isinstance(result_json, dict) else None
+    if not isinstance(result_json, dict):
+        raise ValueError(f"unexpected response type, expected dict: {type(result_json)}")
+
+    success = result_json.get("success")
+    if success is not True:
+        # 后端失败时通常会返回 {"success": false, "error": "..."}
+        raise ValueError(f"backend analyze failed: {result_json.get('error')}, raw: {result_json}")
+
+    data = result_json.get("data")
     if not isinstance(data, dict):
         raise ValueError(f"unexpected response shape, no data: {result_json}")
+
+    # 如果不是柑橘叶片，直接给出提示（避免误判病害）
+    is_citrus_leaf = data.get("is_citrus_leaf")
+    if is_citrus_leaf is False:
+        citrus_type = data.get("citrus_type", "非柑橘")
+        warning = str(data.get("image_quality_warning") or "").strip()
+        info = f"非柑橘叶片 (识别类型: {citrus_type})"
+        if warning:
+            info = f"{info}；图片质量告警: {warning}"
+        return False, info
 
     disease = data.get("disease_analysis")
     if not isinstance(disease, dict):
         raise ValueError(f"unexpected response shape, no disease_analysis: {result_json}")
 
     is_healthy = disease.get("is_healthy")
-    disease_name = disease.get("disease_name", "")
-    confidence = disease.get("confidence", "")
+    disease_name = str(disease.get("disease_name") or "").strip()
+    severity = str(disease.get("severity") or "").strip()
+    confidence = disease.get("confidence")
 
-    # 构建诊断信息字符串
+    # 置信度展示：后端是 0~1 的 float，这里格式化为百分比更直观
+    confidence_str = ""
+    if isinstance(confidence, (int, float)):
+        confidence_str = f"{confidence:.0%}"
+    elif confidence is not None:
+        confidence_str = str(confidence).strip()
+
+    # 组装描述信息（把 severity / 治疗 / 预防 / 图片告警都带出来，方便排查与展示）
+    treatment = str(disease.get("treatment_suggestion") or "").strip()
+    prevention = str(disease.get("preventive_measures") or "").strip()
+    warning = str(data.get("image_quality_warning") or "").strip()
+
+    parts: list[str] = []
     if is_healthy is True:
-        diagnosis_info = f"健康 (置信度: {confidence})" if confidence else "健康"
-        return False, diagnosis_info
+        parts.append("健康")
+        if confidence_str:
+            parts.append(f"置信度: {confidence_str}")
+        if warning:
+            parts.append(f"图片质量告警: {warning}")
+        return False, "；".join(parts)
+
     if is_healthy is False:
-        name = str(disease_name).strip().lower()
-        diagnosis_info = f"{disease_name} (置信度: {confidence})" if confidence else str(disease_name)
-        # 允许模型输出不同写法
+        if disease_name:
+            parts.append(disease_name)
+        else:
+            parts.append("不健康")
+
+        if severity:
+            parts.append(f"程度: {severity}")
+        if confidence_str:
+            parts.append(f"置信度: {confidence_str}")
+        if treatment:
+            parts.append(f"治疗建议: {treatment}")
+        if prevention:
+            parts.append(f"预防措施: {prevention}")
+        if warning:
+            parts.append(f"图片质量告警: {warning}")
+
+        diagnosis_info = "；".join(parts)
+
+        # 判定是否黄龙病：兼容中文/英文缩写
+        name_lower = disease_name.lower()
         if "黄龙病" in disease_name:
             return True, diagnosis_info
-        if "hlb" in name or "huanglongbing" in name:
+        if "hlb" in name_lower or "huanglongbing" in name_lower:
             return True, diagnosis_info
         return False, diagnosis_info
 
     raise ValueError(f"unexpected is_healthy value: {is_healthy}, raw: {result_json}")
-
-
-def is_hlb_from_result(result_json: dict) -> bool:
-    """兼容旧接口"""
-    is_hlb, _ = parse_disease_result(result_json)
-    return is_hlb
 
 
 def main():
@@ -114,40 +203,45 @@ def main():
         print("hlb_rate=0.0")
         return 0
 
-    session = requests.Session()
-
     ok = 0
     failed = 0
     hlb = 0
 
-    for idx, img_path in enumerate(images, start=1):
-        try:
-            data_url = to_data_url(img_path)
-            # 不发送 message 字段，只发送图片数据
-            payload = {
-                "image": data_url,
-            }
-            resp = session.post(endpoint, json=payload, timeout=args.timeout)
-            resp.raise_for_status()
-            j = resp.json()
+    def analyze_one(img_path: Path):
+        # 每个任务使用自己的 Session，避免跨线程共享 Session 的不确定行为
+        session = requests.Session()
+        data_url = to_data_url(img_path)
+        payload = {"image": data_url}
+        resp = session.post(endpoint, json=payload, timeout=args.timeout)
+        resp.raise_for_status()
+        j = resp.json()
 
-            # Rust 端成功时通常会有 success=true
-            if isinstance(j, dict) and j.get("success") is False:
-                raise ValueError(f"server returned success=false: {j}")
+        # Rust 端成功时通常会有 success=true
+        if isinstance(j, dict) and j.get("success") is False:
+            raise ValueError(f"server returned success=false: {j}")
 
-            is_hlb, diagnosis_info = parse_disease_result(j)
-            if is_hlb:
-                hlb += 1
-            ok += 1
-            
-            # 每张图片处理后立即打印结果，包含后端诊断信息
-            status = "HLB" if is_hlb else "OK"
-            print(f"[{idx}/{total}] {status} - {img_path.name} | 诊断: {diagnosis_info}")
-            
-        except Exception as e:
-            failed += 1
-            # 输出到 stderr
-            print(f"[{idx}/{total}] FAILED - {img_path.name}: {e}", file=sys.stderr)
+        is_hlb, diagnosis_info = parse_disease_result(j)
+        return is_hlb, diagnosis_info
+
+    futures = {}
+    with ThreadPoolExecutor(max_workers=CONCURRENCY) as executor:
+        for idx, img_path in enumerate(images, start=1):
+            fut = executor.submit(analyze_one, img_path)
+            futures[fut] = (idx, img_path)
+
+        for fut in as_completed(futures):
+            idx, img_path = futures[fut]
+            try:
+                is_hlb, diagnosis_info = fut.result()
+                if is_hlb:
+                    hlb += 1
+                ok += 1
+
+                status = "HLB" if is_hlb else "OK"
+                print(f"[{idx}/{total}] {status} - {img_path.name} | 诊断: {diagnosis_info}")
+            except Exception as e:
+                failed += 1
+                print(f"[{idx}/{total}] FAILED - {img_path.name}: {e}", file=sys.stderr)
 
     scanned = ok + failed
     rate = (hlb / ok) if ok > 0 else 0.0
