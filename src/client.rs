@@ -1,4 +1,6 @@
-use crate::models::{ChatMessage, ChatRequest, ChatResponse, ResponseFormat};
+use crate::models::{
+    ChatMessage, ChatRequest, ChatResponse, CitrusAnalysisResponse, ResponseFormat,
+};
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
 use serde_json::{json, Value};
 use std::time::Instant;
@@ -110,10 +112,7 @@ impl GlmClient {
     }
 
     /// 底层 API 调用
-    pub async fn chat_completions(
-        &self,
-        request: &ChatRequest,
-    ) -> anyhow::Result<ChatResponse> {
+    pub async fn chat_completions(&self, request: &ChatRequest) -> anyhow::Result<ChatResponse> {
         let client = reqwest::Client::new();
 
         let response = client
@@ -135,10 +134,7 @@ impl GlmClient {
     }
 
     /// 简化的聊天接口（统一 CLI 和 Server 的调用方式）
-    pub async fn chat(
-        &self,
-        request: SimpleChatRequest,
-    ) -> anyhow::Result<SimpleChatResponse> {
+    pub async fn chat(&self, request: SimpleChatRequest) -> anyhow::Result<SimpleChatResponse> {
         let content = crate::utils::build_message_content(&request.message, request.image.as_ref());
 
         let mut messages = Vec::new();
@@ -213,7 +209,7 @@ impl GlmClient {
         options = options.json_response();
 
         let request = SimpleChatRequest {
-            message: api_req.message,
+            message: api_req.message.unwrap_or_else(|| "请分析图片".to_string()),
             image: api_req.image,
             options,
             system_message: None,
@@ -253,45 +249,9 @@ impl GlmClient {
         Ok(json_val)
     }
 
-    /// 供 server/cli 使用：执行柑橘分析并返回 JSON 值（success/data + usage + metrics）
-    pub async fn exec_analyze_citrus(
-        &self,
-        message: String,
-        image: Option<String>,
-    ) -> anyhow::Result<Value> {
-        let start_time = Instant::now();
-
-        let request = self.build_citrus_request(message, image);
-        let resp = self.chat(request).await?;
-
-        let duration = start_time.elapsed();
-        let total_tokens = resp.usage.total_tokens as f64;
-        let tps = if duration.as_secs_f64() > 0.0 {
-            total_tokens / duration.as_secs_f64()
-        } else {
-            0.0
-        };
-
-        let analysis: crate::models::CitrusAnalysisResult = serde_json::from_str(&resp.content)
-            .map_err(|e| anyhow::anyhow!("无法解析模型返回的JSON: {}, raw: {}", e, resp.content))?;
-
-        Ok(json!({
-            "success": true,
-            "data": analysis,
-            "usage": resp.usage,
-            "metrics": {
-                "duration_secs": duration.as_secs_f64(),
-                "tokens_per_sec": tps
-            }
-        }))
-    }
-
-    /// 构建柑橘分析用的请求（供 exec_analyze_citrus / analyze_citrus 复用）
-    fn build_citrus_request(
-        &self,
-        message: impl Into<String>,
-        image: Option<impl Into<String>>,
-    ) -> SimpleChatRequest {
+    /// 构建柑橘分析用的请求（供 analyze_citrus 使用）
+    /// 用户消息只包含图片，所有指令都在 system prompt 中
+    fn build_citrus_request(&self, image: Option<impl Into<String>>) -> SimpleChatRequest {
         const CITRUS_SYSTEM_MESSAGE: &str = r#"你是柑橘方面专家。
 
 请分析用户上传的图片，并严格按JSON格式返回以下结构，不要返回其他内容、不要使用Markdown代码块、不要添加额外字段：
@@ -309,7 +269,8 @@ impl GlmClient {
   "image_quality_warning": "string"                 // 图片质量告警；无则填空字符串
 }"#;
 
-        let request = SimpleChatRequest::new(message)
+        // 用户消息只发送"请分析图片"，所有详细指令都在 system prompt 中
+        let request = SimpleChatRequest::new("请分析图片")
             .with_options(
                 ChatOptions::new()
                     .temperature(0.1)
@@ -324,20 +285,38 @@ impl GlmClient {
         }
     }
 
-    /// 柑橘分析专用接口（结构化返回）
+    /// 柑橘分析专用接口（结构化返回，包含分析结果、usage 和 metrics）
+    /// 用户消息只包含图片，所有指令都在 system prompt 中
     pub async fn analyze_citrus(
         &self,
-        message: impl Into<String>,
         image: Option<impl Into<String>>,
-    ) -> anyhow::Result<crate::models::CitrusAnalysisResult> {
-        let request = self.build_citrus_request(message, image);
+    ) -> anyhow::Result<CitrusAnalysisResponse> {
+        let start_time = Instant::now();
 
+        let request = self.build_citrus_request(image);
         let response = self.chat(request).await?;
 
-        let result: crate::models::CitrusAnalysisResult =
-            serde_json::from_str(&response.content)
-                .map_err(|e| anyhow::anyhow!("无法解析模型返回的JSON: {}, raw: {}", e, response.content))?;
+        let duration = start_time.elapsed();
+        let total_tokens = response.usage.total_tokens as f64;
+        let tokens_per_sec = if duration.as_secs_f64() > 0.0 {
+            total_tokens / duration.as_secs_f64()
+        } else {
+            0.0
+        };
 
-        Ok(result)
+        let data: crate::models::CitrusAnalysisResult =
+            serde_json::from_str(&response.content).map_err(|e| {
+                anyhow::anyhow!("无法解析模型返回的JSON: {}, raw: {}", e, response.content)
+            })?;
+
+        Ok(CitrusAnalysisResponse {
+            success: true,
+            data,
+            usage: response.usage,
+            metrics: crate::models::AnalysisMetrics {
+                duration_secs: duration.as_secs_f64(),
+                tokens_per_sec,
+            },
+        })
     }
 }

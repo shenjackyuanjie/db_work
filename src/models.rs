@@ -64,7 +64,7 @@ pub struct ChatResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatApiRequest {
-    pub message: String,
+    pub message: Option<String>,
     pub image: Option<String>,
     pub temperature: Option<f64>,
     pub top_p: Option<f64>,
@@ -111,4 +111,20 @@ pub enum Severity {
     轻度,
     中度,
     重度,
+}
+
+/// 柑橘分析完整响应（包含分析结果、使用量、性能指标）
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CitrusAnalysisResponse {
+    pub success: bool,
+    pub data: CitrusAnalysisResult,
+    pub usage: Usage,
+    pub metrics: AnalysisMetrics,
+}
+
+/// 分析性能指标
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AnalysisMetrics {
+    pub duration_secs: f64,
+    pub tokens_per_sec: f64,
 }

@@ -2,7 +2,6 @@
 import argparse
 import base64
 import mimetypes
-import os
 import sys
 from pathlib import Path
 
@@ -38,7 +37,11 @@ def to_data_url(path: Path) -> str:
     return f"data:{mime};base64,{b64}"
 
 
-def is_hlb_from_result(result_json: dict) -> bool:
+def parse_disease_result(result_json: dict) -> tuple[bool, str]:
+    """
+    解析后端返回的诊断结果
+    返回: (is_hlb, diagnosis_info) - 是否为黄龙病，诊断信息字符串
+    """
     # /citrus/analyze 返回结构：{"success": true/false, "data": {...}, ...}
     data = result_json.get("data") if isinstance(result_json, dict) else None
     if not isinstance(data, dict):
@@ -50,19 +53,29 @@ def is_hlb_from_result(result_json: dict) -> bool:
 
     is_healthy = disease.get("is_healthy")
     disease_name = disease.get("disease_name", "")
+    confidence = disease.get("confidence", "")
 
+    # 构建诊断信息字符串
     if is_healthy is True:
-        return False
+        diagnosis_info = f"健康 (置信度: {confidence})" if confidence else "健康"
+        return False, diagnosis_info
     if is_healthy is False:
         name = str(disease_name).strip().lower()
+        diagnosis_info = f"{disease_name} (置信度: {confidence})" if confidence else str(disease_name)
         # 允许模型输出不同写法
         if "黄龙病" in disease_name:
-            return True
+            return True, diagnosis_info
         if "hlb" in name or "huanglongbing" in name:
-            return True
-        return False
+            return True, diagnosis_info
+        return False, diagnosis_info
 
     raise ValueError(f"unexpected is_healthy value: {is_healthy}, raw: {result_json}")
+
+
+def is_hlb_from_result(result_json: dict) -> bool:
+    """兼容旧接口"""
+    is_hlb, _ = parse_disease_result(result_json)
+    return is_hlb
 
 
 def main():
@@ -107,14 +120,11 @@ def main():
     failed = 0
     hlb = 0
 
-    # 这段 message 会被 server 用到（system prompt 已在 Rust 端固定）
-    message = "请判断图片中的柑橘叶片/植株是否患黄龙病(HLB)。只需在 JSON 的 disease_analysis 里给出最可能疾病。"
-
     for idx, img_path in enumerate(images, start=1):
         try:
             data_url = to_data_url(img_path)
+            # 不发送 message 字段，只发送图片数据
             payload = {
-                "message": message,
                 "image": data_url,
             }
             resp = session.post(endpoint, json=payload, timeout=args.timeout)
@@ -125,17 +135,27 @@ def main():
             if isinstance(j, dict) and j.get("success") is False:
                 raise ValueError(f"server returned success=false: {j}")
 
-            if is_hlb_from_result(j):
+            is_hlb, diagnosis_info = parse_disease_result(j)
+            if is_hlb:
                 hlb += 1
             ok += 1
+            
+            # 每张图片处理后立即打印结果，包含后端诊断信息
+            status = "HLB" if is_hlb else "OK"
+            print(f"[{idx}/{total}] {status} - {img_path.name} | 诊断: {diagnosis_info}")
+            
         except Exception as e:
             failed += 1
-            # 只输出到 stderr 避免污染最终统计
-            print(f"[FAILED] {idx}/{total} {img_path}: {e}", file=sys.stderr)
+            # 输出到 stderr
+            print(f"[{idx}/{total}] FAILED - {img_path.name}: {e}", file=sys.stderr)
 
     scanned = ok + failed
     rate = (hlb / ok) if ok > 0 else 0.0
 
+    # 打印汇总信息
+    print("\n" + "="*60)
+    print("处理完成 - 汇总报告")
+    print("="*60)
     print(f"dir={folder}")
     print(f"server={endpoint}")
     print(f"total_images={total}")
@@ -144,6 +164,7 @@ def main():
     print(f"failed={failed}")
     print(f"hlb_images={hlb}")
     print(f"hlb_rate={rate:.6f}")
+    print("="*60)
 
     return 0 if failed == 0 else 1
 

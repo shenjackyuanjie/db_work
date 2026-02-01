@@ -22,13 +22,9 @@ enum Commands {
         #[arg(short, long, default_value = "127.0.0.1:3000")]
         addr: String,
     },
-    /// 发送聊天消息
+    /// 分析柑橘图片
     Chat {
-        /// 文本消息
-        #[arg(short, long)]
-        message: String,
-
-        /// 图片文件路径（可选）
+        /// 图片文件路径
         #[arg(short, long)]
         image: Option<String>,
     },
@@ -43,57 +39,16 @@ async fn main() -> anyhow::Result<()> {
             let addr: std::net::SocketAddr = addr.parse().context("解析 addr 失败")?;
             server::run_server(addr).await;
         }
-        Commands::Chat { message, image } => {
+        Commands::Chat { image } => {
             let api_key = std::env::var("GLM_API_KEY").expect("请设置环境变量 GLM_API_KEY");
 
             let client = client::GlmClient::new(api_key);
 
-            // CLI Chat 走柑橘分析接口（exec_analyze_citrus），并对结果做解析与格式化输出
-            // 同时保留调试信息：metrics + usage（由 exec_analyze_citrus 返回）
-            match client.exec_analyze_citrus(message, image).await {
-                Ok(json_val) => {
-                    let success = json_val
-                        .get("success")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(false);
-
-                    if !success {
-                        println!("分析失败（success=false）");
-
-                        if let Some(m) = json_val.get("metrics") {
-                            if let Some(d) = m.get("duration_secs").and_then(|v| v.as_f64()) {
-                                println!("\n性能指标:");
-                                println!("  请求耗时: {:.2} 秒", d);
-                            }
-                            if let Some(tps) = m.get("tokens_per_sec").and_then(|v| v.as_f64()) {
-                                println!("  Token/s: {:.2}", tps);
-                            }
-                        }
-
-                        if let Some(u) = json_val.get("usage") {
-                            println!("\nToken使用情况:");
-                            if let Some(v) = u.get("prompt_tokens") {
-                                println!("  Prompt tokens: {}", v);
-                            }
-                            if let Some(v) = u.get("completion_tokens") {
-                                println!("  Completion tokens: {}", v);
-                            }
-                            if let Some(v) = u.get("total_tokens") {
-                                println!("  Total tokens: {}", v);
-                            }
-                        }
-
-                        println!("\nJSON:");
-                        println!("{}", serde_json::to_string_pretty(&json_val)?);
-                        return Ok(());
-                    }
-
-                    let data = json_val
-                        .get("data")
-                        .context("返回缺少 data 字段")?
-                        .clone();
-
-                    let analysis: crate::models::CitrusAnalysisResult = serde_json::from_value(data)?;
+            // CLI Chat 走柑橘分析接口（analyze_citrus），并对结果做解析与格式化输出
+            // 同时保留调试信息：metrics + usage
+            match client.analyze_citrus(image).await {
+                Ok(response) => {
+                    let analysis = &response.data;
 
                     println!("柑橘分析结果:");
                     println!("  是否柑橘叶片: {}", analysis.is_citrus_leaf);
@@ -117,31 +72,17 @@ async fn main() -> anyhow::Result<()> {
                         println!("\n图片质量告警: {}", analysis.image_quality_warning);
                     }
 
-                    if let Some(m) = json_val.get("metrics") {
-                        if let Some(d) = m.get("duration_secs").and_then(|v| v.as_f64()) {
-                            println!("\n性能指标:");
-                            println!("  请求耗时: {:.2} 秒", d);
-                        }
-                        if let Some(tps) = m.get("tokens_per_sec").and_then(|v| v.as_f64()) {
-                            println!("  Token/s: {:.2}", tps);
-                        }
-                    }
+                    println!("\n性能指标:");
+                    println!("  请求耗时: {:.2} 秒", response.metrics.duration_secs);
+                    println!("  Token/s: {:.2}", response.metrics.tokens_per_sec);
 
-                    if let Some(u) = json_val.get("usage") {
-                        println!("\nToken使用情况:");
-                        if let Some(v) = u.get("prompt_tokens") {
-                            println!("  Prompt tokens: {}", v);
-                        }
-                        if let Some(v) = u.get("completion_tokens") {
-                            println!("  Completion tokens: {}", v);
-                        }
-                        if let Some(v) = u.get("total_tokens") {
-                            println!("  Total tokens: {}", v);
-                        }
-                    }
+                    println!("\nToken使用情况:");
+                    println!("  Prompt tokens: {}", response.usage.prompt_tokens);
+                    println!("  Completion tokens: {}", response.usage.completion_tokens);
+                    println!("  Total tokens: {}", response.usage.total_tokens);
 
                     println!("\nJSON:");
-                    println!("{}", serde_json::to_string_pretty(&json_val)?);
+                    println!("{}", serde_json::to_string_pretty(&response)?);
                 }
                 Err(e) => {
                     eprintln!("请求失败: {}", e);
