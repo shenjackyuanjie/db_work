@@ -14,7 +14,7 @@ from PIL import Image
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tif", ".tiff"}
 
 # 并发数量控制：默认 5
-CONCURRENCY = 5
+CONCURRENCY = 20
 
 
 def iter_images(folder: Path):
@@ -238,10 +238,19 @@ def main():
                 ok += 1
 
                 status = "HLB" if is_hlb else "OK"
-                print(f"[{idx}/{total}] {status} - {img_path.name} | 诊断: {diagnosis_info}")
+                scanned_now = ok + failed
+                acc_now = (hlb / ok) if scanned_now > 0 else 0.0
+                print(
+                    f"[{idx}/{total}] {status} - {img_path.name} | 诊断: {diagnosis_info} | 当前正确率: {acc_now:.2%} ({hlb}/{ok})"
+                )
             except Exception as e:
                 failed += 1
-                print(f"[{idx}/{total}] FAILED - {img_path.name}: {e}", file=sys.stderr)
+                scanned_now = ok + failed
+                acc_now = (hlb / ok) if scanned_now > 0 else 0.0
+                print(
+                    f"[{idx}/{total}] FAILED - {img_path.name}: {e} | 当前正确率: {acc_now:.2%} ({hlb}/{ok})",
+                    file=sys.stderr,
+                )
 
     scanned = ok + failed
     rate = (hlb / ok) if ok > 0 else 0.0
