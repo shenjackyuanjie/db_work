@@ -252,7 +252,7 @@ impl GlmClient {
     /// 构建柑橘分析用的请求（供 analyze_citrus 使用）
     /// 用户消息只包含图片，所有指令都在 system prompt 中
     fn build_citrus_request(&self, image: Option<impl Into<String>>) -> SimpleChatRequest {
-        const CITRUS_SYSTEM_MESSAGE: &str = r#"你是柑橘方面专家。
+        const CITRUS_SYSTEM_MESSAGE: &str = r#"你是柑橘方面专家。现在要诊断柑橘和它的相关病症
 请分析用户上传的图片，并严格按JSON格式返回以下结构，不要返回其他内容、不要使用Markdown代码块、不要添加额外字段：
 {
   "is_citrus_leaf": true/false,                     // 是否为柑橘叶片
@@ -270,7 +270,7 @@ impl GlmClient {
 辅助诊断要点：
 1. 柑橘叶片识别：柑橘叶片通常为卵形或椭圆形，叶片边缘有波浪状，叶片有光泽，叶脉明显
 2. 常见病害特征：
-   - 黄龙病：叶片黄化、斑驳、不对称，叶片变厚变脆
+   - 黄龙病：叶片黄化、斑驳、不对称，叶片变厚变脆；果实变小、畸形、着色不均（“红鼻果”或“青头果”），果皮变厚、汁少味酸
    - 溃疡病：叶片出现圆形黄色晕圈，中间有棕色或黑色凹陷斑点
    - 炭疽病：叶片出现圆形或椭圆形褐色斑点，边缘有黄色晕圈
    - 红蜘蛛危害：叶片出现白色或黄色斑点，叶片背面可见红色小点
