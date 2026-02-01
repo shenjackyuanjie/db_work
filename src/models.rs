@@ -54,10 +54,10 @@ pub struct Usage {
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct ChatResponse {
-    pub id: String,
-    pub object: String,
-    pub created: u64,
-    pub model: String,
+    // pub id: String,
+    // pub object: String,
+    // pub created: u64,
+    // pub model: String,
     pub choices: Vec<ChatChoice>,
     pub usage: Usage,
 }

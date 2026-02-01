@@ -46,7 +46,7 @@ pub async fn health_handler() -> impl IntoResponse {
         StatusCode::OK,
         Json(json!({
             "status": "ok",
-            "service": "glm-api-server"
+            "service": "openrouter"
         })),
     )
 }
@@ -54,9 +54,8 @@ pub async fn citrus_analyze_handler(
     State(state): State<AppState>,
     Json(request): Json<ChatApiRequest>,
 ) -> impl IntoResponse {
-    println!("收到柑橘分析请求");
     println!(
-        "图像数据长度: {}",
+        "处理请求 图像数据长度: {}",
         request.image.as_ref().map_or(0, |img| img.len())
     );
 
@@ -64,7 +63,7 @@ pub async fn citrus_analyze_handler(
     // 用户消息只包含图片，所有指令都在 system prompt 中
     match state.client.analyze_citrus(request.image).await {
         Ok(response) => {
-            println!("柑橘分析请求处理成功");
+            println!("柑橘分析请求处理成功 usage: {:?}", response.usage);
             (StatusCode::OK, Json(json!({
                 "success": true,
                 "data": response.data,
@@ -84,7 +83,7 @@ pub async fn citrus_analyze_handler(
 }
 
 pub fn create_router() -> Router {
-    let api_key = env::var("GLM_API_KEY").expect("请设置环境变量 GLM_API_KEY");
+    let api_key = env::var("OPENROUTER_API_KEY").expect("请设置环境变量 OPENROUTER_API_KEY");
 
     let client = GlmClient::new(api_key);
     let state = AppState { client };

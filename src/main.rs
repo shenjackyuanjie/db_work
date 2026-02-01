@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
             server::run_server(addr).await;
         }
         Commands::Chat { image } => {
-            let api_key = std::env::var("GLM_API_KEY").expect("请设置环境变量 GLM_API_KEY");
+            let api_key = std::env::var("OPENROUTER_API_KEY").expect("请设置环境变量 OPENROUTER_API_KEY");
 
             let client = client::GlmClient::new(api_key);
 

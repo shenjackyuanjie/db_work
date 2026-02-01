@@ -1,7 +1,8 @@
 use crate::models::{
     ChatMessage, ChatRequest, ChatResponse, CitrusAnalysisResponse, ResponseFormat,
 };
-use reqwest::header::{AUTHORIZATION, CONTENT_TYPE};
+use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderName};
+use std::str::FromStr;
 use serde_json::{json, Value};
 use std::time::Instant;
 
@@ -83,8 +84,8 @@ impl SimpleChatRequest {
 /// 聊天响应结果（简化版）
 #[derive(Debug)]
 pub struct SimpleChatResponse {
-    pub id: String,
-    pub model: String,
+    // pub id: String,
+    // pub model: String,
     pub content: String,
     pub usage: crate::models::Usage,
 }
@@ -100,8 +101,10 @@ impl GlmClient {
     pub fn new(api_key: String) -> Self {
         Self {
             api_key,
-            base_url: "https://open.bigmodel.cn/api/paas/v4/chat/completions".to_string(),
-            model: "glm-4.6v".to_string(),
+            base_url: "https://openrouter.ai/api/v1/chat/completions".to_string(),
+            // model: "zhipuai/glm-4v".to_string(),
+            model: "moonshotai/kimi-k2.5".to_string(),
+            // model: "google/gemini-2.5-flash-image".to_string(),
         }
     }
 
@@ -115,10 +118,23 @@ impl GlmClient {
     pub async fn chat_completions(&self, request: &ChatRequest) -> anyhow::Result<ChatResponse> {
         let client = reqwest::Client::new();
 
+        // 构建请求头，添加 OpenRouter 推荐的额外 Header
+        let mut headers = HeaderMap::new();
+        headers.insert(CONTENT_TYPE, "application/json".parse()?);
+        headers.insert(AUTHORIZATION, format!("Bearer {}", self.api_key).parse()?);
+        // OpenRouter 推荐使用这些 Header 来标识应用（用于排行榜统计）
+        headers.insert(
+            HeaderName::from_str("HTTP-Referer")?,
+            "https://github.com/glm-api".parse()?, // 可根据实际情况修改
+        );
+        headers.insert(
+            HeaderName::from_str("X-Title")?,
+            "db-test".parse()?, // 可根据实际情况修改
+        );
+
         let response = client
             .post(&self.base_url)
-            .header(CONTENT_TYPE, "application/json")
-            .header(AUTHORIZATION, format!("Bearer {}", self.api_key))
+            .headers(headers)
             .json(request)
             .send()
             .await?;
@@ -173,8 +189,8 @@ impl GlmClient {
             .unwrap_or_default();
 
         Ok(SimpleChatResponse {
-            id: response.id,
-            model: response.model,
+            // id: response.id,
+            // model: response.model,
             content,
             usage: response.usage,
         })
@@ -183,8 +199,8 @@ impl GlmClient {
     /// 将 SimpleChatResponse 转为统一的 JSON（供 server/cli 复用）
     fn simple_chat_response_to_json(resp: &SimpleChatResponse) -> Value {
         json!({
-            "id": resp.id,
-            "model": resp.model,
+            // "id": resp.id,
+            // "model": resp.model,
             "message": resp.content,
             "usage": resp.usage,
         })
