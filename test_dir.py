@@ -42,7 +42,7 @@ def to_data_url(path: Path) -> str:
             mime = "image/webp"
         else:
             mime = "application/octet-stream"
-    max_size = 512
+    max_size = 1024
     with Image.open(path) as im:
         w, h = im.size
         if w > max_size or h > max_size:

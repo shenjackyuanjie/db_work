@@ -10,12 +10,12 @@ use std::env;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 
-use crate::client::GlmClient;
+use crate::client::OpenRouterClient;
 use crate::models::ChatApiRequest;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub client: GlmClient,
+    pub client: OpenRouterClient,
 }
 
 pub async fn chat_handler(
@@ -85,7 +85,7 @@ pub async fn citrus_analyze_handler(
 pub fn create_router() -> Router {
     let api_key = env::var("OPENROUTER_API_KEY").expect("请设置环境变量 OPENROUTER_API_KEY");
 
-    let client = GlmClient::new(api_key);
+    let client = OpenRouterClient::new(api_key);
     let state = AppState { client };
 
     Router::new()

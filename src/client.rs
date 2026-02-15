@@ -13,6 +13,12 @@ pub struct ChatOptions {
     pub top_p: Option<f64>,
     pub max_tokens: Option<u32>,
     pub response_format: Option<ResponseFormat>,
+    /// 是否使用流式传输
+    pub stream: Option<bool>,
+    /// 供应商偏好设置
+    pub provider: Option<crate::models::ProviderPreferences>,
+    /// 请求转换（如 ["middle-out"]）
+    pub transforms: Option<Vec<String>>,
 }
 
 impl ChatOptions {
@@ -42,6 +48,30 @@ impl ChatOptions {
 
     pub fn with_system_message(self, _message: &str) -> Self {
         // 标记需要 system message，实际内容在调用时处理
+        self
+    }
+
+    /// 启用流式传输
+    pub fn stream(mut self, enabled: bool) -> Self {
+        self.stream = Some(enabled);
+        self
+    }
+
+    /// 设置供应商偏好
+    pub fn with_provider(mut self, provider: crate::models::ProviderPreferences) -> Self {
+        self.provider = Some(provider);
+        self
+    }
+
+    /// 设置请求转换
+    pub fn with_transforms(mut self, transforms: Vec<String>) -> Self {
+        self.transforms = Some(transforms);
+        self
+    }
+
+    /// 使用 middle-out 转换（用于截断长对话）
+    pub fn middle_out_transform(mut self) -> Self {
+        self.transforms = Some(vec!["middle-out".to_string()]);
         self
     }
 }
@@ -84,27 +114,34 @@ impl SimpleChatRequest {
 /// 聊天响应结果（简化版）
 #[derive(Debug)]
 pub struct SimpleChatResponse {
-    // pub id: String,
-    // pub model: String,
+    pub id: String,
+    pub model: String,
     pub content: String,
     pub usage: crate::models::Usage,
+    /// 实际使用的供应商
+    pub provider: Option<String>,
 }
 
 #[derive(Clone)]
-pub struct GlmClient {
+pub struct OpenRouterClient {
     api_key: String,
     base_url: String,
     model: String,
+    /// 请求超时时间（秒）
+    timeout_secs: u64,
+    /// 默认供应商偏好
+    default_provider: Option<crate::models::ProviderPreferences>,
 }
 
-impl GlmClient {
+impl OpenRouterClient {
     pub fn new(api_key: String) -> Self {
         Self {
             api_key,
             base_url: "https://openrouter.ai/api/v1/chat/completions".to_string(),
-            // model: "zhipuai/glm-4v".to_string(),
+            // 默认使用 Kimi K2.5，支持图像理解
             model: "moonshotai/kimi-k2.5".to_string(),
-            // model: "google/gemini-2.5-flash-image".to_string(),
+            timeout_secs: 60,
+            default_provider: None,
         }
     }
 
@@ -114,23 +151,53 @@ impl GlmClient {
         self
     }
 
-    /// 底层 API 调用
-    pub async fn chat_completions(&self, request: &ChatRequest) -> anyhow::Result<ChatResponse> {
-        let client = reqwest::Client::new();
+    /// 设置请求超时时间
+    pub fn with_timeout(mut self, secs: u64) -> Self {
+        self.timeout_secs = secs;
+        self
+    }
 
-        // 构建请求头，添加 OpenRouter 推荐的额外 Header
+    /// 设置默认供应商偏好
+    pub fn with_default_provider(mut self, provider: crate::models::ProviderPreferences) -> Self {
+        self.default_provider = Some(provider);
+        self
+    }
+
+    /// 构建请求头
+    fn build_headers(&self) -> anyhow::Result<HeaderMap> {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, "application/json".parse()?);
         headers.insert(AUTHORIZATION, format!("Bearer {}", self.api_key).parse()?);
+
         // OpenRouter 推荐使用这些 Header 来标识应用（用于排行榜统计）
+        // 尝试从环境变量读取，否则使用默认值
+        let referer = std::env::var("OPENROUTER_REFERER")
+            .unwrap_or_else(|_| "https://github.com/citrus-ai".to_string());
+        let title = std::env::var("OPENROUTER_TITLE")
+            .unwrap_or_else(|_| "citrus-ai-analyzer".to_string());
+
         headers.insert(
             HeaderName::from_str("HTTP-Referer")?,
-            "https://github.com/glm-api".parse()?, // 可根据实际情况修改
+            referer.parse()?,
         );
         headers.insert(
             HeaderName::from_str("X-Title")?,
-            "db-test".parse()?, // 可根据实际情况修改
+            title.parse()?,
         );
+
+        Ok(headers)
+    }
+
+    /// 底层 API 调用
+    pub async fn chat_completions(
+        &self,
+        request: &ChatRequest,
+    ) -> anyhow::Result<ChatResponse> {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(self.timeout_secs))
+            .build()?;
+
+        let headers = self.build_headers()?;
 
         let response = client
             .post(&self.base_url)
@@ -139,9 +206,48 @@ impl GlmClient {
             .send()
             .await?;
 
-        if !response.status().is_success() {
-            let status = response.status();
+        let status = response.status();
+
+        if !status.is_success() {
             let error_text = response.text().await?;
+
+            // 尝试解析 OpenRouter 的错误格式
+            if let Ok(error_resp) =
+                serde_json::from_str::<crate::models::OpenRouterErrorResponse>(
+                    &error_text,
+                )
+            {
+                let code = error_resp.error.code.unwrap_or(-1);
+                let msg = &error_resp.error.message;
+
+                // 根据错误码提供更详细的错误信息
+                let detailed_msg = match code {
+                    400 => format!("请求参数错误 (400): {}", msg),
+                    401 => format!("API Key 无效或已过期 (401): {}", msg),
+                    402 => format!("账户余额不足 (402): {}", msg),
+                    403 => format!("没有权限访问该模型 (403): {}", msg),
+                    408 => format!("请求超时 (408): {}", msg),
+                    429 => format!("请求过于频繁 (429): {}", msg),
+                    500 => format!("OpenRouter 服务器错误 (500): {}", msg),
+                    502 => format!("上游供应商错误 (502): {}", msg),
+                    503 => format!("模型暂时不可用 (503): {}", msg),
+                    _ => format!("OpenRouter API 错误 (code: {}): {}", code, msg),
+                };
+
+                anyhow::bail!("{}", detailed_msg);
+            }
+
+            // 尝试解析标准错误 JSON
+            if let Ok(error_json) = serde_json::from_str::<Value>(&error_text) {
+                if let Some(error_obj) = error_json.get("error").and_then(|e| e.as_object()) {
+                    let error_msg = error_obj
+                        .get("message")
+                        .and_then(|m| m.as_str())
+                        .unwrap_or(&error_text);
+                    anyhow::bail!("API 错误: {}", error_msg);
+                }
+            }
+
             anyhow::bail!("API request failed with status {}: {}", status, error_text);
         }
 
@@ -168,6 +274,9 @@ impl GlmClient {
             content,
         });
 
+        // 合并默认 provider 和请求中的 provider
+        let provider = request.options.provider.or_else(|| self.default_provider.clone());
+
         let chat_request = ChatRequest {
             model: self.model.clone(),
             messages,
@@ -175,6 +284,9 @@ impl GlmClient {
             top_p: request.options.top_p,
             max_tokens: request.options.max_tokens,
             response_format: request.options.response_format,
+            stream: request.options.stream,
+            provider,
+            transforms: request.options.transforms,
         };
 
         let response = self.chat_completions(&chat_request).await?;
@@ -189,24 +301,33 @@ impl GlmClient {
             .unwrap_or_default();
 
         Ok(SimpleChatResponse {
-            // id: response.id,
-            // model: response.model,
+            id: response.id,
+            model: response.model,
             content,
             usage: response.usage,
+            provider: response.provider,
         })
     }
 
     /// 将 SimpleChatResponse 转为统一的 JSON（供 server/cli 复用）
     fn simple_chat_response_to_json(resp: &SimpleChatResponse) -> Value {
-        json!({
-            // "id": resp.id,
-            // "model": resp.model,
+        let mut obj = json!({
+            "id": resp.id,
+            "model": resp.model,
             "message": resp.content,
             "usage": resp.usage,
-        })
+        });
+
+        if let Some(provider) = &resp.provider {
+            if let Value::Object(ref mut map) = obj {
+                map.insert("provider".to_string(), json!(provider));
+            }
+        }
+
+        obj
     }
 
-    /// 从 HTTP API 风格的 ChatApiRequest 统一执行聊天并返回 SimpleChatResponse（供 CLI 使用，保留原有调试字段）
+    /// 从 HTTP API 风格的 ChatApiRequest 统一执行聊天并返回 SimpleChatResponse
     pub async fn exec_chat_from_api(
         &self,
         api_req: crate::models::ChatApiRequest,
@@ -222,6 +343,16 @@ impl GlmClient {
         if let Some(m) = api_req.max_tokens {
             options = options.max_tokens(m);
         }
+        if let Some(stream) = api_req.stream {
+            options = options.stream(stream);
+        }
+
+        // 如果指定了首选供应商，创建 provider 偏好
+        if let Some(preferred) = api_req.preferred_provider {
+            let provider = crate::models::ProviderPreferences::with_order(vec![preferred]);
+            options = options.with_provider(provider);
+        }
+
         options = options.json_response();
 
         let request = SimpleChatRequest {
@@ -235,7 +366,7 @@ impl GlmClient {
         Ok(resp)
     }
 
-    /// 供 server 使用的包装方法：接受 ChatApiRequest，返回 serde_json::Value（id/model/message/usage + metrics）
+    /// 供 server 使用的包装方法：接受 ChatApiRequest，返回 serde_json::Value
     pub async fn exec_chat_api(
         &self,
         api_req: crate::models::ChatApiRequest,
@@ -266,7 +397,6 @@ impl GlmClient {
     }
 
     /// 构建柑橘分析用的请求（供 analyze_citrus 使用）
-    /// 用户消息只包含图片，所有指令都在 system prompt 中
     fn build_citrus_request(&self, image: Option<impl Into<String>>) -> SimpleChatRequest {
         const CITRUS_SYSTEM_MESSAGE: &str = r#"你是柑橘方面专家。现在要诊断柑橘和它的相关病症
 请分析用户上传的图片，并严格按JSON格式返回以下结构，不要返回其他内容、不要使用Markdown代码块、不要添加额外字段：
@@ -286,7 +416,7 @@ impl GlmClient {
 辅助诊断要点：
 1. 柑橘叶片识别：柑橘叶片通常为卵形或椭圆形，叶片边缘有波浪状，叶片有光泽，叶脉明显
 2. 常见病害特征：
-   - 黄龙病：叶片黄化、斑驳、不对称，叶片变厚变脆；果实变小、畸形、着色不均（“红鼻果”或“青头果”），果皮变厚、汁少味酸
+   - 黄龙病：叶片黄化、斑驳、不对称，叶片变厚变脆；果实变小、畸形、着色不均（"红鼻果"或"青头果"），果皮变厚、汁少味酸
    - 溃疡病：叶片出现圆形黄色晕圈，中间有棕色或黑色凹陷斑点
    - 炭疽病：叶片出现圆形或椭圆形褐色斑点，边缘有黄色晕圈
    - 红蜘蛛危害：叶片出现白色或黄色斑点，叶片背面可见红色小点
@@ -321,7 +451,6 @@ impl GlmClient {
     }
 
     /// 柑橘分析专用接口（结构化返回，包含分析结果、usage 和 metrics）
-    /// 用户消息只包含图片，所有指令都在 system prompt 中
     pub async fn analyze_citrus(
         &self,
         image: Option<impl Into<String>>,

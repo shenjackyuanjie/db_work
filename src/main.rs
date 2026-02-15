@@ -42,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Chat { image } => {
             let api_key = std::env::var("OPENROUTER_API_KEY").expect("请设置环境变量 OPENROUTER_API_KEY");
 
-            let client = client::GlmClient::new(api_key);
+            let client = client::OpenRouterClient::new(api_key);
 
             // CLI Chat 走柑橘分析接口（analyze_citrus），并对结果做解析与格式化输出
             // 同时保留调试信息：metrics + usage
