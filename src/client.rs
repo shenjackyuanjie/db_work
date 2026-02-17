@@ -238,14 +238,10 @@ impl OpenRouterClient {
             }
 
             // 尝试解析标准错误 JSON
-            if let Ok(error_json) = serde_json::from_str::<Value>(&error_text) {
-                if let Some(error_obj) = error_json.get("error").and_then(|e| e.as_object()) {
-                    let error_msg = error_obj
-                        .get("message")
-                        .and_then(|m| m.as_str())
-                        .unwrap_or(&error_text);
-                    anyhow::bail!("API 错误: {}", error_msg);
-                }
+            if let Ok(error_json) = serde_json::from_str::<Value>(&error_text)
+                && let Some(error_msg) = error_json.get("error").and_then(|e| e.as_object()).and_then(|error_obj| error_obj.get("message")).and_then(|m| m.as_str())
+            {
+                anyhow::bail!("API 错误：{}", error_msg);
             }
 
             anyhow::bail!("API request failed with status {}: {}", status, error_text);
@@ -318,10 +314,8 @@ impl OpenRouterClient {
             "usage": resp.usage,
         });
 
-        if let Some(provider) = &resp.provider {
-            if let Value::Object(ref mut map) = obj {
-                map.insert("provider".to_string(), json!(provider));
-            }
+        if let (Some(provider), Some(map)) = (&resp.provider, obj.as_object_mut()) {
+            map.insert("provider".to_string(), json!(provider));
         }
 
         obj

@@ -150,12 +150,11 @@ pub struct ChatChoice {
     pub logprobs: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Usage {
     pub prompt_tokens: u32,
     pub completion_tokens: u32,
     pub total_tokens: u32,
-    /// OpenRouter 特定：生成 tokens 的详细信息
     #[serde(skip_serializing_if = "Option::is_none")]
     pub generation_details: Option<GenerationDetails>,
 }
@@ -181,14 +180,39 @@ pub struct ChatApiRequest {
     pub temperature: Option<f64>,
     pub top_p: Option<f64>,
     pub max_tokens: Option<u32>,
+    /// 可选的登录 token
+    pub token: Option<String>,
     /// 指定首选供应商（如 "Moonshot AI", "Together", "Fireworks" 等）
     pub preferred_provider: Option<String>,
     /// 是否启用流式传输
     pub stream: Option<bool>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct User {
+    pub username: String,
+    pub password_hash: String,
+    pub is_admin: bool,
+    pub created_at: u64,
+    pub session_token: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Invitation {
+    pub code: String,
+    pub used: bool,
+    pub expires_at: u64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PendingUser {
+    pub username: String,
+    pub password_hash: String,
+    pub created_at: u64,
+}
+
 // 柑橘分析结构化输出（新 schema）
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CitrusAnalysisResult {
     /// 是否为柑橘叶片
     pub is_citrus_leaf: bool,
@@ -200,7 +224,7 @@ pub struct CitrusAnalysisResult {
     pub image_quality_warning: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DiseaseAnalysis {
     pub is_healthy: bool,
     pub disease_name: String,
@@ -211,7 +235,7 @@ pub struct DiseaseAnalysis {
     pub preventive_measures: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum CitrusType {
     脐橙,
     砂糖橘,
@@ -221,7 +245,7 @@ pub enum CitrusType {
     非柑橘,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Severity {
     健康,
     轻度,

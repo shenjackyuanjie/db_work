@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>柑橘识别</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7fb;
+        --card: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --primary: #2563eb;
+        --danger: #dc2626;
+        --border: #e5e7eb;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system,
+          sans-serif;
+      }
+      header {
+        background: var(--card);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      header h1 {
+        font-size: 18px;
+        margin: 0;
+      }
+      header nav {
+        margin-left: auto;
+        display: flex;
+        gap: 12px;
+      }
+      header nav a {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 14px;
+      }
+      header nav a:hover {
+        color: var(--primary);
+      }
+      main {
+        max-width: 1100px;
+        margin: 24px auto;
+        padding: 0 16px 48px;
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 20px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+      }
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+      .input-row {
+        display: grid;
+        gap: 10px;
+      }
+      .input-row label {
+        font-size: 14px;
+        color: var(--muted);
+      }
+      input[type="file"] {
+        width: 100%;
+      }
+      button {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .danger {
+        color: var(--danger);
+      }
+      .preview {
+        width: 100%;
+        aspect-ratio: 4/3;
+        border: 1px dashed var(--border);
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: #fafafa;
+      }
+      .preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .result {
+        display: grid;
+        gap: 10px;
+      }
+      .result pre {
+        background: #0b1020;
+        color: #e5e7eb;
+        border-radius: 10px;
+        padding: 12px;
+        overflow: auto;
+        font-size: 12px;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        background: #eef2ff;
+        color: #3730a3;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .kv {
+        display: grid;
+        gap: 6px;
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      .kv span {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .kv strong {
+        font-size: 14px;
+      }
+      .top-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .token-display {
+        font-size: 12px;
+        color: var(--muted);
+        word-break: break-all;
+      }
+      .hidden {
+        display: none;
+      }
+      @media (max-width: 980px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>柑橘识别</h1>
+      <div class="top-actions">
+        <span class="badge" id="loginBadge">未登录</span>
+      </div>
+      <nav>
+        <a href="/index.html">登录/注册</a>
+        <a href="/admin.html">管理员</a>
+        <a href="/analyze.html">识别</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>上传图片</h2>
+        <div class="input-row">
+          <label for="imageInput">选择柑橘叶片图片（JPEG/PNG/GIF/WebP）</label>
+          <input type="file" id="imageInput" accept="image/*" />
+        </div>
+        <div class="preview" id="previewBox">
+          <span class="muted">预览区域</span>
+        </div>
+        <div class="input-row">
+          <button id="analyzeBtn" disabled>开始识别</button>
+          <div class="muted">需要登录后才能识别。登录 token 将存储在本地浏览器。</div>
+          <div class="token-display" id="tokenDisplay"></div>
+        </div>
+        <div class="input-row hidden" id="errorBox">
+          <div class="danger" id="errorText"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>识别结果</h2>
+        <div class="result">
+          <div class="grid">
+            <div class="kv">
+              <span>是否柑橘叶片</span>
+              <strong id="isLeaf">-</strong>
+            </div>
+            <div class="kv">
+              <span>柑橘类型</span>
+              <strong id="citrusType">-</strong>
+            </div>
+            <div class="kv">
+              <span>健康状态</span>
+              <strong id="isHealthy">-</strong>
+            </div>
+            <div class="kv">
+              <span>病害名称</span>
+              <strong id="diseaseName">-</strong>
+            </div>
+            <div class="kv">
+              <span>严重程度</span>
+              <strong id="severity">-</strong>
+            </div>
+            <div class="kv">
+              <span>置信度</span>
+              <strong id="confidence">-</strong>
+            </div>
+          </div>
+          <div class="kv">
+            <span>治疗建议</span>
+            <strong id="treatment">-</strong>
+          </div>
+          <div class="kv">
+            <span>预防措施</span>
+            <strong id="prevention">-</strong>
+          </div>
+          <div class="kv">
+            <span>图片质量告警</span>
+            <strong id="qualityWarning">-</strong>
+          </div>
+          <div class="grid">
+            <div class="kv">
+              <span>耗时（秒）</span>
+              <strong id="duration">-</strong>
+            </div>
+            <div class="kv">
+              <span>Token/s</span>
+              <strong id="tps">-</strong>
+            </div>
+          </div>
+          <div>
+            <span class="muted">原始响应</span>
+            <pre id="rawResponse">-</pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const tokenKey = "glm_token";
+      const imageInput = document.getElementById("imageInput");
+      const analyzeBtn = document.getElementById("analyzeBtn");
+      const previewBox = document.getElementById("previewBox");
+      const errorBox = document.getElementById("errorBox");
+      const errorText = document.getElementById("errorText");
+      const tokenDisplay = document.getElementById("tokenDisplay");
+      const loginBadge = document.getElementById("loginBadge");
+
+      const isLeaf = document.getElementById("isLeaf");
+      const citrusType = document.getElementById("citrusType");
+      const isHealthy = document.getElementById("isHealthy");
+      const diseaseName = document.getElementById("diseaseName");
+      const severity = document.getElementById("severity");
+      const confidence = document.getElementById("confidence");
+      const treatment = document.getElementById("treatment");
+      const prevention = document.getElementById("prevention");
+      const qualityWarning = document.getElementById("qualityWarning");
+      const duration = document.getElementById("duration");
+      const tps = document.getElementById("tps");
+      const rawResponse = document.getElementById("rawResponse");
+
+      function getToken() {
+        return localStorage.getItem(tokenKey);
+      }
+
+      function updateLoginUI() {
+        const token = getToken();
+        if (token) {
+          loginBadge.textContent = "已登录";
+          tokenDisplay.textContent = `Token: ${token}`;
+          analyzeBtn.disabled = !imageInput.files.length;
+        } else {
+          loginBadge.textContent = "未登录";
+          tokenDisplay.textContent = "未检测到登录 token";
+          analyzeBtn.disabled = true;
+        }
+      }
+
+      function setError(msg) {
+        if (!msg) {
+          errorBox.classList.add("hidden");
+          errorText.textContent = "";
+          return;
+        }
+        errorBox.classList.remove("hidden");
+        errorText.textContent = msg;
+      }
+
+      function resetResult() {
+        isLeaf.textContent = "-";
+        citrusType.textContent = "-";
+        isHealthy.textContent = "-";
+        diseaseName.textContent = "-";
+        severity.textContent = "-";
+        confidence.textContent = "-";
+        treatment.textContent = "-";
+        prevention.textContent = "-";
+        qualityWarning.textContent = "-";
+        duration.textContent = "-";
+        tps.textContent = "-";
+        rawResponse.textContent = "-";
+      }
+
+      function renderPreview(file) {
+        previewBox.innerHTML = "";
+        if (!file) {
+          previewBox.innerHTML = '<span class="muted">预览区域</span>';
+          return;
+        }
+        const img = document.createElement("img");
+        const url = URL.createObjectURL(file);
+        img.onload = () => URL.revokeObjectURL(url);
+        img.src = url;
+        previewBox.appendChild(img);
+      }
+
+      function fileToDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onerror = () => reject(new Error("读取图片失败"));
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      imageInput.addEventListener("change", () => {
+        setError("");
+        resetResult();
+        renderPreview(imageInput.files[0]);
+        updateLoginUI();
+      });
+
+      analyzeBtn.addEventListener("click", async () => {
+        setError("");
+        resetResult();
+        const token = getToken();
+        if (!token) {
+          setError("未登录，请先登录");
+          return;
+        }
+        const file = imageInput.files[0];
+        if (!file) {
+          setError("请先选择图片");
+          return;
+        }
+
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = "识别中...";
+
+        try {
+          const imageDataUrl = await fileToDataUrl(file);
+          const resp = await fetch("/citrus/analyze", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              token,
+              image: imageDataUrl,
+            }),
+          });
+
+          const data = await resp.json();
+          rawResponse.textContent = JSON.stringify(data, null, 2);
+
+          if (!resp.ok || data.success === false) {
+            const msg = data.error || "识别失败";
+            setError(msg);
+            return;
+          }
+
+          const result = data.data;
+          isLeaf.textContent = result.is_citrus_leaf ? "是" : "否";
+          citrusType.textContent = result.citrus_type;
+          isHealthy.textContent = result.disease_analysis.is_healthy ? "健康" : "不健康";
+          diseaseName.textContent = result.disease_analysis.disease_name || "-";
+          severity.textContent = result.disease_analysis.severity;
+          confidence.textContent = result.disease_analysis.confidence;
+          treatment.textContent = result.disease_analysis.treatment_suggestion || "-";
+          prevention.textContent = result.disease_analysis.preventive_measures || "-";
+          qualityWarning.textContent = result.image_quality_warning || "-";
+          duration.textContent = data.metrics?.duration_secs ?? "-";
+          tps.textContent = data.metrics?.tokens_per_sec ?? "-";
+        } catch (err) {
+          setError(err.message || "请求失败");
+        } finally {
+          analyzeBtn.disabled = false;
+          analyzeBtn.textContent = "开始识别";
+        }
+      });
+
+      updateLoginUI();
+    </script>
+  </body>
+</html>

@@ -1,14 +1,17 @@
 use axum::{
-    Router,
     extract::State,
-    http::StatusCode,
-    response::{IntoResponse, Json},
+    response::IntoResponse,
+    Json,
+    Router,
     routing::post,
+    http::StatusCode,
 };
+
 use serde_json::json;
 use std::env;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::services::ServeDir;
 
 use crate::client::OpenRouterClient;
 use crate::models::ChatApiRequest;
@@ -16,7 +19,13 @@ use crate::models::ChatApiRequest;
 #[derive(Clone)]
 pub struct AppState {
     pub client: OpenRouterClient,
+    pub users: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::User>>>,
+    pub invitations: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::Invitation>>>,
+    pub pending_users: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::PendingUser>>>,
+    pub tokens: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, String>>>, // token -> username
 }
+
+
 
 pub async fn chat_handler(
     State(state): State<AppState>,
@@ -50,10 +59,36 @@ pub async fn health_handler() -> impl IntoResponse {
         })),
     )
 }
+#[axum::debug_handler]
 pub async fn citrus_analyze_handler(
     State(state): State<AppState>,
     Json(request): Json<ChatApiRequest>,
 ) -> impl IntoResponse {
+    let token = match request.token.clone() {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "Missing token" })),
+            )
+                .into_response()
+        }
+    };
+
+
+
+    let token_valid = {
+        let tokens = state.tokens.lock().unwrap();
+        tokens.contains_key(&token)
+    };
+    if !token_valid {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({ "error": "Invalid token" })),
+        )
+            .into_response();
+    }
+
     println!(
         "处理请求 图像数据长度: {}",
         request.image.as_ref().map_or(0, |img| img.len())
@@ -70,6 +105,7 @@ pub async fn citrus_analyze_handler(
                 "usage": response.usage,
                 "metrics": response.metrics
             })))
+                .into_response()
         }
         Err(e) => {
             println!("柑橘分析请求处理失败: {}", e);
@@ -77,7 +113,7 @@ pub async fn citrus_analyze_handler(
                 "success": false,
                 "error": e.to_string(),
             });
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)).into_response()
         }
     }
 }
@@ -86,12 +122,33 @@ pub fn create_router() -> Router {
     let api_key = env::var("OPENROUTER_API_KEY").expect("请设置环境变量 OPENROUTER_API_KEY");
 
     let client = OpenRouterClient::new(api_key);
-    let state = AppState { client };
+    let state = AppState {
+        client,
+        users: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+        invitations: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+        pending_users: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+        tokens: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+    };
+
+    {
+        let mut invites = state.invitations.lock().unwrap();
+        invites.insert(
+            "1111".to_string(),
+            crate::models::Invitation {
+                code: "1111".to_string(),
+                used: false,
+                expires_at: u64::MAX,
+            },
+        );
+    }
 
     Router::new()
         .route("/health", axum::routing::get(health_handler))
+        .route("/", axum::routing::get(|| async { axum::response::Redirect::temporary("/index.html") }))
         .route("/chat", post(chat_handler))
         .route("/citrus/analyze", post(citrus_analyze_handler))
+        .nest("/user", crate::user_routes::router(state.clone()))
+        .fallback_service(ServeDir::new("static"))
         .with_state(state)
         .layer(
             CorsLayer::new()

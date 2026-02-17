@@ -2,6 +2,9 @@ mod client;
 mod models;
 mod server;
 mod utils;
+mod user_routes;
+
+
 
 use anyhow::Context;
 use clap::{Parser, Subcommand};
@@ -37,6 +40,7 @@ async fn main() -> anyhow::Result<()> {
     match cli.command {
         Commands::Server { addr } => {
             let addr: std::net::SocketAddr = addr.parse().context("解析 addr 失败")?;
+            println!("服务器已启动，监听地址: {}", addr);
             server::run_server(addr).await;
         }
         Commands::Chat { image } => {

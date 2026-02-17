@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理员页面</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --card: #1f2937;
+        --text: #e5e7eb;
+        --muted: #94a3b8;
+        --primary: #3b82f6;
+        --danger: #ef4444;
+        --success: #22c55e;
+        --border: #334155;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      header {
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        padding: 16px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 18px;
+      }
+      nav a {
+        color: var(--muted);
+        margin-right: 16px;
+        text-decoration: none;
+      }
+      nav a:hover {
+        color: var(--text);
+      }
+      main {
+        max-width: 1100px;
+        margin: 24px auto;
+        padding: 0 16px 40px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+      }
+      .card h2 {
+        margin-top: 0;
+        font-size: 16px;
+      }
+      label {
+        display: block;
+        margin: 10px 0 6px;
+        color: var(--muted);
+      }
+      input,
+      button,
+      textarea,
+      select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #0b1220;
+        color: var(--text);
+      }
+      button {
+        background: var(--primary);
+        border: none;
+        cursor: pointer;
+        margin-top: 12px;
+        font-weight: 600;
+      }
+      button.secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+      }
+      .row > * {
+        flex: 1;
+      }
+      .status {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: #0b1220;
+        border: 1px solid var(--border);
+        color: var(--muted);
+        white-space: pre-wrap;
+        min-height: 40px;
+      }
+      .status.error {
+        color: #fecaca;
+        border-color: #7f1d1d;
+      }
+      .status.success {
+        color: #bbf7d0;
+        border-color: #14532d;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+      }
+      th,
+      td {
+        border-bottom: 1px solid var(--border);
+        padding: 8px;
+        text-align: left;
+        font-size: 13px;
+      }
+      th {
+        color: var(--muted);
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .pill.admin {
+        color: var(--success);
+        border-color: var(--success);
+      }
+      .pill.user {
+        color: var(--muted);
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>管理员控制台</h1>
+      <nav>
+        <a href="/index.html">登录/注册</a>
+        <a href="/admin.html">管理员</a>
+        <a href="/analyze.html">识别页面</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="card" style="margin-bottom: 16px">
+        <h2>会话信息</h2>
+        <div class="row">
+          <div>
+            <label>管理员 Token</label>
+            <input id="adminToken" placeholder="从登录后保存的 token 会自动读取" />
+          </div>
+          <div style="align-self: flex-end">
+            <button class="secondary" id="btnLoadToken">读取本地 Token</button>
+            <button class="secondary" id="btnClearToken">清除本地 Token</button>
+          </div>
+        </div>
+        <div class="status" id="sessionStatus"></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>创建邀请码</h2>
+          <label>有效期（秒）</label>
+          <input id="ttlSeconds" type="number" placeholder="默认 86400" />
+          <button id="btnCreateInvite">创建邀请码</button>
+          <div class="status" id="createInviteStatus"></div>
+        </div>
+
+        <div class="card">
+          <h2>设置用户管理员权限</h2>
+          <label>目标用户名</label>
+          <input id="targetUsername" placeholder="请输入用户名" />
+          <label>是否设为管理员</label>
+          <select id="makeAdmin">
+            <option value="true">是</option>
+            <option value="false">否</option>
+          </select>
+          <button id="btnSetAdmin">提交</button>
+          <div class="status" id="setAdminStatus"></div>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top: 16px">
+        <div class="card">
+          <h2>邀请码列表</h2>
+          <button class="secondary" id="btnListInvites">刷新邀请码</button>
+          <div id="invitesWrap"></div>
+        </div>
+        <div class="card">
+          <h2>用户列表</h2>
+          <button class="secondary" id="btnListUsers">刷新用户</button>
+          <div id="usersWrap"></div>
+        </div>
+        <div class="card">
+          <h2></h2>待审批用户</h2>
+          <button class="secondary" id="btnListPending">刷新待审批</button>
+          <div id="pendingWrap"></div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const tokenKey = "glm_token";
+
+      function setStatus(el, msg, type) {
+        el.textContent = msg || "";
+        el.classList.remove("error", "success");
+        if (type) el.classList.add(type);
+      }
+
+      function getToken() {
+        return $("adminToken").value.trim();
+      }
+
+      function loadToken() {
+        const t = localStorage.getItem(tokenKey) || "";
+        $("adminToken").value = t;
+        setStatus($("sessionStatus"), t ? "已读取本地 token" : "本地没有 token");
+      }
+
+      function clearToken() {
+        localStorage.removeItem(tokenKey);
+        $("adminToken").value = "";
+        setStatus($("sessionStatus"), "已清除本地 token");
+      }
+
+      function saveToken(t) {
+        if (t) localStorage.setItem(tokenKey, t);
+      }
+
+      async function postJson(url, body) {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const text = await res.text();
+        try {
+          return { ok: res.ok, data: JSON.parse(text) };
+        } catch {
+          return { ok: res.ok, data: { raw: text } };
+        }
+      }
+
+      async function validateAdmin() {
+        const token = getToken();
+        if (!token) {
+          setStatus($("sessionStatus"), "未检测到 token，请先登录", "error");
+          return false;
+        }
+        const resp = await postJson("/user/validate", { token });
+        if (!resp.ok || !resp.data.valid) {
+          setStatus($("sessionStatus"), resp.data.error || "token 无效，请重新登录", "error");
+          return false;
+        }
+        if (!resp.data.is_admin) {
+          setStatus($("sessionStatus"), "当前账号不是管理员", "error");
+          return false;
+        }
+        setStatus($("sessionStatus"), `管理员身份已验证：${resp.data.username}`, "success");
+        return true;
+      }
+
+      async function createInvite() {
+        if (!(await validateAdmin())) return;
+        const adminToken = getToken();
+        saveToken(adminToken);
+        const ttl = $("ttlSeconds").value ? Number($("ttlSeconds").value) : undefined;
+        const resp = await postJson("/user/admin/invitations/create", {
+          admin_token: adminToken,
+          ttl_seconds: ttl,
+        });
+        setStatus($("createInviteStatus"), JSON.stringify(resp.data, null, 2));
+      }
+
+      async function setAdmin() {
+        if (!(await validateAdmin())) return;
+        const adminToken = getToken();
+        saveToken(adminToken);
+        const resp = await postJson("/user/admin/set_admin", {
+          admin_token: adminToken,
+          target_username: $("targetUsername").value.trim(),
+          make_admin: $("makeAdmin").value === "true",
+        });
+        setStatus($("setAdminStatus"), JSON.stringify(resp.data, null, 2));
+      }
+
+      function renderInvites(list) {
+        if (!list || list.length === 0) {
+          $("invitesWrap").innerHTML = "<div class='status'>暂无邀请码</div>";
+          return;
+        }
+        const rows = list
+          .map(
+            (i) => `
+        <tr>
+          <td>${i.code}</td>
+          <td>${i.used ? "已使用" : "未使用"}</td>
+          <td>${i.expires_at}</td>
+        </tr>
+      `
+          )
+          .join("");
+        $("invitesWrap").innerHTML = `
+        <table>
+          <thead><tr><th>邀请码</th><th>状态</th><th>过期时间(秒)</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      }
+
+      function renderUsers(list) {
+        if (!list || list.length === 0) {
+          $("usersWrap").innerHTML = "<div class='status'>暂无用户</div>";
+          return;
+        }
+        const rows = list
+          .map(
+            (u) => `
+        <tr>
+          <td>${u.username}</td>
+          <td>${
+            u.is_admin
+              ? "<span class='pill admin'>管理员</span>"
+              : "<span class='pill user'>普通用户</span>"
+          }</td>
+          <td>${u.created_at}</td>
+        </tr>
+      `
+          )
+          .join("");
+        $("usersWrap").innerHTML = `
+        <table>
+          <thead><tr><th>用户名</th><th>角色</th><th>创建时间(秒)</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      }
+
+      function renderPending(list) {
+        if (!list || list.length === 0) {
+          $("pendingWrap").innerHTML = "<div class='status'>暂无待审批用户</div>";
+          return;
+        }
+        const rows = list
+          .map(
+            (u) => `
+        <tr>
+          <td>${u.username}</td>
+          <td>${u.created_at}</td>
+          <td>
+            <button class="secondary" onclick="approvePending('${u.username}')">通过</button>
+            <button class="secondary" onclick="rejectPending('${u.username}')">拒绝</button>
+          </td>
+        </tr>
+      `
+          )
+          .join("");
+        $("pendingWrap").innerHTML = `
+        <table>
+          <thead><tr><th>用户名</th><th>申请时间(秒)</th><th>操作</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+      }
+
+      async function listPending() {
+        if (!(await validateAdmin())) return;
+        const adminToken = getToken();
+        saveToken(adminToken);
+        const resp = await postJson("/user/admin/pending/list", { admin_token: adminToken });
+        renderPending(resp.data.pending_users || []);
+      }
+
+      async function approvePending(username) {
+        if (!(await validateAdmin())) return;
+        const adminToken = getToken();
+        saveToken(adminToken);
+        const resp = await postJson("/user/admin/pending/approve", {
+          admin_token: adminToken,
+          username,
+        });
+        setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2));
+        await listPending();
+        await listUsers();
+      }
+
+      async function rejectPending(username) {
+        if (!(await validateAdmin())) return;
+        const adminToken = getToken();
+        saveToken(adminToken);
+        const resp = await postJson("/user/admin/pending/reject", {
+          admin_token: adminToken,
+          username,
+        });
+        setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2));
+        await listPending();
+      }
+
+      async function listInvites() {
+        if (!(await validateAdmin())) return;
+        const adminToken = getToken();
+        saveToken(adminToken);
+        const resp = await postJson("/user/admin/invitations/list", { admin_token: adminToken });
+        renderInvites(resp.data.invitations || []);
+      }
+
+      async function listUsers() {
+        if (!(await validateAdmin())) return;
+        const adminToken = getToken();
+        saveToken(adminToken);
+        const resp = await postJson("/user/admin/users/list", { admin_token: adminToken });
+        renderUsers(resp.data.users || []);
+      }
+
+      $("btnLoadToken").addEventListener("click", loadToken);
+      $("btnClearToken").addEventListener("click", clearToken);
+      $("btnCreateInvite").addEventListener("click", createInvite);
+      $("btnSetAdmin").addEventListener("click", setAdmin);
+      $("btnListInvites").addEventListener("click", listInvites);
+      $("btnListUsers").addEventListener("click", listUsers);
+      $("btnListPending").addEventListener("click", listPending);
+
+      loadToken();
+      validateAdmin();
+    </script>
+  </body>
+</html>
