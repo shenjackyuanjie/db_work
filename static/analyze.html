@@ -160,11 +160,6 @@
         gap: 10px;
         align-items: center;
       }
-      .token-display {
-        font-size: 12px;
-        color: var(--muted);
-        word-break: break-all;
-      }
       .hidden {
         display: none;
       }
@@ -200,8 +195,7 @@
         </div>
         <div class="input-row">
           <button id="analyzeBtn" disabled>开始识别</button>
-          <div class="muted">需要登录后才能识别。登录 token 将存储在本地浏览器。</div>
-          <div class="token-display" id="tokenDisplay"></div>
+          <div class="muted">需要先登录后才能识别。</div>
         </div>
         <div class="input-row hidden" id="errorBox">
           <div class="danger" id="errorText"></div>
@@ -268,13 +262,12 @@
     </main>
 
     <script>
-      const tokenKey = "glm_token";
+      const SESSION_COOKIE = "session_token";
       const imageInput = document.getElementById("imageInput");
       const analyzeBtn = document.getElementById("analyzeBtn");
       const previewBox = document.getElementById("previewBox");
       const errorBox = document.getElementById("errorBox");
       const errorText = document.getElementById("errorText");
-      const tokenDisplay = document.getElementById("tokenDisplay");
       const loginBadge = document.getElementById("loginBadge");
 
       const isLeaf = document.getElementById("isLeaf");
@@ -290,19 +283,27 @@
       const tps = document.getElementById("tps");
       const rawResponse = document.getElementById("rawResponse");
 
+      function getCookie(name) {
+        const prefix = `${name}=`;
+        const part = document.cookie
+          .split(";")
+          .map((item) => item.trim())
+          .find((item) => item.startsWith(prefix));
+        if (!part) return "";
+        return decodeURIComponent(part.slice(prefix.length));
+      }
+
       function getToken() {
-        return localStorage.getItem(tokenKey);
+        return getCookie(SESSION_COOKIE);
       }
 
       function updateLoginUI() {
         const token = getToken();
         if (token) {
           loginBadge.textContent = "已登录";
-          tokenDisplay.textContent = `Token: ${token}`;
           analyzeBtn.disabled = !imageInput.files.length;
         } else {
           loginBadge.textContent = "未登录";
-          tokenDisplay.textContent = "未检测到登录 token";
           analyzeBtn.disabled = true;
         }
       }
@@ -382,11 +383,12 @@
           const imageDataUrl = await fileToDataUrl(file);
           const resp = await fetch("/citrus/analyze", {
             method: "POST",
+            credentials: "same-origin",
             headers: {
               "Content-Type": "application/json",
+              "X-Session-Token": token,
             },
             body: JSON.stringify({
-              token,
               image: imageDataUrl,
             }),
           });

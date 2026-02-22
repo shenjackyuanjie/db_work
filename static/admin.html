@@ -167,16 +167,7 @@
     <main>
       <div class="card" style="margin-bottom: 16px">
         <h2>会话信息</h2>
-        <div class="row">
-          <div>
-            <label>管理员 Token</label>
-            <input id="adminToken" placeholder="从登录后保存的 token 会自动读取" />
-          </div>
-          <div style="align-self: flex-end">
-            <button class="secondary" id="btnLoadToken">读取本地 Token</button>
-            <button class="secondary" id="btnClearToken">清除本地 Token</button>
-          </div>
-        </div>
+        <div class="status">登录成功后会自动读取会话，无需手动处理登录凭证。</div>
         <div class="status" id="sessionStatus"></div>
       </div>
 
@@ -215,7 +206,7 @@
           <div id="usersWrap"></div>
         </div>
         <div class="card">
-          <h2></h2>待审批用户</h2>
+          <h2>待审批用户</h2>
           <button class="secondary" id="btnListPending">刷新待审批</button>
           <div id="pendingWrap"></div>
         </div>
@@ -224,7 +215,7 @@
 
     <script>
       const $ = (id) => document.getElementById(id);
-      const tokenKey = "glm_token";
+      const SESSION_COOKIE = "session_token";
 
       function setStatus(el, msg, type) {
         el.textContent = msg || "";
@@ -232,31 +223,37 @@
         if (type) el.classList.add(type);
       }
 
+      function getCookie(name) {
+        const prefix = `${name}=`;
+        const part = document.cookie
+          .split(";")
+          .map((item) => item.trim())
+          .find((item) => item.startsWith(prefix));
+        if (!part) return "";
+        return decodeURIComponent(part.slice(prefix.length));
+      }
+
       function getToken() {
-        return $("adminToken").value.trim();
+        return getCookie(SESSION_COOKIE);
       }
 
-      function loadToken() {
-        const t = localStorage.getItem(tokenKey) || "";
-        $("adminToken").value = t;
-        setStatus($("sessionStatus"), t ? "已读取本地 token" : "本地没有 token");
-      }
-
-      function clearToken() {
-        localStorage.removeItem(tokenKey);
-        $("adminToken").value = "";
-        setStatus($("sessionStatus"), "已清除本地 token");
-      }
-
-      function saveToken(t) {
-        if (t) localStorage.setItem(tokenKey, t);
+      function requestHeaders(withJsonBody) {
+        const headers = {};
+        if (withJsonBody) headers["Content-Type"] = "application/json";
+        const token = getToken();
+        if (token) {
+          headers["X-Session-Token"] = token;
+        }
+        return headers;
       }
 
       async function postJson(url, body) {
+        const withBody = body !== undefined;
         const res = await fetch(url, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          credentials: "same-origin",
+          headers: requestHeaders(withBody),
+          body: withBody ? JSON.stringify(body) : undefined,
         });
         const text = await res.text();
         try {
@@ -269,12 +266,13 @@
       async function validateAdmin() {
         const token = getToken();
         if (!token) {
-          setStatus($("sessionStatus"), "未检测到 token，请先登录", "error");
+          setStatus($("sessionStatus"), "未检测到登录会话，请先登录", "error");
           return false;
         }
-        const resp = await postJson("/user/validate", { token });
+
+        const resp = await postJson("/user/validate");
         if (!resp.ok || !resp.data.valid) {
-          setStatus($("sessionStatus"), resp.data.error || "token 无效，请重新登录", "error");
+          setStatus($("sessionStatus"), resp.data.error || "登录会话无效，请重新登录", "error");
           return false;
         }
         if (!resp.data.is_admin) {
@@ -287,26 +285,20 @@
 
       async function createInvite() {
         if (!(await validateAdmin())) return;
-        const adminToken = getToken();
-        saveToken(adminToken);
         const ttl = $("ttlSeconds").value ? Number($("ttlSeconds").value) : undefined;
         const resp = await postJson("/user/admin/invitations/create", {
-          admin_token: adminToken,
           ttl_seconds: ttl,
         });
-        setStatus($("createInviteStatus"), JSON.stringify(resp.data, null, 2));
+        setStatus($("createInviteStatus"), JSON.stringify(resp.data, null, 2), resp.ok ? "" : "error");
       }
 
       async function setAdmin() {
         if (!(await validateAdmin())) return;
-        const adminToken = getToken();
-        saveToken(adminToken);
         const resp = await postJson("/user/admin/set_admin", {
-          admin_token: adminToken,
           target_username: $("targetUsername").value.trim(),
           make_admin: $("makeAdmin").value === "true",
         });
-        setStatus($("setAdminStatus"), JSON.stringify(resp.data, null, 2));
+        setStatus($("setAdminStatus"), JSON.stringify(resp.data, null, 2), resp.ok ? "" : "error");
       }
 
       function renderInvites(list) {
@@ -365,84 +357,80 @@
           return;
         }
         const rows = list
-          .map(
-            (u) => `
+          .map((u) => {
+            const role = u.requested_role === "admin" ? "管理员" : "用户";
+            const encoded = encodeURIComponent(u.username);
+            return `
         <tr>
           <td>${u.username}</td>
+          <td>${role}</td>
           <td>${u.created_at}</td>
           <td>
-            <button class="secondary" onclick="approvePending('${u.username}')">通过</button>
-            <button class="secondary" onclick="rejectPending('${u.username}')">拒绝</button>
+            <button class="secondary" onclick="approvePending(decodeURIComponent('${encoded}'))">通过</button>
+            <button class="secondary" onclick="rejectPending(decodeURIComponent('${encoded}'))">拒绝</button>
           </td>
         </tr>
-      `
-          )
+      `;
+          })
           .join("");
         $("pendingWrap").innerHTML = `
         <table>
-          <thead><tr><th>用户名</th><th>申请时间(秒)</th><th>操作</th></tr></thead>
+          <thead><tr><th>用户名</th><th>申请身份</th><th>申请时间(秒)</th><th>操作</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>`;
       }
 
       async function listPending() {
         if (!(await validateAdmin())) return;
-        const adminToken = getToken();
-        saveToken(adminToken);
-        const resp = await postJson("/user/admin/pending/list", { admin_token: adminToken });
+        const resp = await postJson("/user/admin/pending/list");
+        if (!resp.ok) {
+          setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2), "error");
+          return;
+        }
         renderPending(resp.data.pending_users || []);
       }
 
       async function approvePending(username) {
         if (!(await validateAdmin())) return;
-        const adminToken = getToken();
-        saveToken(adminToken);
-        const resp = await postJson("/user/admin/pending/approve", {
-          admin_token: adminToken,
-          username,
-        });
-        setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2));
+        const resp = await postJson("/user/admin/pending/approve", { username });
+        setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2), resp.ok ? "success" : "error");
         await listPending();
         await listUsers();
       }
 
       async function rejectPending(username) {
         if (!(await validateAdmin())) return;
-        const adminToken = getToken();
-        saveToken(adminToken);
-        const resp = await postJson("/user/admin/pending/reject", {
-          admin_token: adminToken,
-          username,
-        });
-        setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2));
+        const resp = await postJson("/user/admin/pending/reject", { username });
+        setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2), resp.ok ? "success" : "error");
         await listPending();
       }
 
       async function listInvites() {
         if (!(await validateAdmin())) return;
-        const adminToken = getToken();
-        saveToken(adminToken);
-        const resp = await postJson("/user/admin/invitations/list", { admin_token: adminToken });
+        const resp = await postJson("/user/admin/invitations/list");
+        if (!resp.ok) {
+          setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2), "error");
+          return;
+        }
         renderInvites(resp.data.invitations || []);
       }
 
       async function listUsers() {
         if (!(await validateAdmin())) return;
-        const adminToken = getToken();
-        saveToken(adminToken);
-        const resp = await postJson("/user/admin/users/list", { admin_token: adminToken });
+        const resp = await postJson("/user/admin/users/list");
+        if (!resp.ok) {
+          setStatus($("sessionStatus"), JSON.stringify(resp.data, null, 2), "error");
+          return;
+        }
         renderUsers(resp.data.users || []);
       }
 
-      $("btnLoadToken").addEventListener("click", loadToken);
-      $("btnClearToken").addEventListener("click", clearToken);
       $("btnCreateInvite").addEventListener("click", createInvite);
       $("btnSetAdmin").addEventListener("click", setAdmin);
       $("btnListInvites").addEventListener("click", listInvites);
       $("btnListUsers").addEventListener("click", listUsers);
       $("btnListPending").addEventListener("click", listPending);
 
-      loadToken();
       validateAdmin();
     </script>
   </body>

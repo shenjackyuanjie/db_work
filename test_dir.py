@@ -169,7 +169,7 @@ def parse_disease_result(result_json: dict) -> tuple[bool, str]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="批量上传文件夹图片到 Rust GLM server，判定黄龙病并统计得病率（走 /citrus/analyze）"
+        description="批量上传文件夹图片到 Rust AI server，判定黄龙病并统计得病率（走 /citrus/analyze）"
     )
     parser.add_argument("--dir", required=True, help="本地图片文件夹路径")
     parser.add_argument(
@@ -274,3 +274,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

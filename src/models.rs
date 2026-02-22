@@ -204,11 +204,27 @@ pub struct Invitation {
     pub expires_at: u64,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum RequestedRole {
+    #[default]
+    User,
+    Admin,
+}
+
+impl RequestedRole {
+    pub fn is_admin(&self) -> bool {
+        matches!(self, Self::Admin)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PendingUser {
     pub username: String,
     pub password_hash: String,
     pub created_at: u64,
+    #[serde(default)]
+    pub requested_role: RequestedRole,
 }
 
 // 柑橘分析结构化输出（新 schema）

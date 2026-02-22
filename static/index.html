@@ -11,6 +11,7 @@
         --text: #e5e7eb;
         --muted: #9ca3af;
         --primary: #22c55e;
+        --primary-2: #0ea5e9;
         --border: #1f2937;
       }
       * {
@@ -20,7 +21,7 @@
         margin: 0;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-        background: var(--bg);
+        background: radial-gradient(circle at 12% 12%, #1e293b, #0f172a 45%);
         color: var(--text);
         min-height: 100vh;
         display: flex;
@@ -48,13 +49,48 @@
       .field {
         margin-bottom: 12px;
       }
+      .input-with-btn {
+        position: relative;
+      }
+      .input-with-btn input {
+        padding-right: 110px;
+      }
+      .input-with-btn > .pw-toggle {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        padding: 4px;
+        border-radius: 6px;
+        border: 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 14px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .input-with-btn > .pw-toggle svg {
+        display: block;
+        width: 18px;
+        height: 18px;
+      }
+      @media (max-width: 480px) {
+        .input-with-btn input {
+          padding-right: 56px;
+        }
+      }
       label {
         display: block;
         font-size: 12px;
         color: var(--muted);
         margin-bottom: 6px;
       }
-      input {
+      input,
+      select {
         width: 100%;
         padding: 10px 12px;
         border-radius: 8px;
@@ -63,7 +99,8 @@
         color: var(--text);
         outline: none;
       }
-      input:focus {
+      input:focus,
+      select:focus {
         border-color: #334155;
       }
       button {
@@ -75,6 +112,24 @@
         color: #0b1220;
         font-weight: 700;
         cursor: pointer;
+      }
+      .mode-switch {
+        display: none;
+        width: 100%;
+      }
+      .mode-switch button {
+        width: 50%;
+        border-radius: 0;
+      }
+      .mode-switch button:first-child {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        background: var(--primary);
+      }
+      .mode-switch button:last-child {
+        border-top-right-radius: 8px;
+        border-bottom-right-radius: 8px;
+        background: var(--primary-2);
       }
       .row {
         display: flex;
@@ -100,6 +155,10 @@
         color: var(--muted);
         min-height: 38px;
       }
+      #login-msg,
+      #register-msg {
+        display: none;
+      }
       .msg.error {
         color: #fecaca;
         border-color: #7f1d1d;
@@ -108,24 +167,29 @@
         color: #bbf7d0;
         border-color: #14532d;
       }
-      .links {
-        margin-top: 12px;
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      a {
-        color: #93c5fd;
-        text-decoration: none;
-        font-size: 13px;
-      }
-      a:hover {
-        text-decoration: underline;
-      }
       .small {
         font-size: 12px;
         color: var(--muted);
         word-break: break-all;
+      }
+      details {
+        margin-bottom: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: #0b1220;
+      }
+      summary {
+        cursor: pointer;
+        padding: 10px 12px;
+        font-size: 12px;
+        color: var(--muted);
+        list-style: none;
+      }
+      details summary::-webkit-details-marker {
+        display: none;
+      }
+      .invite-body {
+        padding: 0 12px 12px;
       }
       @media (max-width: 900px) {
         .container {
@@ -144,18 +208,17 @@
         </div>
         <div class="field">
           <label>密码</label>
-          <input id="login-password" type="password" placeholder="请输入密码" />
+          <div class="input-with-btn">
+            <input id="login-password" type="password" placeholder="请输入密码" />
+            <button type="button" class="pw-toggle" data-target="login-password" aria-label="显示密码"></button>
+          </div>
         </div>
         <button id="login-btn">登录</button>
+        <div class="mode-switch" id="mode-switch">
+          <button id="enter-user-mode">进入用户模式</button>
+          <button id="enter-admin-mode">进入管理员模式</button>
+        </div>
         <div class="msg" id="login-msg"></div>
-        <div class="links">
-          <a href="/admin.html">管理员页面</a>
-          <a href="/analyze.html">识别页面</a>
-        </div>
-        <div class="row">
-          <span class="tag">token</span>
-          <span class="small" id="token-preview">未登录</span>
-        </div>
       </section>
 
       <section class="card">
@@ -166,46 +229,90 @@
         </div>
         <div class="field">
           <label>密码</label>
-          <input id="register-password" type="password" placeholder="请输入密码" />
+          <div class="input-with-btn">
+            <input id="register-password" type="password" placeholder="请输入密码" />
+            <button type="button" class="pw-toggle" data-target="register-password" aria-label="显示密码"></button>
+          </div>
         </div>
         <div class="field">
-          <label>邀请码（可选）</label>
-          <input id="register-code" placeholder="可留空，需管理员审批" />
+          <label>申请身份</label>
+          <select id="register-role">
+            <option value="user">用户</option>
+            <option value="admin">管理员</option>
+          </select>
         </div>
+        <details>
+          <summary>邀请码（可选，点击展开）</summary>
+          <div class="invite-body">
+            <input id="register-code" placeholder="不填则进入审核队列" />
+            <div class="small" style="margin-top: 8px">
+              输入正确邀请码可直接注册，输入错误会提示并可改为提交审核申请。
+            </div>
+          </div>
+        </details>
         <button id="register-btn">注册</button>
         <div class="msg" id="register-msg"></div>
-        <div class="small">无邀请码将进入待审批队列。</div>
       </section>
     </div>
 
     <script>
-      const tokenKey = "glm_token";
+      const SESSION_COOKIE = "session_token";
+      const COOKIE_AGE = 30 * 24 * 60 * 60;
 
       const loginBtn = document.getElementById("login-btn");
+      const modeSwitch = document.getElementById("mode-switch");
+      const userModeBtn = document.getElementById("enter-user-mode");
+      const adminModeBtn = document.getElementById("enter-admin-mode");
       const registerBtn = document.getElementById("register-btn");
       const loginMsg = document.getElementById("login-msg");
       const registerMsg = document.getElementById("register-msg");
-      const tokenPreview = document.getElementById("token-preview");
 
       function setMsg(el, text, type) {
         el.textContent = text || "";
         el.classList.remove("error", "success");
         if (type) el.classList.add(type);
-      }
-
-      function setToken(token) {
-        if (token) {
-          localStorage.setItem(tokenKey, token);
-        } else {
-          localStorage.removeItem(tokenKey);
+        if (el.id === "login-msg" || el.id === "register-msg") {
+          el.style.display = text ? "block" : "none";
         }
-        const current = localStorage.getItem(tokenKey);
-        tokenPreview.textContent = current ? current : "未登录";
       }
 
-      setToken(localStorage.getItem(tokenKey));
+      function getCookie(name) {
+        const prefix = `${name}=`;
+        const part = document.cookie
+          .split(";")
+          .map((item) => item.trim())
+          .find((item) => item.startsWith(prefix));
+        if (!part) return "";
+        return decodeURIComponent(part.slice(prefix.length));
+      }
+
+      function setSessionToken(token) {
+        if (!token) return;
+        document.cookie = `${SESSION_COOKIE}=${encodeURIComponent(
+          token
+        )}; path=/; max-age=${COOKIE_AGE}; samesite=lax`;
+      }
+
+      function hideAdminModeChooser() {
+        modeSwitch.style.display = "none";
+        loginBtn.style.display = "block";
+      }
+
+      function showAdminModeChooser() {
+        loginBtn.style.display = "none";
+        modeSwitch.style.display = "flex";
+      }
+
+      userModeBtn.addEventListener("click", () => {
+        window.location.href = "/analyze.html";
+      });
+
+      adminModeBtn.addEventListener("click", () => {
+        window.location.href = "/admin.html";
+      });
 
       loginBtn.addEventListener("click", async () => {
+        hideAdminModeChooser();
         setMsg(loginMsg, "登录中...");
         const username = document.getElementById("login-username").value.trim();
         const password = document.getElementById("login-password").value.trim();
@@ -217,6 +324,7 @@
         const res = await fetch("/user/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
           body: JSON.stringify({ username, password }),
         });
 
@@ -226,21 +334,28 @@
           return;
         }
 
-        setToken(data.token);
-        setMsg(
-          loginMsg,
-          data.is_admin ? "登录成功（管理员）" : "登录成功",
-          "success"
-        );
+        setSessionToken(data.token);
+        if (data.is_admin) {
+          setMsg(loginMsg, "登录成功，请选择进入用户模式或管理员模式", "success");
+          showAdminModeChooser();
+          return;
+        }
+
+        setMsg(loginMsg, "登录成功，正在进入用户模式...", "success");
+        setTimeout(() => {
+          window.location.href = "/analyze.html";
+        }, 250);
       });
 
       registerBtn.addEventListener("click", async () => {
         setMsg(registerMsg, "注册中...");
         const username = document.getElementById("register-username").value.trim();
         const password = document.getElementById("register-password").value.trim();
+        const requested_role = document.getElementById("register-role").value;
         const invitation_code = document
           .getElementById("register-code")
           .value.trim();
+
         if (!username || !password) {
           setMsg(registerMsg, "用户名、密码不能为空", "error");
           return;
@@ -249,22 +364,61 @@
         const res = await fetch("/user/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password, invitation_code }),
+          credentials: "same-origin",
+          body: JSON.stringify({
+            username,
+            password,
+            requested_role,
+            invitation_code,
+          }),
         });
 
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
-          setMsg(registerMsg, data.error || "注册失败", "error");
+          const hint = data.hint ? `。${data.hint}` : "";
+          setMsg(registerMsg, `${data.error || "注册失败"}${hint}`, "error");
           return;
         }
 
         if (data.status === "pending_approval") {
-          setMsg(registerMsg, "已提交，等待管理员审批", "success");
+          const roleText = requested_role === "admin" ? "管理员" : "用户";
+          setMsg(registerMsg, `已提交${roleText}申请，等待管理员审核`, "success");
+          return;
+        }
+
+        if (data.is_admin) {
+          setMsg(registerMsg, "注册成功（管理员），请登录后选择模式", "success");
           return;
         }
 
         setMsg(registerMsg, "注册成功，请返回登录", "success");
       });
+
+      // 密码显示/隐藏切换逻辑（使用 SVG 图标）
+      const eyeOpen = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><circle cx="12" cy="12" r="3"></circle></svg>';
+      const eyeClosed = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><circle cx="12" cy="12" r="3"></circle><line x1="4" y1="4" x2="20" y2="20"></line></svg>';
+
+      document.querySelectorAll('.pw-toggle').forEach(btn => {
+        const targetId = btn.getAttribute('data-target');
+        const input = document.getElementById(targetId);
+        if (!input) return;
+
+        function updateIcon() {
+          const isPassword = input.type === 'password';
+          btn.innerHTML = isPassword ? eyeOpen : eyeClosed;
+          btn.title = isPassword ? '显示密码' : '隐藏密码';
+          btn.setAttribute('aria-pressed', String(!isPassword));
+        }
+
+        btn.addEventListener('click', () => {
+          input.type = input.type === 'password' ? 'text' : 'password';
+          updateIcon();
+        });
+
+        // 初始化图标状态
+        updateIcon();
+      });
+
     </script>
   </body>
 </html>

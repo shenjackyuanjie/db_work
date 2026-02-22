@@ -1,10 +1,9 @@
 use axum::{
     extract::State,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
-    Json,
-    Router,
     routing::post,
-    http::StatusCode,
+    Json, Router,
 };
 
 use serde_json::json;
@@ -12,6 +11,7 @@ use std::env;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
+use tracing_subscriber::EnvFilter;
 
 use crate::client::OpenRouterClient;
 use crate::models::ChatApiRequest;
@@ -62,9 +62,10 @@ pub async fn health_handler() -> impl IntoResponse {
 #[axum::debug_handler]
 pub async fn citrus_analyze_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(request): Json<ChatApiRequest>,
 ) -> impl IntoResponse {
-    let token = match request.token.clone() {
+    let token = match crate::user_routes::extract_auth_token(&headers).or(request.token.clone()) {
         Some(t) => t,
         None => {
             return (
@@ -74,8 +75,6 @@ pub async fn citrus_analyze_handler(
                 .into_response()
         }
     };
-
-
 
     let token_valid = {
         let tokens = state.tokens.lock().unwrap();
@@ -158,16 +157,61 @@ pub fn create_router() -> Router {
         )
 }
 
-pub async fn run_server(addr: SocketAddr) {
-    tracing_subscriber::fmt::init();
+pub fn init_tracing(log_level: &str) {
+    let env_filter = EnvFilter::try_from_default_env()
+        .or_else(|_| EnvFilter::try_new(log_level))
+        .unwrap_or_else(|_| EnvFilter::new("info"));
 
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(env_filter)
+        .try_init();
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        if let Err(err) = tokio::signal::ctrl_c().await {
+            tracing::error!("监听 Ctrl+C 失败: {}", err);
+        }
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        use tokio::signal::unix::{SignalKind, signal};
+
+        match signal(SignalKind::terminate()) {
+            Ok(mut stream) => {
+                stream.recv().await;
+            }
+            Err(err) => {
+                tracing::error!("监听 SIGTERM 失败: {}", err);
+                std::future::pending::<()>().await;
+            }
+        }
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    tracing::info!("收到退出信号，正在关闭服务器...");
+}
+
+pub async fn run_server(addr: SocketAddr) {
     let app = create_router();
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .expect("无法绑定到地址");
 
-    tracing::info!("GLM API 服务器正在监听: {}", addr);
+    tracing::info!("AI 服务 服务器正在监听: {}", addr);
 
-    axum::serve(listener, app).await.expect("服务器运行失败");
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .expect("服务器运行失败");
 }
+

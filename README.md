@@ -1,10 +1,10 @@
-# GLM API
+# AI 服务
 
-这是一个基于 Rust 开发的智谱 AI GLM-4V 模型 API 客户端，提供命令行工具（CLI）和 HTTP 服务器两种使用方式，支持文本和图片的多模态对话。
+这是一个基于 Rust 开发的智谱 AI AI-4V 模型 API 客户端，提供命令行工具（CLI）和 HTTP 服务器两种使用方式，支持文本和图片的多模态对话。
 
 ## 功能特性
 
-- 🚀 支持 CLI 命令行直接调用 GLM-4V 模型
+- 🚀 支持 CLI 命令行直接调用 AI-4V 模型
 - 🌐 内置 HTTP 服务器，提供 RESTful API 接口
 - 🖼️ 支持图片输入（JPEG、PNG、GIF、WebP）
 - ⚡ 异步请求处理，基于 Tokio 运行时
@@ -43,13 +43,13 @@ cargo build --release
 
 ```bash
 # Linux/macOS
-export GLM_API_KEY=your_api_key_here
+export AI_API_KEY=your_api_key_here
 
 # Windows PowerShell
-$env:GLM_API_KEY="your_api_key_here"
+$env:AI_API_KEY="your_api_key_here"
 
 # Windows CMD
-set GLM_API_KEY=your_api_key_here
+set AI_API_KEY=your_api_key_here
 ```
 
 API Key 可以从 [智谱 AI 开放平台](https://open.bigmodel.cn/) 获取。
@@ -78,10 +78,10 @@ cargo run -- --help
 
 ```
 Response ID: chat-1234567890
-Model: glm-4.6v-flash
+Model: AI-4.6v-flash
 
 Assistant回复:
-[user]: 你好！我是智谱AI开发的GLM-4.6V...
+[user]: 你好！我是智谱AI开发的AI-4.6V...
 
 性能指标:
   请求耗时: 1.23 秒
@@ -117,7 +117,7 @@ GET /health
 ```json
 {
   "status": "ok",
-  "service": "glm-api-server"
+  "service": "ai-service-server"
 }
 ```
 
@@ -143,8 +143,8 @@ Content-Type: application/json
 ```json
 {
   "id": "chat-1234567890",
-  "model": "glm-4.6v-flash",
-  "message": "你好！我是智谱AI开发的GLM-4.6V模型...",
+  "model": "AI-4.6v-flash",
+  "message": "你好！我是智谱AI开发的AI-4.6V模型...",
   "usage": {
     "prompt_tokens": 45,
     "completion_tokens": 12,
@@ -210,7 +210,7 @@ curl -X POST http://127.0.0.1:3000/chat \
 db/
 ├── src/
 │   ├── main.rs      # 主程序入口，CLI 参数解析
-│   ├── client.rs    # GLM API 客户端实现
+│   ├── client.rs    # AI 服务 客户端实现
 │   ├── server.rs    # HTTP 服务器实现
 │   ├── models.rs    # 数据结构定义
 │   └── utils.rs     # 工具函数（图片处理等）
@@ -245,7 +245,7 @@ cargo check
 A: 访问 [智谱 AI 开放平台](https://open.bigmodel.cn/) 注册并获取 API Key。
 
 ### Q: 支持哪些模型？
-A: 当前使用 `glm-4.6v-flash` 模型，支持文本和图片多模态输入。
+A: 当前使用 `AI-4.6v-flash` 模型，支持文本和图片多模态输入。
 
 ### Q: 图片大小有限制吗？
 A: 智谱 AI 对上传的图片大小有限制，建议使用小于 10MB 的图片。
@@ -260,6 +260,7 @@ A: 可以创建 Dockerfile 使用 Rust 镜像构建，或在编译后使用最�
 ## 相关链接
 
 - [智谱 AI 开放平台](https://open.bigmodel.cn/)
-- [GLM-4 模型文档](https://open.bigmodel.cn/dev/api)
+- [AI-4 模型文档](https://open.bigmodel.cn/dev/api)
 - [Rust 官方文档](https://www.rust-lang.org/)
 - [Axum 框架](https://github.com/tokio-rs/axum)
+

@@ -1,6 +1,6 @@
 use axum::{
     extract::{Json, State},
-    http::StatusCode,
+    http::{HeaderMap, HeaderValue, StatusCode, header},
     response::IntoResponse,
     routing::post,
     Router,
@@ -8,10 +8,15 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tracing::{info, warn};
 use uuid::Uuid;
 
-use crate::models::{Invitation, PendingUser, User};
+use crate::models::{Invitation, PendingUser, RequestedRole, User};
 use crate::server::AppState;
+
+const SESSION_COOKIE_NAME: &str = "session_token";
+const SESSION_HEADER_NAME: &str = "x-session-token";
+const SESSION_MAX_AGE_SECONDS: u64 = 30 * 24 * 60 * 60;
 
 /// Request payload for login
 #[derive(Debug, Deserialize)]
@@ -27,18 +32,15 @@ pub struct LoginResponse {
     pub is_admin: bool,
 }
 
-/// Request payload for registration (requires invitation code)
+/// Request payload for registration
 #[derive(Debug, Deserialize)]
 pub struct RegisterRequest {
     pub username: String,
     pub password: String,
+    #[serde(default)]
     pub invitation_code: String,
-}
-
-/// Request payload for logout
-#[derive(Debug, Deserialize)]
-pub struct LogoutRequest {
-    pub token: String,
+    #[serde(default)]
+    pub requested_role: RequestedRole,
 }
 
 /// Request payload for admin to set a user's admin flag
@@ -46,52 +48,24 @@ pub struct LogoutRequest {
 pub struct SetAdminRequest {
     pub target_username: String,
     pub make_admin: bool,
-    pub admin_token: String,
 }
 
 /// Request payload for admin to create invitation
 #[derive(Debug, Deserialize)]
 pub struct CreateInvitationRequest {
-    pub admin_token: String,
     pub ttl_seconds: Option<u64>,
-}
-
-/// Request payload for admin to list invitations
-#[derive(Debug, Deserialize)]
-pub struct ListInvitationsRequest {
-    pub admin_token: String,
-}
-
-/// Request payload for admin to list users
-#[derive(Debug, Deserialize)]
-pub struct ListUsersRequest {
-    pub admin_token: String,
-}
-
-/// Request payload for admin to list pending users
-#[derive(Debug, Deserialize)]
-pub struct ListPendingUsersRequest {
-    pub admin_token: String,
 }
 
 /// Request payload for admin to approve pending user
 #[derive(Debug, Deserialize)]
 pub struct ApprovePendingUserRequest {
-    pub admin_token: String,
     pub username: String,
 }
 
 /// Request payload for admin to reject pending user
 #[derive(Debug, Deserialize)]
 pub struct RejectPendingUserRequest {
-    pub admin_token: String,
     pub username: String,
-}
-
-/// Request payload for token validation
-#[derive(Debug, Deserialize)]
-pub struct ValidateTokenRequest {
-    pub token: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -105,12 +79,12 @@ pub struct PublicUser {
 pub struct PendingPublicUser {
     pub username: String,
     pub created_at: u64,
+    pub requested_role: RequestedRole,
 }
 
 /// Generate a UUID v4 token
-fn generate_token(username: &str) -> String {
-    let uuid = Uuid::new_v4();
-    format!("{}-{}", username, uuid)
+fn generate_token() -> String {
+    Uuid::new_v4().to_string()
 }
 
 /// Password hashing using blake3
@@ -124,18 +98,88 @@ fn verify_password(hash: &str, pw: &str) -> bool {
 }
 
 fn now_secs() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
 }
 
-fn ensure_admin(state: &AppState, admin_token: &str) -> Result<String, (StatusCode, serde_json::Value)> {
-    let tokens = state.tokens.lock().unwrap();
-    let admin_username = match tokens.get(admin_token) {
-        Some(name) => name.clone(),
+fn requested_role_label(role: &RequestedRole) -> &'static str {
+    if role.is_admin() { "admin" } else { "user" }
+}
+
+fn build_login_cookie(token: &str) -> Result<HeaderValue, (StatusCode, serde_json::Value)> {
+    let cookie = format!(
+        "{SESSION_COOKIE_NAME}={token}; Path=/; SameSite=Lax; Max-Age={SESSION_MAX_AGE_SECONDS}"
+    );
+    HeaderValue::from_str(&cookie).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            json!({ "error": "Failed to build session cookie" }),
+        )
+    })
+}
+
+fn build_clear_cookie() -> Result<HeaderValue, (StatusCode, serde_json::Value)> {
+    let cookie = format!("{SESSION_COOKIE_NAME}=; Path=/; SameSite=Lax; Max-Age=0");
+    HeaderValue::from_str(&cookie).map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            json!({ "error": "Failed to clear session cookie" }),
+        )
+    })
+}
+
+fn token_from_cookie(headers: &HeaderMap) -> Option<String> {
+    let cookie_header = headers.get(header::COOKIE)?.to_str().ok()?;
+    cookie_header.split(';').find_map(|part| {
+        let trimmed = part.trim();
+        trimmed
+            .strip_prefix("session_token=")
+            .and_then(|value| (!value.is_empty()).then(|| value.to_string()))
+    })
+}
+
+pub fn extract_auth_token(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get(SESSION_HEADER_NAME)
+        .and_then(|v| v.to_str().ok())
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(ToString::to_string)
+        .or_else(|| token_from_cookie(headers))
+}
+
+fn ensure_authenticated(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<(String, String), (StatusCode, serde_json::Value)> {
+    let token = match extract_auth_token(headers) {
+        Some(t) => t,
         None => {
-            return Err((StatusCode::UNAUTHORIZED, json!({ "error": "Invalid admin token" })));
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                json!({ "error": "Missing session token" }),
+            ));
         }
     };
-    drop(tokens);
+
+    let tokens = state.tokens.lock().unwrap();
+    let username = match tokens.get(&token) {
+        Some(name) => name.clone(),
+        None => {
+            return Err((StatusCode::UNAUTHORIZED, json!({ "error": "Invalid token" })));
+        }
+    };
+
+    Ok((token, username))
+}
+
+fn ensure_admin(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<String, (StatusCode, serde_json::Value)> {
+    let (_, admin_username) = ensure_authenticated(state, headers)?;
 
     let users = state.users.lock().unwrap();
     let admin_user = match users.get(&admin_username) {
@@ -155,103 +199,215 @@ pub async fn login_handler(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
 ) -> impl IntoResponse {
-    let users = state.users.lock().unwrap();
-    if let Some(user) = users.get(&payload.username).filter(|user| verify_password(&user.password_hash, &payload.password)) {
-        let token = generate_token(&payload.username);
-        state.tokens.lock().unwrap().insert(token.clone(), payload.username.clone());
-        let resp = LoginResponse {
-            token,
-            is_admin: user.is_admin,
-        };
-        return (StatusCode::OK, Json(resp)).into_response();
+    let username = payload.username.trim();
+    let password = payload.password.trim();
+    info!("用户请求登录: username={}", username);
+
+    if username.is_empty() || password.is_empty() {
+        warn!("登录失败: username={}, reason=missing_username_or_password", username);
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error":"Username and password are required"})),
+        )
+            .into_response();
     }
-    (StatusCode::UNAUTHORIZED, Json(json!({"error":"Invalid credentials"}))).into_response()
+
+    let mut users = state.users.lock().unwrap();
+    let user = match users.get_mut(username) {
+        Some(u) => u,
+        None => {
+            warn!("登录失败: username={}, reason=user_not_found", username);
+            return (StatusCode::UNAUTHORIZED, Json(json!({"error":"Invalid credentials"})))
+                .into_response();
+        }
+    };
+
+    if !verify_password(&user.password_hash, password) {
+        warn!("登录失败: username={}, reason=invalid_password", username);
+        return (StatusCode::UNAUTHORIZED, Json(json!({"error":"Invalid credentials"})))
+            .into_response();
+    }
+
+    let token = generate_token();
+    user.session_token = Some(token.clone());
+    let is_admin = user.is_admin;
+    drop(users);
+
+    state
+        .tokens
+        .lock()
+        .unwrap()
+        .insert(token.clone(), username.to_string());
+
+    let cookie_header = match build_login_cookie(&token) {
+        Ok(v) => v,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+
+    let mut headers = HeaderMap::new();
+    headers.insert(header::SET_COOKIE, cookie_header);
+
+    info!("登录成功: username={}, is_admin={}", username, is_admin);
+
+    let resp = LoginResponse { token, is_admin };
+    (StatusCode::OK, headers, Json(resp)).into_response()
 }
 
-/// Register handler – requires a valid invitation
+/// Register handler
 pub async fn register_handler(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> impl IntoResponse {
-    if payload.invitation_code.trim().is_empty() {
+    let username = payload.username.trim().to_string();
+    let password = payload.password.trim().to_string();
+    let has_invitation = !payload.invitation_code.trim().is_empty();
+    let requested_role = requested_role_label(&payload.requested_role);
+
+    info!(
+        "用户请求注册: username={}, requested_role={}, has_invitation={}",
+        username, requested_role, has_invitation
+    );
+
+    if username.is_empty() || password.is_empty() {
+        warn!(
+            "注册失败: username={}, reason=missing_username_or_password",
+            username
+        );
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error":"Username and password are required"})),
+        )
+            .into_response();
+    }
+
+    {
         let users = state.users.lock().unwrap();
-        if users.contains_key(&payload.username) {
+        if users.contains_key(&username) {
+            warn!("注册失败: username={}, reason=username_exists", username);
             return (
                 StatusCode::CONFLICT,
                 Json(json!({"error":"Username already exists"})),
             )
                 .into_response();
         }
-        drop(users);
+    }
 
-        let mut pending = state.pending_users.lock().unwrap();
-        if pending.contains_key(&payload.username) {
+    {
+        let pending = state.pending_users.lock().unwrap();
+        if pending.contains_key(&username) {
+            warn!("注册失败: username={}, reason=username_already_pending", username);
             return (
                 StatusCode::CONFLICT,
                 Json(json!({"error":"Username already pending approval"})),
             )
                 .into_response();
         }
+    }
 
+    let invitation_code = payload.invitation_code.trim();
+    if invitation_code.is_empty() {
         let pending_user = PendingUser {
-            username: payload.username.clone(),
-            password_hash: hash_password(&payload.password),
+            username: username.clone(),
+            password_hash: hash_password(&password),
             created_at: now_secs(),
+            requested_role: payload.requested_role.clone(),
         };
-        pending.insert(payload.username.clone(), pending_user);
+        state
+            .pending_users
+            .lock()
+            .unwrap()
+            .insert(username.clone(), pending_user);
+
+        info!(
+            "注册进入审核队列: username={}, requested_role={}",
+            username, requested_role
+        );
 
         return (
             StatusCode::ACCEPTED,
-            Json(json!({"status":"pending_approval"})),
+            Json(json!({
+                "status":"pending_approval",
+                "requested_role": payload.requested_role
+            })),
         )
             .into_response();
     }
 
     let mut invites = state.invitations.lock().unwrap();
-    match invites.get_mut(&payload.invitation_code) {
+    match invites.get_mut(invitation_code) {
         Some(inv) if !inv.used && inv.expires_at > now_secs() => {
             inv.used = true;
         }
         _ => {
+            warn!("注册失败: username={}, reason=invalid_or_expired_invitation", username);
             return (
                 StatusCode::BAD_REQUEST,
-                Json(json!({"error":"Invalid or expired invitation"})),
+                Json(json!({
+                    "error":"Invalid or expired invitation",
+                    "hint":"邀请码错误时可清空邀请码并提交审核申请"
+                })),
             )
-                .into_response()
+                .into_response();
         }
     }
-
-    let mut users = state.users.lock().unwrap();
-    if users.contains_key(&payload.username) {
-        return (
-            StatusCode::CONFLICT,
-            Json(json!({"error":"Username already exists"})),
-        )
-            .into_response();
-    }
+    drop(invites);
 
     let user = User {
-        username: payload.username.clone(),
-        password_hash: hash_password(&payload.password),
-        is_admin: false,
+        username: username.clone(),
+        password_hash: hash_password(&password),
+        is_admin: payload.requested_role.is_admin(),
         created_at: now_secs(),
         session_token: None,
     };
-    users.insert(payload.username.clone(), user);
-    (StatusCode::CREATED, Json(json!({"status":"registered"}))).into_response()
+    state.users.lock().unwrap().insert(username.clone(), user);
+
+    info!(
+        "注册成功: username={}, is_admin={}, via_invitation=true",
+        username,
+        payload.requested_role.is_admin()
+    );
+
+    (
+        StatusCode::CREATED,
+        Json(json!({
+            "status":"registered",
+            "is_admin": payload.requested_role.is_admin()
+        })),
+    )
+        .into_response()
 }
 
-/// Logout handler – removes token
-pub async fn logout_handler(
-    State(state): State<AppState>,
-    Json(payload): Json<LogoutRequest>,
-) -> impl IntoResponse {
-    let mut tokens = state.tokens.lock().unwrap();
-    if tokens.remove(&payload.token).is_some() {
-        (StatusCode::OK, Json(json!({"status":"logged out"}))).into_response()
+/// Logout handler
+pub async fn logout_handler(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let token = match extract_auth_token(&headers) {
+        Some(t) => t,
+        None => {
+            warn!("登出失败: reason=missing_token");
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({"error":"Missing token"})),
+            )
+                .into_response();
+        }
+    };
+
+    let clear_cookie = match build_clear_cookie() {
+        Ok(v) => v,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+
+    let mut res_headers = HeaderMap::new();
+    res_headers.insert(header::SET_COOKIE, clear_cookie);
+
+    let removed_username = state.tokens.lock().unwrap().remove(&token);
+    if let Some(username) = removed_username {
+        info!("登出成功: username={}", username);
+        (StatusCode::OK, res_headers, Json(json!({"status":"logged out"}))).into_response()
     } else {
+        warn!("登出失败: reason=invalid_token");
         (
             StatusCode::BAD_REQUEST,
+            res_headers,
             Json(json!({"error":"Invalid token"})),
         )
             .into_response()
@@ -261,42 +417,38 @@ pub async fn logout_handler(
 /// Validate token handler
 pub async fn validate_token_handler(
     State(state): State<AppState>,
-    Json(payload): Json<ValidateTokenRequest>,
+    headers: HeaderMap,
 ) -> impl IntoResponse {
+    let token = match extract_auth_token(&headers) {
+        Some(t) => t,
+        None => return (StatusCode::OK, Json(json!({"valid": false}))).into_response(),
+    };
+
     let tokens = state.tokens.lock().unwrap();
-    if let Some(username) = tokens.get(&payload.token) {
+    if let Some(username) = tokens.get(&token) {
         let users = state.users.lock().unwrap();
-        let user = users.get(username).unwrap();
-        return (
-            StatusCode::OK,
-            Json(json!({
-                "valid": true,
-                "username": user.username,
-                "is_admin": user.is_admin
-            })),
-        )
-            .into_response();
+        if let Some(user) = users.get(username) {
+            return (
+                StatusCode::OK,
+                Json(json!({
+                    "valid": true,
+                    "username": user.username,
+                    "is_admin": user.is_admin
+                })),
+            )
+                .into_response();
+        }
     }
+
     (StatusCode::OK, Json(json!({"valid": false}))).into_response()
 }
 
 /// Current user info
-pub async fn me_handler(
-    State(state): State<AppState>,
-    Json(payload): Json<ValidateTokenRequest>,
-) -> impl IntoResponse {
-    let tokens = state.tokens.lock().unwrap();
-    let username = match tokens.get(&payload.token) {
-        Some(name) => name.clone(),
-        None => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({ "error": "Invalid token" })),
-            )
-                .into_response()
-        }
+pub async fn me_handler(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    let (_, username) = match ensure_authenticated(&state, &headers) {
+        Ok(v) => v,
+        Err((code, body)) => return (code, Json(body)).into_response(),
     };
-    drop(tokens);
 
     let users = state.users.lock().unwrap();
     let user = users.get(&username).unwrap();
@@ -314,17 +466,32 @@ pub async fn me_handler(
 /// Admin handler to set admin flag for another user
 pub async fn set_admin_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<SetAdminRequest>,
 ) -> impl IntoResponse {
-    if let Err((code, body)) = ensure_admin(&state, &payload.admin_token) {
-        return (code, Json(body)).into_response();
-    }
+    let admin_username = match ensure_admin(&state, &headers) {
+        Ok(name) => name,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+
+    info!(
+        "管理员请求修改用户权限: admin={}, target_username={}, make_admin={}",
+        admin_username, payload.target_username, payload.make_admin
+    );
 
     let mut users = state.users.lock().unwrap();
     if let Some(target) = users.get_mut(&payload.target_username) {
         target.is_admin = payload.make_admin;
+        info!(
+            "管理员修改用户权限成功: admin={}, target_username={}, make_admin={}",
+            admin_username, payload.target_username, payload.make_admin
+        );
         (StatusCode::OK, Json(json!({"status":"updated"}))).into_response()
     } else {
+        warn!(
+            "管理员修改用户权限失败: admin={}, target_username={}, reason=target_not_found",
+            admin_username, payload.target_username
+        );
         (
             StatusCode::NOT_FOUND,
             Json(json!({"error":"Target user not found"})),
@@ -336,13 +503,20 @@ pub async fn set_admin_handler(
 /// Admin handler to create invitation
 pub async fn create_invitation_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<CreateInvitationRequest>,
 ) -> impl IntoResponse {
-    if let Err((code, body)) = ensure_admin(&state, &payload.admin_token) {
-        return (code, Json(body)).into_response();
-    }
+    let admin_username = match ensure_admin(&state, &headers) {
+        Ok(name) => name,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
 
     let ttl = payload.ttl_seconds.unwrap_or(24 * 60 * 60);
+    info!(
+        "管理员请求创建邀请码: admin={}, ttl_seconds={}",
+        admin_username, ttl
+    );
+
     let code = Uuid::new_v4().to_string();
     let invitation = Invitation {
         code: code.clone(),
@@ -352,6 +526,8 @@ pub async fn create_invitation_handler(
 
     let mut invites = state.invitations.lock().unwrap();
     invites.insert(code.clone(), invitation);
+
+    info!("管理员创建邀请码成功: admin={}", admin_username);
 
     (
         StatusCode::OK,
@@ -366,9 +542,9 @@ pub async fn create_invitation_handler(
 /// Admin handler to list invitations
 pub async fn list_invitations_handler(
     State(state): State<AppState>,
-    Json(payload): Json<ListInvitationsRequest>,
+    headers: HeaderMap,
 ) -> impl IntoResponse {
-    if let Err((code, body)) = ensure_admin(&state, &payload.admin_token) {
+    if let Err((code, body)) = ensure_admin(&state, &headers) {
         return (code, Json(body)).into_response();
     }
 
@@ -378,11 +554,8 @@ pub async fn list_invitations_handler(
 }
 
 /// Admin handler to list users
-pub async fn list_users_handler(
-    State(state): State<AppState>,
-    Json(payload): Json<ListUsersRequest>,
-) -> impl IntoResponse {
-    if let Err((code, body)) = ensure_admin(&state, &payload.admin_token) {
+pub async fn list_users_handler(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
+    if let Err((code, body)) = ensure_admin(&state, &headers) {
         return (code, Json(body)).into_response();
     }
 
@@ -402,9 +575,9 @@ pub async fn list_users_handler(
 /// Admin handler to list pending users
 pub async fn list_pending_users_handler(
     State(state): State<AppState>,
-    Json(payload): Json<ListPendingUsersRequest>,
+    headers: HeaderMap,
 ) -> impl IntoResponse {
-    if let Err((code, body)) = ensure_admin(&state, &payload.admin_token) {
+    if let Err((code, body)) = ensure_admin(&state, &headers) {
         return (code, Json(body)).into_response();
     }
 
@@ -414,6 +587,7 @@ pub async fn list_pending_users_handler(
         .map(|u| PendingPublicUser {
             username: u.username.clone(),
             created_at: u.created_at,
+            requested_role: u.requested_role.clone(),
         })
         .collect();
 
@@ -423,27 +597,42 @@ pub async fn list_pending_users_handler(
 /// Admin handler to approve pending user
 pub async fn approve_pending_user_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<ApprovePendingUserRequest>,
 ) -> impl IntoResponse {
-    if let Err((code, body)) = ensure_admin(&state, &payload.admin_token) {
-        return (code, Json(body)).into_response();
-    }
+    let admin_username = match ensure_admin(&state, &headers) {
+        Ok(name) => name,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+
+    info!(
+        "管理员请求通过审核: admin={}, username={}",
+        admin_username, payload.username
+    );
 
     let mut pending = state.pending_users.lock().unwrap();
     let pending_user = match pending.remove(&payload.username) {
         Some(u) => u,
         None => {
+            warn!(
+                "管理员通过审核失败: admin={}, username={}, reason=pending_user_not_found",
+                admin_username, payload.username
+            );
             return (
                 StatusCode::NOT_FOUND,
                 Json(json!({ "error": "Pending user not found" })),
             )
-                .into_response()
+                .into_response();
         }
     };
     drop(pending);
 
     let mut users = state.users.lock().unwrap();
     if users.contains_key(&pending_user.username) {
+        warn!(
+            "管理员通过审核失败: admin={}, username={}, reason=username_exists",
+            admin_username, pending_user.username
+        );
         return (
             StatusCode::CONFLICT,
             Json(json!({ "error": "Username already exists" })),
@@ -454,11 +643,16 @@ pub async fn approve_pending_user_handler(
     let user = User {
         username: pending_user.username.clone(),
         password_hash: pending_user.password_hash,
-        is_admin: false,
+        is_admin: pending_user.requested_role.is_admin(),
         created_at: pending_user.created_at,
         session_token: None,
     };
     users.insert(user.username.clone(), user);
+
+    info!(
+        "管理员通过审核成功: admin={}, username={}",
+        admin_username, payload.username
+    );
 
     (StatusCode::OK, Json(json!({ "status": "approved" }))).into_response()
 }
@@ -466,16 +660,31 @@ pub async fn approve_pending_user_handler(
 /// Admin handler to reject pending user
 pub async fn reject_pending_user_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(payload): Json<RejectPendingUserRequest>,
 ) -> impl IntoResponse {
-    if let Err((code, body)) = ensure_admin(&state, &payload.admin_token) {
-        return (code, Json(body)).into_response();
-    }
+    let admin_username = match ensure_admin(&state, &headers) {
+        Ok(name) => name,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+
+    info!(
+        "管理员请求拒绝审核: admin={}, username={}",
+        admin_username, payload.username
+    );
 
     let mut pending = state.pending_users.lock().unwrap();
     if pending.remove(&payload.username).is_some() {
+        info!(
+            "管理员拒绝审核成功: admin={}, username={}",
+            admin_username, payload.username
+        );
         (StatusCode::OK, Json(json!({ "status": "rejected" }))).into_response()
     } else {
+        warn!(
+            "管理员拒绝审核失败: admin={}, username={}, reason=pending_user_not_found",
+            admin_username, payload.username
+        );
         (
             StatusCode::NOT_FOUND,
             Json(json!({ "error": "Pending user not found" })),
@@ -484,7 +693,7 @@ pub async fn reject_pending_user_handler(
     }
 }
 
-/// Build the router for all user‑related endpoints
+/// Build the router for all user-related endpoints
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/login", post(login_handler))

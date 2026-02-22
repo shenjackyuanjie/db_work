@@ -7,12 +7,20 @@ mod user_routes;
 
 
 use anyhow::Context;
-use clap::{Parser, Subcommand};
+use clap::{ArgAction, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
-#[command(name = "glm-api")]
+#[command(name = "ai-service")]
 #[command(author, version, about, long_about = None)]
 struct Cli {
+    /// 增加日志详细度（-v=debug, -vv=trace）
+    #[arg(short = 'v', action = ArgAction::Count, global = true)]
+    verbose: u8,
+
+    /// 使用 warning 级别日志
+    #[arg(short = 'd', long = "warning", action = ArgAction::SetTrue, global = true, conflicts_with = "verbose")]
+    warning: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -33,9 +41,23 @@ enum Commands {
     },
 }
 
+fn resolve_log_level(verbose: u8, warning: bool) -> &'static str {
+    if warning {
+        "warn"
+    } else {
+        match verbose {
+            0 => "info",
+            1 => "debug",
+            _ => "trace",
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+    let log_level = resolve_log_level(cli.verbose, cli.warning);
+    server::init_tracing(log_level);
 
     match cli.command {
         Commands::Server { addr } => {
@@ -97,3 +119,5 @@ async fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+
+
