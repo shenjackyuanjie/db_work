@@ -1,8 +1,8 @@
 use axum::{
     extract::State,
     http::{HeaderMap, StatusCode},
-    response::IntoResponse,
-    routing::post,
+    response::{Html, IntoResponse, Redirect},
+    routing::{get, post},
     Json, Router,
 };
 
@@ -24,32 +24,6 @@ pub struct AppState {
     pub pending_users: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::PendingUser>>>,
     pub tokens: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, String>>>, // token -> username
 }
-
-
-
-pub async fn chat_handler(
-    State(state): State<AppState>,
-    Json(mut request): Json<ChatApiRequest>,
-) -> impl IntoResponse {
-    // 如果没有提供 message，使用默认提示词
-    if request.message.is_none() {
-        request.message = Some("请分析这张图片。".to_string());
-    }
-
-    // 使用统一的客户端执行方法，将构建/调用逻辑下沉到 client 中
-    // 期望 client 提供 `exec_chat_api` 方法，返回 `Result<serde_json::Value, _>`，
-    // 包含与之前一致的字段：id, model, message, usage
-    match state.client.exec_chat_api(request).await {
-        Ok(json_val) => (StatusCode::OK, Json(json_val)),
-        Err(e) => {
-            let error_response = json!({
-                "error": e.to_string(),
-            });
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response))
-        }
-    }
-}
-
 pub async fn health_handler() -> impl IntoResponse {
     (
         StatusCode::OK,
@@ -59,6 +33,52 @@ pub async fn health_handler() -> impl IntoResponse {
         })),
     )
 }
+
+fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
+    let token = match crate::user_routes::extract_auth_token(headers) {
+        Some(t) => t,
+        None => return false,
+    };
+    let tokens = state.tokens.lock().unwrap();
+    tokens.contains_key(&token)
+}
+
+pub async fn admin_page_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !has_valid_session(&state, &headers) {
+        tracing::warn!("未登录或会话无效访问 /admin.html，重定向到 /index.html");
+        return Redirect::temporary("/index.html").into_response();
+    }
+
+    match tokio::fs::read_to_string("static/admin.html").await {
+        Ok(content) => Html(content).into_response(),
+        Err(err) => {
+            tracing::error!("读取 admin 页面失败: {}", err);
+            (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
+        }
+    }
+}
+
+pub async fn analyze_page_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if !has_valid_session(&state, &headers) {
+        tracing::warn!("未登录或会话无效访问 /analyze.html，重定向到 /index.html");
+        return Redirect::temporary("/index.html").into_response();
+    }
+
+    match tokio::fs::read_to_string("static/analyze.html").await {
+        Ok(content) => Html(content).into_response(),
+        Err(err) => {
+            tracing::error!("读取 analyze 页面失败: {}", err);
+            (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
+        }
+    }
+}
+
 #[axum::debug_handler]
 pub async fn citrus_analyze_handler(
     State(state): State<AppState>,
@@ -142,9 +162,10 @@ pub fn create_router() -> Router {
     }
 
     Router::new()
-        .route("/health", axum::routing::get(health_handler))
-        .route("/", axum::routing::get(|| async { axum::response::Redirect::temporary("/index.html") }))
-        .route("/chat", post(chat_handler))
+        .route("/health", get(health_handler))
+        .route("/", get(|| async { axum::response::Redirect::temporary("/index.html") }))
+        .route("/admin.html", get(admin_page_handler))
+        .route("/analyze.html", get(analyze_page_handler))
         .route("/citrus/analyze", post(citrus_analyze_handler))
         .nest("/user", crate::user_routes::router(state.clone()))
         .fallback_service(ServeDir::new("static"))

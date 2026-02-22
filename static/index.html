@@ -36,12 +36,24 @@
         grid-template-columns: 1fr 1fr;
         gap: 20px;
       }
+      .container.single-centered {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+      .top-logout {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 999;
+      }
       .card {
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 20px;
         box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+        width: 100%;
+        max-width: 520px;
       }
       h2 {
         margin: 0 0 16px;
@@ -199,6 +211,7 @@
     </style>
   </head>
   <body>
+  <button id="logout-btn" class="top-logout ghost" style="display:none">退出登录</button>
     <div class="container">
       <section class="card">
         <h2>登录</h2>
@@ -393,6 +406,69 @@
 
         setMsg(registerMsg, "注册成功，请返回登录", "success");
       });
+
+        // 页面加载时检查是否已有会话 cookie，若存在则向后端验证并显示已登录状态，隐藏注册栏
+        async function checkSessionOnLoad() {
+          const token = getCookie(SESSION_COOKIE);
+          if (!token) return;
+          setMsg(loginMsg, "检测到会话，验证中...");
+          try {
+            const res = await fetch("/user/validate", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: { "Content-Type": "application/json" },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok && data.valid) {
+              setSessionToken(token);
+              setMsg(loginMsg, `已登录：${data.username}`, "success");
+
+              // 隐藏注册那半内容（注册卡片）并让登录区居中
+              const registerCard = document.getElementById("register-btn").closest(".card");
+              const containerEl = document.querySelector('.container');
+              if (registerCard) registerCard.style.display = "none";
+              if (containerEl) containerEl.classList.add('single-centered');
+
+              // 管理员显示模式选择，普通用户将登录按钮变为进入用户模式
+              const logoutBtnEl = document.getElementById('logout-btn');
+              if (logoutBtnEl) logoutBtnEl.style.display = 'block';
+
+              if (data.is_admin) {
+                setMsg(loginMsg, "已登录（管理员），请选择模式", "success");
+                showAdminModeChooser();
+              } else {
+                hideAdminModeChooser();
+                loginBtn.textContent = "进入用户模式";
+                loginBtn.onclick = () => (window.location.href = "/analyze.html");
+              }
+              return;
+            }
+
+            // token 无效则清除 cookie，并恢复注册栏显示
+            document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
+            const registerCard = document.getElementById("register-btn")?.closest(".card");
+            const containerEl = document.querySelector('.container');
+            const logoutBtnEl = document.getElementById('logout-btn');
+            if (registerCard) registerCard.style.display = "";
+            if (containerEl) containerEl.classList.remove('single-centered');
+            if (logoutBtnEl) logoutBtnEl.style.display = 'none';
+          } catch (e) {
+            // 忽略网络错误，不影响页面其他功能
+          }
+        }
+
+        // 立即执行检查
+        checkSessionOnLoad();
+
+        // 统一的 logout：清除 cookie 并刷新页面
+        function logout() {
+          document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
+          // 小延迟保证 cookie 写入后刷新
+          setTimeout(() => location.reload(), 80);
+        }
+
+        // 绑定浮动退出按钮
+        document.getElementById('logout-btn')?.addEventListener('click', logout);
 
       // 密码显示/隐藏切换逻辑（使用 SVG 图标）
       const eyeOpen = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><circle cx="12" cy="12" r="3"></circle></svg>';

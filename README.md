@@ -121,81 +121,10 @@ GET /health
 }
 ```
 
-##### 2. 聊天接口
+##### 2. 页面与鉴权相关接口
 
-```bash
-POST /chat
-Content-Type: application/json
-```
-
-请求体：
-```json
-{
-  "message": "请介绍一下你自己",
-  "image": "data:image/jpeg;base64,...",
-  "temperature": 0.7,
-  "top_p": 0.9,
-  "max_tokens": 1000
-}
-```
-
-响应：
-```json
-{
-  "id": "chat-1234567890",
-  "model": "AI-4.6v-flash",
-  "message": "你好！我是智谱AI开发的AI-4.6V模型...",
-  "usage": {
-    "prompt_tokens": 45,
-    "completion_tokens": 12,
-    "total_tokens": 57
-  }
-}
-```
-
-#### 使用 cURL 测试
-
-```bash
-# 纯文本对话
-curl -X POST http://127.0.0.1:3000/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "你好",
-    "temperature": 0.7
-  }'
-
-# 带图片的对话
-curl -X POST http://127.0.0.1:3000/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "描述这张图片",
-    "image": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
-  }'
-```
-
-## API 参数说明
-
-### 请求参数
-
-| 参数 | 类型 | 必需 | 说明 |
-|------|------|------|------|
-| message | String | 是 | 用户消息文本 |
-| image | String | 否 | 图片的 base64 data URL |
-| temperature | Float | 否 | 控制随机性，范围 0-2，默认 0.7 |
-| top_p | Float | 否 | 核采样参数，默认 0.9 |
-| max_tokens | Integer | 否 | 最大生成 token 数 |
-
-### 响应字段
-
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | String | 响应 ID |
-| model | String | 使用的模型名称 |
-| message | String | AI 的回复内容 |
-| usage | Object | Token 使用情况 |
-| usage.prompt_tokens | Integer | 提示 token 数 |
-| usage.completion_tokens | Integer | 完成 token 数 |
-| usage.total_tokens | Integer | 总 token 数 |
+服务器模式主要用于登录/注册与页面访问控制。
+聊天能力请使用 CLI 模式。
 
 ## 支持的图片格式
 
