@@ -45,6 +45,14 @@
         top: 16px;
         right: 16px;
         z-index: 999;
+        /* 小型红色 pill 风格，覆盖默认 button 宽度 */
+        width: auto !important;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: #ef4444;
+        color: #fff;
+        border: 0;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
       }
       .card {
         background: var(--card);
@@ -316,6 +324,27 @@
         modeSwitch.style.display = "flex";
       }
 
+      // 统一的登录后 UI 更新（供登录成功和页面加载验证通过时复用）
+      function applyLoggedInState(user) {
+        const registerCard = document.getElementById("register-btn").closest(".card");
+        const containerEl = document.querySelector('.container');
+        if (registerCard) registerCard.style.display = "none";
+        if (containerEl) containerEl.classList.add('single-centered');
+
+        const logoutBtnEl = document.getElementById('logout-btn');
+        if (logoutBtnEl) logoutBtnEl.style.display = 'block';
+
+        if (user.is_admin) {
+          setMsg(loginMsg, "已登录（管理员），请选择模式", "success");
+          showAdminModeChooser();
+        } else {
+          hideAdminModeChooser();
+          loginBtn.textContent = "进入用户模式";
+          loginBtn.onclick = () => (window.location.href = "/analyze.html");
+          setMsg(loginMsg, `已登录：${user.username}`, "success");
+        }
+      }
+
       userModeBtn.addEventListener("click", () => {
         window.location.href = "/analyze.html";
       });
@@ -348,16 +377,9 @@
         }
 
         setSessionToken(data.token);
-        if (data.is_admin) {
-          setMsg(loginMsg, "登录成功，请选择进入用户模式或管理员模式", "success");
-          showAdminModeChooser();
-          return;
-        }
-
-        setMsg(loginMsg, "登录成功，正在进入用户模式...", "success");
-        setTimeout(() => {
-          window.location.href = "/analyze.html";
-        }, 250);
+        // 使用与页面加载时相同的登录后效果
+        applyLoggedInState(data);
+        return;
       });
 
       registerBtn.addEventListener("click", async () => {
@@ -421,26 +443,7 @@
             const data = await res.json().catch(() => ({}));
             if (res.ok && data.valid) {
               setSessionToken(token);
-              setMsg(loginMsg, `已登录：${data.username}`, "success");
-
-              // 隐藏注册那半内容（注册卡片）并让登录区居中
-              const registerCard = document.getElementById("register-btn").closest(".card");
-              const containerEl = document.querySelector('.container');
-              if (registerCard) registerCard.style.display = "none";
-              if (containerEl) containerEl.classList.add('single-centered');
-
-              // 管理员显示模式选择，普通用户将登录按钮变为进入用户模式
-              const logoutBtnEl = document.getElementById('logout-btn');
-              if (logoutBtnEl) logoutBtnEl.style.display = 'block';
-
-              if (data.is_admin) {
-                setMsg(loginMsg, "已登录（管理员），请选择模式", "success");
-                showAdminModeChooser();
-              } else {
-                hideAdminModeChooser();
-                loginBtn.textContent = "进入用户模式";
-                loginBtn.onclick = () => (window.location.href = "/analyze.html");
-              }
+              applyLoggedInState(data);
               return;
             }
 
