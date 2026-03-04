@@ -324,9 +324,10 @@
         modeSwitch.style.display = "flex";
       }
 
-      // 统一的登录后 UI 更新（供登录成功和页面加载验证通过时复用）
-      function applyLoggedInState(user) {
-        const registerCard = document.getElementById("register-btn").closest(".card");
+      // 统一的登录后 UI 更新（兼容后端直接返回 user 或包装在 { user, ... } 的情况）
+      function applyLoggedInState(userOrResp) {
+        const user = (userOrResp && userOrResp.user) ? userOrResp.user : (userOrResp || {});
+        const registerCard = document.getElementById("register-btn")?.closest(".card");
         const containerEl = document.querySelector('.container');
         if (registerCard) registerCard.style.display = "none";
         if (containerEl) containerEl.classList.add('single-centered');
@@ -341,7 +342,8 @@
           hideAdminModeChooser();
           loginBtn.textContent = "进入用户模式";
           loginBtn.onclick = () => (window.location.href = "/analyze.html");
-          setMsg(loginMsg, `已登录：${user.username}`, "success");
+          const name = user.username || user.name || '未知用户';
+          setMsg(loginMsg, `已登录：${name}`, "success");
         }
       }
 
@@ -377,7 +379,23 @@
         }
 
         setSessionToken(data.token);
-        // 使用与页面加载时相同的登录后效果
+        // 登录返回的是 token + is_admin，继续请求后端以获取用户名后再应用已登录状态
+        try {
+          const vres = await fetch("/user/validate", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+          });
+          const vdata = await vres.json().catch(() => ({}));
+          if (vres.ok && vdata.valid) {
+            applyLoggedInState(vdata);
+            return;
+          }
+        } catch (e) {
+          // 若校验请求失败，仍回退为使用登录响应（可能缺少用户名）
+        }
+
+        // 最后回退：依然应用登录响应（一般不会到这里，因为 /user/validate 应返回用户名）
         applyLoggedInState(data);
         return;
       });

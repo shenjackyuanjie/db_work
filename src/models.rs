@@ -284,3 +284,90 @@ pub struct AnalysisMetrics {
     pub duration_secs: f64,
     pub tokens_per_sec: f64,
 }
+
+/// 识别记录 - 存储每次柑橘识别请求和结果
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DiagnosisRecord {
+    pub id: String,
+    pub timestamp: u64,
+    /// 识别结果（预测类别）
+    pub predicted_class: String,
+    /// 置信度（0~100）
+    pub confidence: f64,
+    /// 是否为柑橘叶片
+    pub is_citrus_leaf: bool,
+    /// 柑橘类型
+    pub citrus_type: String,
+    /// 是否健康
+    pub is_healthy: bool,
+    /// 病害名称（健康时为空）
+    pub disease_name: String,
+    /// 严重程度
+    pub severity: String,
+    /// 治疗建议
+    pub treatment_suggestion: String,
+    /// 预防措施
+    pub preventive_measures: String,
+    /// 图片质量告警
+    pub image_quality_warning: String,
+    /// 关联用户名（可选）
+    pub username: Option<String>,
+    /// 区域（可选）
+    pub area: Option<String>,
+}
+
+/// 施肥方案生成请求
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FertilizationPlanRequest {
+    /// 土壤类型
+    pub soil_type: Option<String>,
+    /// pH 值
+    pub ph_value: Option<f64>,
+    /// 氮素水平（low/medium/high）
+    pub nitrogen_level: Option<String>,
+    /// 磷素水平（low/medium/high）
+    pub phosphorus_level: Option<String>,
+    /// 钾素水平（low/medium/high）
+    pub potassium_level: Option<String>,
+    /// 生长阶段
+    pub growth_stage: Option<String>,
+    /// 树龄（年）
+    pub tree_age: Option<u32>,
+    /// 面积（平方米）
+    pub area_size: Option<u32>,
+}
+
+/// 推荐肥料
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RecommendedFertilizer {
+    pub name: String,
+    pub amount: String,
+    pub application_method: String,
+}
+
+/// 施用计划
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ApplicationScheduleItem {
+    pub stage: String,
+    pub date: String,
+    pub description: String,
+}
+
+/// 施肥方案响应
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct FertilizationPlanResponse {
+    pub plan_id: String,
+    pub title: String,
+    pub content: String,
+    pub recommended_fertilizers: Vec<RecommendedFertilizer>,
+    pub application_schedule: Vec<ApplicationScheduleItem>,
+}
+
+/// LLM 返回的施肥方案 JSON 结构（用于解析）
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FertilizationPlanLlmOutput {
+    pub title: String,
+    pub content: String,
+    pub recommended_fertilizers: Vec<RecommendedFertilizer>,
+    pub application_schedule: Vec<ApplicationScheduleItem>,
+}
