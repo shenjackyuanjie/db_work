@@ -1,372 +1,269 @@
-use axum::{
-    extract::{Multipart, State},
-    http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect},
-    routing::{get, post},
-    Json, Router,
-};
 use crate::models::{DiagnosisRecord, FertilizationPlanRequest};
+use axum::{
+    Json, Router,
+    extract::{Query, State},
+    http::{HeaderMap, StatusCode},
+    response::{Html, IntoResponse, Redirect, Response},
+    routing::{get, post},
+};
 
+use serde::Deserialize;
 use serde_json::json;
-use std::env;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
-use base64::Engine;
 use crate::client::OpenRouterClient;
 use crate::models::ChatApiRequest;
+use base64::Engine;
 
 #[derive(Clone)]
 pub struct AppState {
     pub client: OpenRouterClient,
-    pub users: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::User>>>,
-    pub invitations: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::Invitation>>>,
-    pub pending_users: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::PendingUser>>>,
+    pub inference: crate::inference::InferenceRuntime,
+    pub users:
+        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::User>>>,
+    pub invitations: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, crate::models::Invitation>>,
+    >,
+    pub pending_users: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, crate::models::PendingUser>>,
+    >,
     pub tokens: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, String>>>, // token -> username
     /// 识别请求记录列表（按时间顺序追加）
     pub diagnosis_records: std::sync::Arc<std::sync::Mutex<Vec<DiagnosisRecord>>>,
+    /// 任务列表
+    pub tasks: std::sync::Arc<std::sync::Mutex<Vec<TaskRecord>>>,
+    /// 温湿度样本
+    pub temperature_humidity_records:
+        std::sync::Arc<std::sync::Mutex<Vec<TemperatureHumiditySample>>>,
 }
-pub async fn health_handler() -> impl IntoResponse {
+
+#[derive(Debug, Clone)]
+pub struct TaskRecord {
+    pub id: String,
+    pub username: String,
+    pub title: String,
+    pub description: String,
+    pub risk_level: String,
+    pub task_type: String,
+    pub source: String,
+    pub is_completed: bool,
+    pub created_at: u64,
+    pub completed_at: Option<u64>,
+}
+
+#[derive(Debug, Clone)]
+pub struct TemperatureHumiditySample {
+    pub username: Option<String>,
+    pub timestamp: u64,
+    pub temperature: f64,
+    pub humidity: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UsernameQuery {
+    pub username: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DiseaseTreatmentQuery {
+    pub disease_name: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddTaskRequest {
+    pub username: String,
+    pub title: String,
+    pub description: String,
+    pub risk_level: Option<String>,
+    pub task_type: Option<String>,
+    pub source: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CompleteTaskRequest {
+    pub task_id: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GenerateDiseaseTaskRequest {
+    pub disease_name: String,
+    pub username: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GenerateEnvironmentTaskRequest {
+    pub username: String,
+    pub temperature: f64,
+    pub humidity: f64,
+}
+
+fn now_millis() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0)
+}
+
+fn api_response(
+    status: StatusCode,
+    code: u16,
+    message: impl Into<String>,
+    data: serde_json::Value,
+) -> Response {
     (
-        StatusCode::OK,
-        Json(json!({
-            "status": "ok",
-            "service": "openrouter"
+        status,
+        Json(serde_json::json!({
+            "code": code,
+            "message": message.into(),
+            "data": data,
+            "timestamp": now_millis()
         })),
     )
+        .into_response()
 }
 
-fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
-    let token = match crate::user_routes::extract_auth_token(headers) {
-        Some(t) => t,
-        None => return false,
-    };
-    let tokens = state.tokens.lock().unwrap();
-    tokens.contains_key(&token)
+fn api_success(data: serde_json::Value) -> Response {
+    api_response(StatusCode::OK, 200, "success", data)
 }
 
-pub async fn admin_page_handler(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
-    if !has_valid_session(&state, &headers) {
-        tracing::warn!("未登录或会话无效访问 /admin.html，重定向到 /index.html");
-        return Redirect::temporary("/index.html").into_response();
+fn user_exists(state: &AppState, username: &str) -> bool {
+    let users = state.users.lock().unwrap();
+    users.contains_key(username)
+}
+
+fn time_label_from_millis(millis: u64) -> String {
+    let total_minutes = (millis / 60_000) % (24 * 60);
+    let hour = total_minutes / 60;
+    let minute = total_minutes % 60;
+    format!("{:02}:{:02}", hour, minute)
+}
+
+fn build_temp_humidity_payload(samples: &[TemperatureHumiditySample]) -> serde_json::Value {
+    let mut temperature_history = Vec::new();
+    let mut humidity_history = Vec::new();
+
+    for (index, item) in samples.iter().enumerate() {
+        let show_label = index % 2 == 0 || index == samples.len().saturating_sub(1);
+        let label = if show_label {
+            time_label_from_millis(item.timestamp)
+        } else {
+            String::new()
+        };
+
+        let temp_value = (item.temperature * 10.0).round() / 10.0;
+        let humidity_value = (item.humidity * 10.0).round() / 10.0;
+
+        temperature_history.push(serde_json::json!({
+            "timestamp": label,
+            "value": temp_value
+        }));
+        humidity_history.push(serde_json::json!({
+            "timestamp": if show_label { time_label_from_millis(item.timestamp) } else { String::new() },
+            "value": humidity_value
+        }));
     }
 
-    match tokio::fs::read_to_string("static/admin.html").await {
-        Ok(content) => Html(content).into_response(),
-        Err(err) => {
-            tracing::error!("读取 admin 页面失败: {}", err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
+    let current_temperature = samples
+        .last()
+        .map(|x| (x.temperature * 10.0).round() / 10.0)
+        .unwrap_or(0.0);
+    let current_humidity = samples
+        .last()
+        .map(|x| (x.humidity * 10.0).round() / 10.0)
+        .unwrap_or(0.0);
+
+    serde_json::json!({
+        "temperatureHistory": temperature_history,
+        "humidityHistory": humidity_history,
+        "currentTemperature": current_temperature,
+        "currentHumidity": current_humidity
+    })
+}
+
+fn default_temperature_samples() -> Vec<TemperatureHumiditySample> {
+    let now = now_millis();
+    let temperatures = [24.0, 24.6, 25.1, 25.4, 25.0, 24.8, 24.9, 25.2, 25.5, 25.1];
+    let humidities = [68.0, 67.3, 66.8, 67.1, 67.9, 68.2, 67.6, 66.9, 66.5, 66.8];
+
+    temperatures
+        .iter()
+        .zip(humidities.iter())
+        .enumerate()
+        .map(|(index, (temp, humidity))| TemperatureHumiditySample {
+            username: None,
+            timestamp: now
+                .saturating_sub(((temperatures.len() - index - 1) as u64) * 10 * 60 * 1000),
+            temperature: *temp,
+            humidity: *humidity,
+        })
+        .collect()
+}
+
+fn disease_treatment_text(disease: &str) -> &'static str {
+    match disease {
+        "黄龙病" => {
+            "先杀虫，后砍树：发现病树后，先全园喷洒噻虫嗪、联苯菊酯等药剂杀灭柑橘木虱。间隔3-5天后，将病树连根挖除或砍除，并集中烧毁。砍除时需对树蔸做毁蔸处理（如划十字、涂草甘膦、覆土），防止复发。"
         }
-    }
-}
-
-pub async fn analyze_page_handler(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
-    if !has_valid_session(&state, &headers) {
-        tracing::warn!("未登录或会话无效访问 /analyze.html，重定向到 /index.html");
-        return Redirect::temporary("/index.html").into_response();
-    }
-
-    match tokio::fs::read_to_string("static/analyze.html").await {
-        Ok(content) => Html(content).into_response(),
-        Err(err) => {
-            tracing::error!("读取 analyze 页面失败: {}", err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
+        "沙皮病" => {
+            "清园+药剂防治：及时剪除并清理果园内的枯死枝条和落叶，减少病菌来源。在谢花期、幼果期等关键时期，可选用苯醚甲环唑、吡唑醚菌酯、代森锰锌等药剂进行喷雾保护。避免果树遭受冻害或日灼，减少伤口。"
         }
+        "溃疡病" => {
+            "采用药-剪-药策略：首先使用铜制剂（如噻菌铜、春雷·王铜）全面喷雾杀菌。然后彻底剪除病枝、病叶、病果并集中销毁，修剪工具需消毒。修剪完成后，再喷一次杀菌剂进行保护，7-10天后可再施一次。同时注意防治潜叶蛾等虫媒，减少传播伤口。"
+        }
+        _ => "暂无治理建议",
     }
 }
 
-pub async fn api_user_handler(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
-    crate::user_routes::me_handler(State(state), headers).await
+fn risk_from_disease_name(disease_name: &str) -> &'static str {
+    if disease_name == "健康果树" || disease_name == "非果树" {
+        "正常"
+    } else {
+        "高风险"
+    }
 }
 
-#[axum::debug_handler]
-pub async fn citrus_analyze_handler(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-    Json(request): Json<ChatApiRequest>,
-) -> impl IntoResponse {
-    let token = match crate::user_routes::extract_auth_token(&headers).or(request.token.clone()) {
-        Some(t) => t,
-        None => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({ "error": "Missing token" })),
-            )
-                .into_response()
-        }
-    };
-
-    let token_valid = {
-        let tokens = state.tokens.lock().unwrap();
-        tokens.contains_key(&token)
-    };
-    if !token_valid {
-        return (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({ "error": "Invalid token" })),
+fn classify_environment_risk(temperature: f64, humidity: f64) -> (&'static str, &'static str) {
+    if (22.0..=32.0).contains(&temperature) && (80.0..=100.0).contains(&humidity) {
+        (
+            "高风险",
+            "加强果园巡查，每7-10天喷施木虱防治药剂（如噻虫嗪、高效氯氟氰菊酯）；发现病树立即标记并挖除，防止传播。",
         )
-            .into_response();
-    }
-
-    println!(
-        "处理请求 图像数据长度: {}",
-        request.image.as_ref().map_or(0, |img| img.len())
-    );
-
-    // Delegate to unified analyze method on client which returns CitrusAnalysisResponse
-    // 用户消息只包含图片，所有指令都在 system prompt 中
-    match state.client.analyze_citrus(request.image).await {
-        Ok(response) => {
-            println!("柑橘分析请求处理成功 usage: {:?}", response.usage);
-            (StatusCode::OK, Json(json!({
-                "success": true,
-                "data": response.data,
-                "usage": response.usage,
-                "metrics": response.metrics
-            })))
-                .into_response()
-        }
-        Err(e) => {
-            println!("柑橘分析请求处理失败: {}", e);
-            let error_response = json!({
-                "success": false,
-                "error": e.to_string(),
-            });
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)).into_response()
-        }
-    }
-}
-
-#[axum::debug_handler]
-pub async fn citrus_disease_handler(
-    State(state): State<AppState>,
-    mut multipart: Multipart,
-) -> impl IntoResponse {
-    // 从 multipart 中提取名为 "image" 的文件字段
-    let mut image_data: Option<String> = None;
-
-    loop {
-        match multipart.next_field().await {
-            Ok(Some(field)) => {
-                if field.name() == Some("image") {
-                    let content_type = field
-                        .content_type()
-                        .unwrap_or("image/jpeg")
-                        .to_string();
-                    match field.bytes().await {
-                        Ok(bytes) => {
-                            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                            image_data = Some(format!("data:{};base64,{}", content_type, b64));
-                        }
-                        Err(e) => {
-                            tracing::error!("读取图片字段失败: {}", e);
-                            return (
-                                StatusCode::BAD_REQUEST,
-                                Json(serde_json::json!({
-                                    "code": 400,
-                                    "message": format!("读取图片数据失败: {}", e),
-                                    "data": null
-                                })),
-                            )
-                                .into_response();
-                        }
-                    }
-                }
-            }
-            Ok(None) => break,
-            Err(e) => {
-                tracing::error!("解析 multipart 失败: {}", e);
-                return (
-                    StatusCode::BAD_REQUEST,
-                    Json(serde_json::json!({
-                        "code": 400,
-                        "message": format!("解析请求失败: {}", e),
-                        "data": null
-                    })),
-                )
-                    .into_response();
-            }
-        }
-    }
-
-    if image_data.is_none() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(serde_json::json!({
-                "code": 400,
-                "message": "请求中未找到 image 字段",
-                "data": null
-            })),
+    } else if ((15.0..=22.0).contains(&temperature) || (32.0..=35.0).contains(&temperature))
+        && (60.0..=80.0).contains(&humidity)
+    {
+        (
+            "中风险",
+            "定期监测木虱虫口密度，选用高效低毒农药进行预防性喷雾；剪除零星病梢，保持果园通风透光。",
         )
-            .into_response();
-    }
-
-    match state.client.analyze_citrus(image_data).await {
-        Ok(response) => {
-            let analysis = &response.data;
-
-            // 映射 predicted_class：健康时用 "健康果树"，否则用 disease_name；非柑橘时用 "非果树"
-            let predicted_class = if !analysis.is_citrus_leaf {
-                "非果树".to_string()
-            } else if analysis.disease_analysis.is_healthy {
-                "健康果树".to_string()
-            } else {
-                analysis.disease_analysis.disease_name.clone()
-            };
-
-            let confidence = (analysis.disease_analysis.confidence * 100.0).round();
-
-            let timestamp = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_millis() as u64)
-                .unwrap_or(0);
-
-            // 保存识别记录
-            let record = DiagnosisRecord {
-                id: uuid::Uuid::new_v4().to_string(),
-                timestamp,
-                predicted_class: predicted_class.clone(),
-                confidence,
-                is_citrus_leaf: analysis.is_citrus_leaf,
-                citrus_type: format!("{:?}", analysis.citrus_type),
-                is_healthy: analysis.disease_analysis.is_healthy,
-                disease_name: analysis.disease_analysis.disease_name.clone(),
-                severity: format!("{:?}", analysis.disease_analysis.severity),
-                treatment_suggestion: analysis.disease_analysis.treatment_suggestion.clone(),
-                preventive_measures: analysis.disease_analysis.preventive_measures.clone(),
-                image_quality_warning: analysis.image_quality_warning.clone(),
-            };
-            state.diagnosis_records.lock().unwrap().push(record);
-            tracing::info!("已记录识别结果: {} (置信度: {}%)", predicted_class, confidence);
-
-            (
-                StatusCode::OK,
-                Json(serde_json::json!({
-                    "code": 200,
-                    "message": "success",
-                    "data": {
-                        "predicted_class": predicted_class,
-                        "confidence": confidence,
-                        "stage": "model_2"
-                    },
-                    "timestamp": timestamp
-                })),
-            )
-                .into_response()
-        }
-        Err(e) => {
-            tracing::error!("柑橘病害识别失败: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "code": 500,
-                    "message": format!("识别失败: {}", e),
-                    "data": null
-                })),
-            )
-                .into_response()
-        }
-    }
-}
-
-#[axum::debug_handler]
-pub async fn generate_handler(State(state): State<AppState>) -> impl IntoResponse {
-    let records = state.diagnosis_records.lock().unwrap().clone();
-
-    match state.client.generate_fertilization_text(&records).await {
-        Ok(text) => (
-            StatusCode::OK,
-            Json(serde_json::json!({ "textii": text })),
+    } else {
+        (
+            "低风险",
+            "利用农闲时段彻底清园，剪除病虫枝，树干涂白；干旱时注意灌溉，增强树势，减少木虱越冬场所。",
         )
-            .into_response(),
-        Err(e) => {
-            tracing::error!("生成施肥方案文本失败: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "code": 500,
-                    "message": format!("生成失败: {}", e),
-                    "data": null
-                })),
-            )
-                .into_response()
-        }
     }
 }
 
-#[axum::debug_handler]
-pub async fn generate_fertilization_plan_handler(
-    State(state): State<AppState>,
-    Json(req): Json<FertilizationPlanRequest>,
-) -> impl IntoResponse {
-    match state.client.generate_fertilization_plan(&req).await {
-        Ok(plan) => {
-            let timestamp = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_millis() as u64)
-                .unwrap_or(0);
-            (
-                StatusCode::OK,
-                Json(serde_json::json!({
-                    "code": 200,
-                    "message": "success",
-                    "data": {
-                        "planId": plan.plan_id,
-                        "title": plan.title,
-                        "content": plan.content,
-                        "recommendedFertilizers": plan.recommended_fertilizers.iter().map(|f| serde_json::json!({
-                            "name": f.name,
-                            "amount": f.amount,
-                            "applicationMethod": f.application_method
-                        })).collect::<Vec<_>>(),
-                        "applicationSchedule": plan.application_schedule.iter().map(|s| serde_json::json!({
-                            "stage": s.stage,
-                            "date": s.date,
-                            "description": s.description
-                        })).collect::<Vec<_>>()
-                    },
-                    "timestamp": timestamp
-                })),
-            )
-                .into_response()
-        }
-        Err(e) => {
-            tracing::error!("生成施肥方案失败: {}", e);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "code": 500,
-                    "message": format!("生成失败: {}", e),
-                    "data": null
-                })),
-            )
-                .into_response()
-        }
-    }
-}
+include!("server/handlers_core.rs");
+include!("server/handlers_ai.rs");
 
-pub fn create_router() -> Router {
-    let api_key = env::var("OPENROUTER_API_KEY").expect("请设置环境变量 OPENROUTER_API_KEY");
+pub fn create_router(config: &crate::config::AppConfig) -> Router {
+    let api_key = config.ai.openrouter_api_key.clone();
 
     let client = OpenRouterClient::new(api_key);
+    let inference = crate::inference::InferenceRuntime::new(&config.inference, client.clone());
     let state = AppState {
         client,
+        inference,
         users: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         invitations: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         pending_users: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         tokens: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         diagnosis_records: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+        tasks: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+        temperature_humidity_records: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
     };
 
     {
@@ -383,16 +280,50 @@ pub fn create_router() -> Router {
 
     Router::new()
         .route("/health", get(health_handler))
-        .route("/", get(|| async { axum::response::Redirect::temporary("/index.html") }))
+        .route(
+            "/",
+            get(|| async { axum::response::Redirect::temporary("/index.html") }),
+        )
         .route("/api/register", post(crate::user_routes::register_handler))
         .route("/api/login", post(crate::user_routes::login_handler))
+        .route("/api/logout", post(crate::user_routes::logout_handler))
+        .route(
+            "/api/validate",
+            post(crate::user_routes::validate_token_handler),
+        )
         .route("/api/user", get(api_user_handler))
+        .route("/api/home", get(home_api_handler))
+        .route("/api/growth-tracking", get(growth_tracking_api_handler))
+        .route("/api/diagnose", get(diagnose_api_handler))
+        .route(
+            "/api/temperature-humidity",
+            get(temperature_humidity_api_handler),
+        )
         .route("/admin.html", get(admin_page_handler))
         .route("/analyze.html", get(analyze_page_handler))
         .route("/citrus/analyze", post(citrus_analyze_handler))
         .route("/api/citrus-disease", post(citrus_disease_handler))
+        .route(
+            "/api/recognition-records",
+            get(recognition_records_api_handler),
+        )
+        .route("/api/disease-treatment", get(disease_treatment_api_handler))
+        .route("/api/tasks", get(get_tasks_api_handler))
+        .route("/api/tasks/add", post(add_task_api_handler))
+        .route("/api/tasks/complete", post(complete_task_api_handler))
+        .route(
+            "/api/tasks/generate/disease",
+            post(generate_task_from_disease_api_handler),
+        )
+        .route(
+            "/api/tasks/generate/environment",
+            post(generate_task_from_environment_api_handler),
+        )
         .route("/api/generate", get(generate_handler))
-        .route("/api/generate/fertilization-plan", post(generate_fertilization_plan_handler))
+        .route(
+            "/api/generate/fertilization-plan",
+            post(generate_fertilization_plan_handler),
+        )
         .nest("/user", crate::user_routes::router(state.clone()))
         .fallback_service(ServeDir::new("static"))
         .with_state(state)
@@ -447,8 +378,13 @@ async fn shutdown_signal() {
     tracing::info!("收到退出信号，正在关闭服务器...");
 }
 
-pub async fn run_server(addr: SocketAddr) {
-    let app = create_router();
+pub async fn run_server(config: crate::config::AppConfig) -> anyhow::Result<()> {
+    let addr: SocketAddr = config
+        .server
+        .addr
+        .parse()
+        .map_err(|e| anyhow::anyhow!("解析 server.addr 失败: {}", e))?;
+    let app = create_router(&config);
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await
@@ -459,6 +395,7 @@ pub async fn run_server(addr: SocketAddr) {
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
         .await
-        .expect("服务器运行失败");
-}
+        .map_err(|e| anyhow::anyhow!("服务器运行失败: {}", e))?;
 
+    Ok(())
+}

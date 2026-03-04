@@ -1,0 +1,14 @@
+[server]
+addr = "0.0.0.0:11000"
+log_level = "info"
+
+[ai]
+openrouter_api_key = "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"
+
+[database]
+postgres_url = "postgres://data_race:datarace@192.168.3.52:5600/citrus_db"
+
+[inference]
+mode = "onnx"
+model_1_path = "../navel_back/model/onnx/model_1.onnx"
+model_2_path = "../navel_back/model/onnx/model_2.onnx"

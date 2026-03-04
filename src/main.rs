@@ -1,123 +1,16 @@
 mod client;
+mod config;
+mod inference;
 mod models;
 mod server;
-mod utils;
 mod user_routes;
-
-
-
-use anyhow::Context;
-use clap::{ArgAction, Parser, Subcommand};
-
-#[derive(Debug, Parser)]
-#[command(name = "ai-service")]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    /// 增加日志详细度（-v=debug, -vv=trace）
-    #[arg(short = 'v', action = ArgAction::Count, global = true)]
-    verbose: u8,
-
-    /// 使用 warning 级别日志
-    #[arg(short = 'd', long = "warning", action = ArgAction::SetTrue, global = true, conflicts_with = "verbose")]
-    warning: bool,
-
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Debug, Subcommand)]
-enum Commands {
-    /// 启动HTTP服务器
-    Server {
-        /// 服务器监听地址
-        #[arg(short, long, default_value = "127.0.0.1:3000")]
-        addr: String,
-    },
-    /// 分析柑橘图片
-    Chat {
-        /// 图片文件路径
-        #[arg(short, long)]
-        image: Option<String>,
-    },
-}
-
-fn resolve_log_level(verbose: u8, warning: bool) -> &'static str {
-    if warning {
-        "warn"
-    } else {
-        match verbose {
-            0 => "info",
-            1 => "debug",
-            _ => "trace",
-        }
-    }
-}
+mod utils;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
-    let log_level = resolve_log_level(cli.verbose, cli.warning);
-    server::init_tracing(log_level);
-
-    match cli.command {
-        Commands::Server { addr } => {
-            let addr: std::net::SocketAddr = addr.parse().context("解析 addr 失败")?;
-            println!("服务器已启动，监听地址: {}", addr);
-            server::run_server(addr).await;
-        }
-        Commands::Chat { image } => {
-            let api_key = std::env::var("OPENROUTER_API_KEY").expect("请设置环境变量 OPENROUTER_API_KEY");
-
-            let client = client::OpenRouterClient::new(api_key);
-
-            // CLI Chat 走柑橘分析接口（analyze_citrus），并对结果做解析与格式化输出
-            // 同时保留调试信息：metrics + usage
-            match client.analyze_citrus(image).await {
-                Ok(response) => {
-                    let analysis = &response.data;
-
-                    println!("柑橘分析结果:");
-                    println!("  是否柑橘叶片: {}", analysis.is_citrus_leaf);
-                    println!("  柑橘类型: {:?}", analysis.citrus_type);
-
-                    println!("\n病害分析:");
-                    println!("  是否健康: {}", analysis.disease_analysis.is_healthy);
-                    println!("  病害名称: {}", analysis.disease_analysis.disease_name);
-                    println!("  严重程度: {:?}", analysis.disease_analysis.severity);
-                    println!("  置信度: {:.2}", analysis.disease_analysis.confidence);
-                    println!(
-                        "  治疗建议: {}",
-                        analysis.disease_analysis.treatment_suggestion
-                    );
-                    println!(
-                        "  预防措施: {}",
-                        analysis.disease_analysis.preventive_measures
-                    );
-
-                    if !analysis.image_quality_warning.is_empty() {
-                        println!("\n图片质量告警: {}", analysis.image_quality_warning);
-                    }
-
-                    println!("\n性能指标:");
-                    println!("  请求耗时: {:.2} 秒", response.metrics.duration_secs);
-                    println!("  Token/s: {:.2}", response.metrics.tokens_per_sec);
-
-                    println!("\nToken使用情况:");
-                    println!("  Prompt tokens: {}", response.usage.prompt_tokens);
-                    println!("  Completion tokens: {}", response.usage.completion_tokens);
-                    println!("  Total tokens: {}", response.usage.total_tokens);
-
-                    println!("\nJSON:");
-                    println!("{}", serde_json::to_string_pretty(&response)?);
-                }
-                Err(e) => {
-                    eprintln!("请求失败: {}", e);
-                }
-            }
-        }
-    }
+    let config = config::AppConfig::load("config.toml")?;
+    server::init_tracing(&config.server.log_level);
+    server::run_server(config).await?;
 
     Ok(())
 }
-
-
