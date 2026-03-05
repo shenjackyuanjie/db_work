@@ -1,4 +1,4 @@
-use super::types::DiseasePrediction;
+use super::types::{DiseasePrediction, FruitTreeGatePrediction};
 use base64::Engine;
 use image::imageops::FilterType;
 use std::path::Path;
@@ -76,6 +76,29 @@ impl OnnxInference {
             image_quality_warning: "".to_string(),
         })
     }
+
+    pub async fn predict_fruit_tree(
+        &self,
+        image_data: Option<String>,
+    ) -> anyhow::Result<FruitTreeGatePrediction> {
+        let image_data = image_data.ok_or_else(|| anyhow::anyhow!("缺少图片数据"))?;
+        let input = preprocess_image_data(&image_data)?;
+
+        let logits = run_model(&self.model_1_path, &input)?;
+        let prob = softmax(&logits);
+        let (idx, conf) = argmax_with_confidence(&prob);
+        let is_fruit_tree = idx == 1;
+
+        Ok(FruitTreeGatePrediction {
+            is_fruit_tree,
+            predicted_class: if is_fruit_tree {
+                "是果树".to_string()
+            } else {
+                "非果树".to_string()
+            },
+            confidence: conf * 100.0,
+        })
+    }
 }
 
 fn preprocess_image_data(image_data: &str) -> anyhow::Result<Tensor> {
@@ -103,20 +126,39 @@ fn preprocess_image_data(image_data: &str) -> anyhow::Result<Tensor> {
 }
 
 fn decode_image_data(image_data: &str) -> anyhow::Result<Vec<u8>> {
-    if let Some(encoded) = image_data.split(",").nth(1)
-        && image_data.starts_with("data:image/")
-    {
-        return base64::engine::general_purpose::STANDARD
-            .decode(encoded)
-            .map_err(|e| anyhow::anyhow!("base64 图片解码失败: {}", e));
+    let input = image_data.trim();
+    let preview: String = input.chars().take(48).collect();
+    let input_lower = input.to_ascii_lowercase();
+    tracing::info!(
+        "onnx decode输入: len={} has_data_uri={} preview={}...",
+        input.len(),
+        input_lower.starts_with("data:"),
+        preview
+    );
+
+    if let Some((header, encoded)) = input.split_once(',') {
+        let header_lower = header.trim().to_ascii_lowercase();
+        if header_lower.starts_with("data:") && header_lower.contains(";base64") {
+            tracing::info!(
+                "onnx decode 走 data-uri 路径: header={} encoded_len={}",
+                header,
+                encoded.trim().len()
+            );
+            return base64::engine::general_purpose::STANDARD
+                .decode(encoded.trim())
+                .map_err(|e| anyhow::anyhow!("base64 图片解码失败: {}", e));
+        }
     }
 
-    if Path::new(image_data).exists() {
-        return std::fs::read(image_data).map_err(|e| anyhow::anyhow!("读取图片文件失败: {}", e));
+    if Path::new(input).exists() {
+        tracing::info!("onnx decode 走本地文件路径: {}", input);
+        return std::fs::read(input).map_err(|e| anyhow::anyhow!("读取图片文件失败: {}", e));
     }
+
+    tracing::info!("onnx decode 走纯base64路径: len={}", input.len());
 
     base64::engine::general_purpose::STANDARD
-        .decode(image_data)
+        .decode(input)
         .map_err(|e| anyhow::anyhow!("base64 图片解码失败: {}", e))
 }
 
@@ -217,6 +259,24 @@ mod tests {
     fn decode_data_uri_ok() {
         let data_uri = one_by_one_png_data_uri();
         let bytes = decode_image_data(&data_uri).expect("decode should succeed");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn decode_data_uri_with_spaces_and_uppercase_ok() {
+        let data_uri = one_by_one_png_data_uri();
+        let encoded = data_uri.split(',').nth(1).unwrap_or_default();
+        let noisy = format!("  DATA:IMAGE/PNG;BASE64,{}  \n", encoded);
+        let bytes = decode_image_data(&noisy).expect("decode with spaces should succeed");
+        assert!(!bytes.is_empty());
+    }
+
+    #[test]
+    fn decode_octet_stream_data_uri_ok() {
+        let data_uri = one_by_one_png_data_uri();
+        let encoded = data_uri.split(',').nth(1).unwrap_or_default();
+        let octet = format!("data:application/octet-stream;base64,{}", encoded);
+        let bytes = decode_image_data(&octet).expect("decode octet-stream data uri should succeed");
         assert!(!bytes.is_empty());
     }
 

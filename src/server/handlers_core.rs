@@ -8,20 +8,19 @@ pub async fn health_handler() -> impl IntoResponse {
     )
 }
 
-fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
+async fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
     let token = match crate::user_routes::extract_auth_token(headers) {
         Some(t) => t,
         None => return false,
     };
-    let tokens = state.tokens.lock().unwrap();
-    tokens.contains_key(&token)
+    username_by_token(state, &token).await.is_some()
 }
 
 pub async fn admin_page_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> impl IntoResponse {
-    if !has_valid_session(&state, &headers) {
+    if !has_valid_session(&state, &headers).await {
         tracing::warn!("未登录或会话无效访问 /admin.html，重定向到 /index.html");
         return Redirect::temporary("/index.html").into_response();
     }
@@ -39,7 +38,7 @@ pub async fn analyze_page_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> impl IntoResponse {
-    if !has_valid_session(&state, &headers) {
+    if !has_valid_session(&state, &headers).await {
         tracing::warn!("未登录或会话无效访问 /analyze.html，重定向到 /index.html");
         return Redirect::temporary("/index.html").into_response();
     }
@@ -54,33 +53,42 @@ pub async fn analyze_page_handler(
 }
 
 pub async fn api_user_handler(State(state): State<AppState>, headers: HeaderMap) -> Response {
-    if has_valid_session(&state, &headers) {
+    if has_valid_session(&state, &headers).await {
         return crate::user_routes::me_handler(State(state), headers)
             .await
             .into_response();
     }
 
-    let users = state.users.lock().unwrap();
-    if let Some(user) = users.values().next() {
-        return api_success(serde_json::json!({
-            "id": user.username,
-            "username": user.username,
+    let row = sqlx::query("SELECT username, created_at FROM app_users ORDER BY created_at ASC LIMIT 1")
+        .fetch_optional(&state.db)
+        .await;
+
+    match row {
+        Ok(Some(user)) => api_success(serde_json::json!({
+            "id": user.try_get::<String, _>("username").unwrap_or_default(),
+            "username": user.try_get::<String, _>("username").unwrap_or_default(),
             "email": null,
             "orchard_address": null,
             "latitude": null,
             "longitude": null,
-            "created_at": user.created_at
+            "created_at": user.try_get::<i64, _>("created_at").unwrap_or(0)
         }))
-        .into_response();
+        .into_response(),
+        Ok(None) => api_response(
+            StatusCode::NOT_FOUND,
+            404,
+            "User not found",
+            serde_json::Value::Null,
+        )
+        .into_response(),
+        Err(e) => api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", e),
+            serde_json::Value::Null,
+        )
+        .into_response(),
     }
-
-    api_response(
-        StatusCode::NOT_FOUND,
-        404,
-        "User not found",
-        serde_json::Value::Null,
-    )
-    .into_response()
 }
 
 pub async fn home_api_handler() -> impl IntoResponse {
@@ -146,25 +154,45 @@ pub async fn temperature_humidity_api_handler(
     State(state): State<AppState>,
     Query(query): Query<UsernameQuery>,
 ) -> impl IntoResponse {
-    let mut samples = {
-        let records = state.temperature_humidity_records.lock().unwrap();
-        if let Some(username) = query.username.as_ref() {
-            records
-                .iter()
-                .filter(|x| x.username.as_deref() == Some(username.as_str()))
-                .cloned()
-                .collect::<Vec<_>>()
-        } else {
-            records.clone()
+    let rows = if let Some(username) = query.username.as_ref().map(|x| x.trim()).filter(|x| !x.is_empty()) {
+        sqlx::query(
+            "SELECT username, timestamp, temperature, humidity FROM app_temperature_humidity WHERE username = $1 ORDER BY timestamp DESC LIMIT 10",
+        )
+        .bind(username)
+        .fetch_all(&state.db)
+        .await
+    } else {
+        sqlx::query(
+            "SELECT username, timestamp, temperature, humidity FROM app_temperature_humidity ORDER BY timestamp DESC LIMIT 10",
+        )
+        .fetch_all(&state.db)
+        .await
+    };
+
+    let mut samples = match rows {
+        Ok(rows) => rows
+            .into_iter()
+            .rev()
+            .map(|item| TemperatureHumiditySample {
+                username: item.try_get::<Option<String>, _>("username").unwrap_or(None),
+                timestamp: item.try_get::<i64, _>("timestamp").unwrap_or(0).max(0) as u64,
+                temperature: item.try_get::<f64, _>("temperature").unwrap_or(0.0),
+                humidity: item.try_get::<f64, _>("humidity").unwrap_or(0.0),
+            })
+            .collect::<Vec<_>>(),
+        Err(e) => {
+            return api_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                500,
+                format!("db error: {}", e),
+                serde_json::Value::Null,
+            )
+            .into_response();
         }
     };
 
     if samples.is_empty() {
         samples = default_temperature_samples();
-    }
-
-    if samples.len() > 10 {
-        samples = samples[samples.len() - 10..].to_vec();
     }
 
     api_success(build_temp_humidity_payload(&samples))
@@ -184,34 +212,42 @@ pub async fn recognition_records_api_handler(
         return api_success(serde_json::json!({ "records": [] }));
     }
 
-    let records = state.diagnosis_records.lock().unwrap();
-    let mut list = records
-        .iter()
-        .rev()
-        .filter(|record| {
-            if let Some(name) = username {
-                record.username.as_deref() == Some(name)
-            } else {
-                true
-            }
-        })
-        .take(20)
-        .map(|record| {
-            serde_json::json!({
-                "id": record.id,
-                "imagePath": "",
-                "diseaseName": record.predicted_class,
-                "area": record.area.clone().unwrap_or_else(|| "未指定区域".to_string()),
-                "riskLevel": risk_from_disease_name(&record.predicted_class),
-                "recognitionDate": "2026-03-04",
-                "confidence": record.confidence,
-                "created_at": record.timestamp
-            })
-        })
-        .collect::<Vec<_>>();
-    list.reverse();
+    let rows = sqlx::query(
+        "SELECT id, predicted_class, area, confidence, timestamp FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp DESC LIMIT 20",
+    )
+    .bind(username.unwrap_or_default())
+    .fetch_all(&state.db)
+    .await;
 
-    api_success(serde_json::json!({ "records": list }))
+    match rows {
+        Ok(rows) => {
+            let mut list = rows
+                .into_iter()
+                .map(|record| {
+                    let predicted_class = record.try_get::<String, _>("predicted_class").unwrap_or_default();
+                    serde_json::json!({
+                        "id": record.try_get::<String, _>("id").unwrap_or_default(),
+                        "imagePath": "",
+                        "diseaseName": predicted_class,
+                        "area": record.try_get::<Option<String>, _>("area").unwrap_or(None).unwrap_or_else(|| "未指定区域".to_string()),
+                        "riskLevel": risk_from_disease_name(&record.try_get::<String, _>("predicted_class").unwrap_or_default()),
+                        "recognitionDate": "2026-03-04",
+                        "confidence": record.try_get::<f64, _>("confidence").unwrap_or(0.0),
+                        "created_at": record.try_get::<i64, _>("timestamp").unwrap_or(0)
+                    })
+                })
+                .collect::<Vec<_>>();
+            list.reverse();
+            api_success(serde_json::json!({ "records": list }))
+        }
+        Err(e) => api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", e),
+            serde_json::Value::Null,
+        )
+        .into_response(),
+    }
 }
 
 pub async fn disease_treatment_api_handler(
@@ -263,7 +299,7 @@ pub async fn get_tasks_api_handler(
         }
     };
 
-    if !user_exists(&state, username) {
+    if !user_exists(&state, username).await {
         return api_response(
             StatusCode::NOT_FOUND,
             404,
@@ -273,32 +309,42 @@ pub async fn get_tasks_api_handler(
         .into_response();
     }
 
-    let tasks = state.tasks.lock().unwrap();
-    let mut filtered_tasks = tasks
-        .iter()
-        .filter(|x| x.username == username)
-        .cloned()
-        .collect::<Vec<_>>();
-    filtered_tasks.sort_by_key(|x| std::cmp::Reverse(x.created_at));
+    let rows = sqlx::query(
+        "SELECT id, title, description, risk_level, task_type, source, is_completed, created_at, completed_at FROM app_tasks WHERE username = $1 ORDER BY created_at DESC",
+    )
+    .bind(username)
+    .fetch_all(&state.db)
+    .await;
 
-    let list = filtered_tasks
-        .into_iter()
-        .map(|x| {
-            serde_json::json!({
-                "id": x.id,
-                "title": x.title,
-                "description": x.description,
-                "risk_level": x.risk_level,
-                "task_type": x.task_type,
-                "source": x.source,
-                "is_completed": x.is_completed,
-                "created_at": x.created_at,
-                "completed_at": x.completed_at
-            })
-        })
-        .collect::<Vec<_>>();
+    match rows {
+        Ok(rows) => {
+            let list = rows
+                .into_iter()
+                .map(|x| {
+                    serde_json::json!({
+                        "id": x.try_get::<String, _>("id").unwrap_or_default(),
+                        "title": x.try_get::<String, _>("title").unwrap_or_default(),
+                        "description": x.try_get::<String, _>("description").unwrap_or_default(),
+                        "risk_level": x.try_get::<String, _>("risk_level").unwrap_or_default(),
+                        "task_type": x.try_get::<String, _>("task_type").unwrap_or_default(),
+                        "source": x.try_get::<String, _>("source").unwrap_or_default(),
+                        "is_completed": x.try_get::<bool, _>("is_completed").unwrap_or(false),
+                        "created_at": x.try_get::<i64, _>("created_at").unwrap_or(0),
+                        "completed_at": x.try_get::<Option<i64>, _>("completed_at").unwrap_or(None)
+                    })
+                })
+                .collect::<Vec<_>>();
 
-    api_success(serde_json::Value::Array(list))
+            api_success(serde_json::Value::Array(list))
+        }
+        Err(e) => api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", e),
+            serde_json::Value::Null,
+        )
+        .into_response(),
+    }
 }
 
 pub async fn add_task_api_handler(
@@ -315,7 +361,7 @@ pub async fn add_task_api_handler(
         )
         .into_response();
     }
-    if !user_exists(&state, username) {
+    if !user_exists(&state, username).await {
         return api_response(
             StatusCode::NOT_FOUND,
             404,
@@ -338,7 +384,31 @@ pub async fn add_task_api_handler(
         completed_at: None,
     };
 
-    state.tasks.lock().unwrap().push(task.clone());
+    let result = sqlx::query(
+        "INSERT INTO app_tasks (id, username, title, description, risk_level, task_type, source, is_completed, created_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+    )
+    .bind(&task.id)
+    .bind(&task.username)
+    .bind(&task.title)
+    .bind(&task.description)
+    .bind(&task.risk_level)
+    .bind(&task.task_type)
+    .bind(&task.source)
+    .bind(task.is_completed)
+    .bind(task.created_at as i64)
+    .bind(task.completed_at.map(|x| x as i64))
+    .execute(&state.db)
+    .await;
+
+    if let Err(e) = result {
+        return api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", e),
+            serde_json::Value::Null,
+        )
+        .into_response();
+    }
 
     api_response(
         StatusCode::OK,
@@ -362,39 +432,70 @@ pub async fn complete_task_api_handler(
     State(state): State<AppState>,
     Json(req): Json<CompleteTaskRequest>,
 ) -> impl IntoResponse {
-    let mut tasks = state.tasks.lock().unwrap();
-    let task = match tasks.iter_mut().find(|x| x.id == req.task_id) {
-        Some(task) => task,
-        None => {
-            return api_response(
-                StatusCode::NOT_FOUND,
-                404,
-                "Task not found",
+    let completed_at = now_millis() as i64;
+
+    let updated = sqlx::query(
+        "UPDATE app_tasks SET is_completed = TRUE, completed_at = $1 WHERE id = $2",
+    )
+    .bind(completed_at)
+    .bind(&req.task_id)
+    .execute(&state.db)
+    .await;
+
+    match updated {
+        Ok(result) if result.rows_affected() > 0 => {
+            let row = sqlx::query(
+                "SELECT id, title, description, risk_level, task_type, source, is_completed, created_at, completed_at FROM app_tasks WHERE id = $1 LIMIT 1",
+            )
+            .bind(&req.task_id)
+            .fetch_optional(&state.db)
+            .await
+            .ok()
+            .flatten();
+
+            if let Some(task) = row {
+                return api_response(
+                    StatusCode::OK,
+                    200,
+                    "Task completed successfully",
+                    serde_json::json!({
+                        "id": task.try_get::<String, _>("id").unwrap_or_default(),
+                        "title": task.try_get::<String, _>("title").unwrap_or_default(),
+                        "description": task.try_get::<String, _>("description").unwrap_or_default(),
+                        "risk_level": task.try_get::<String, _>("risk_level").unwrap_or_default(),
+                        "task_type": task.try_get::<String, _>("task_type").unwrap_or_default(),
+                        "source": task.try_get::<String, _>("source").unwrap_or_default(),
+                        "is_completed": task.try_get::<bool, _>("is_completed").unwrap_or(true),
+                        "created_at": task.try_get::<i64, _>("created_at").unwrap_or(0),
+                        "completed_at": task.try_get::<Option<i64>, _>("completed_at").unwrap_or(None)
+                    }),
+                )
+                .into_response();
+            }
+
+            api_response(
+                StatusCode::OK,
+                200,
+                "Task completed successfully",
                 serde_json::Value::Null,
             )
-            .into_response();
+            .into_response()
         }
-    };
-
-    task.is_completed = true;
-    task.completed_at = Some(now_millis());
-
-    api_response(
-        StatusCode::OK,
-        200,
-        "Task completed successfully",
-        serde_json::json!({
-            "id": task.id,
-            "title": task.title,
-            "description": task.description,
-            "risk_level": task.risk_level,
-            "task_type": task.task_type,
-            "source": task.source,
-            "is_completed": task.is_completed,
-            "created_at": task.created_at,
-            "completed_at": task.completed_at
-        }),
-    )
+        Ok(_) => api_response(
+            StatusCode::NOT_FOUND,
+            404,
+            "Task not found",
+            serde_json::Value::Null,
+        )
+        .into_response(),
+        Err(e) => api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", e),
+            serde_json::Value::Null,
+        )
+        .into_response(),
+    }
 }
 
 pub async fn generate_task_from_disease_api_handler(
@@ -413,7 +514,7 @@ pub async fn generate_task_from_disease_api_handler(
         .into_response();
     }
 
-    if !user_exists(&state, username) {
+    if !user_exists(&state, username).await {
         return api_response(
             StatusCode::NOT_FOUND,
             404,
@@ -446,7 +547,31 @@ pub async fn generate_task_from_disease_api_handler(
         completed_at: None,
     };
 
-    state.tasks.lock().unwrap().push(task.clone());
+    let result = sqlx::query(
+        "INSERT INTO app_tasks (id, username, title, description, risk_level, task_type, source, is_completed, created_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+    )
+    .bind(&task.id)
+    .bind(&task.username)
+    .bind(&task.title)
+    .bind(&task.description)
+    .bind(&task.risk_level)
+    .bind(&task.task_type)
+    .bind(&task.source)
+    .bind(task.is_completed)
+    .bind(task.created_at as i64)
+    .bind(task.completed_at.map(|x| x as i64))
+    .execute(&state.db)
+    .await;
+
+    if let Err(e) = result {
+        return api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", e),
+            serde_json::Value::Null,
+        )
+        .into_response();
+    }
 
     api_response(
         StatusCode::OK,
@@ -481,7 +606,7 @@ pub async fn generate_task_from_environment_api_handler(
         .into_response();
     }
 
-    if !user_exists(&state, username) {
+    if !user_exists(&state, username).await {
         return api_response(
             StatusCode::NOT_FOUND,
             404,
@@ -491,16 +616,15 @@ pub async fn generate_task_from_environment_api_handler(
         .into_response();
     }
 
-    state
-        .temperature_humidity_records
-        .lock()
-        .unwrap()
-        .push(TemperatureHumiditySample {
-            username: Some(username.to_string()),
-            timestamp: now_millis(),
-            temperature: req.temperature,
-            humidity: req.humidity,
-        });
+    let _ = sqlx::query(
+        "INSERT INTO app_temperature_humidity (username, timestamp, temperature, humidity) VALUES ($1, $2, $3, $4)",
+    )
+    .bind(username)
+    .bind(now_millis() as i64)
+    .bind(req.temperature)
+    .bind(req.humidity)
+    .execute(&state.db)
+    .await;
 
     let (risk_level, description) = classify_environment_risk(req.temperature, req.humidity);
     if risk_level == "低风险" {
@@ -526,7 +650,30 @@ pub async fn generate_task_from_environment_api_handler(
         completed_at: None,
     };
 
-    state.tasks.lock().unwrap().push(task.clone());
+    if let Err(e) = sqlx::query(
+        "INSERT INTO app_tasks (id, username, title, description, risk_level, task_type, source, is_completed, created_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+    )
+    .bind(&task.id)
+    .bind(&task.username)
+    .bind(&task.title)
+    .bind(&task.description)
+    .bind(&task.risk_level)
+    .bind(&task.task_type)
+    .bind(&task.source)
+    .bind(task.is_completed)
+    .bind(task.created_at as i64)
+    .bind(task.completed_at.map(|x| x as i64))
+    .execute(&state.db)
+    .await
+    {
+        return api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", e),
+            serde_json::Value::Null,
+        )
+        .into_response();
+    }
 
     api_response(
         StatusCode::OK,

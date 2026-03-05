@@ -11,7 +11,11 @@ pub enum InferenceRuntime {
 impl InferenceRuntime {
     pub fn new(config: &crate::config::InferenceConfig, client: OpenRouterClient) -> Self {
         match config.mode {
-            InferenceMode::Remote => Self::Remote(RemoteInference::new(client)),
+            InferenceMode::Remote => Self::Remote(RemoteInference::new(
+                client,
+                config.model_1_path.clone(),
+                config.model_2_path.clone(),
+            )),
             InferenceMode::Onnx => Self::Onnx(OnnxInference::new(
                 config.model_1_path.clone(),
                 config.model_2_path.clone(),

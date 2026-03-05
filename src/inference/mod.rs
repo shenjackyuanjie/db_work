@@ -4,4 +4,4 @@ pub mod runtime;
 pub mod types;
 
 pub use runtime::InferenceRuntime;
-pub use types::DiseasePrediction;
+pub use types::{DiseasePrediction, FruitTreeGatePrediction};

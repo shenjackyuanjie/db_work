@@ -12,3 +12,10 @@ pub struct DiseasePrediction {
     pub preventive_measures: String,
     pub image_quality_warning: String,
 }
+
+#[derive(Debug, Clone)]
+pub struct FruitTreeGatePrediction {
+    pub is_fruit_tree: bool,
+    pub predicted_class: String,
+    pub confidence: f64,
+}

@@ -16,8 +16,7 @@ pub async fn citrus_analyze_handler(
     };
 
     let token_valid = {
-        let tokens = state.tokens.lock().unwrap();
-        tokens.contains_key(&token)
+        username_by_token(&state, &token).await.is_some()
     };
     if !token_valid {
         return (
@@ -66,6 +65,10 @@ struct CitrusDiseaseJsonRequest {
     area: Option<String>,
 }
 
+fn payload_preview(input: &str) -> String {
+    input.chars().take(48).collect()
+}
+
 #[axum::debug_handler]
 pub async fn citrus_disease_handler(
     State(state): State<AppState>,
@@ -77,11 +80,31 @@ pub async fn citrus_disease_handler(
     let mut username: Option<String> = None;
     let mut area: Option<String> = None;
 
+    let auth_username = match crate::user_routes::extract_auth_token(&headers) {
+        Some(token) => match username_by_token(&state, &token).await {
+            Some(name) => Some(name),
+            None => {
+                return (
+                    StatusCode::UNAUTHORIZED,
+                    Json(serde_json::json!({
+                        "code": 401,
+                        "message": "Invalid token",
+                        "data": null
+                    })),
+                )
+                    .into_response();
+            }
+        },
+        None => None,
+    };
+
     let content_type = headers
         .get(axum::http::header::CONTENT_TYPE)
         .and_then(|v| v.to_str().ok())
         .unwrap_or("")
         .to_string();
+
+    tracing::info!("citrus_disease 请求: content_type={}", content_type);
 
     let body_bytes = match axum::body::to_bytes(request.into_body(), 20 * 1024 * 1024).await {
         Ok(bytes) => bytes,
@@ -99,6 +122,8 @@ pub async fn citrus_disease_handler(
         }
     };
 
+    tracing::info!("citrus_disease 请求体大小: {} bytes", body_bytes.len());
+
     if content_type.starts_with("application/json") {
         let payload: CitrusDiseaseJsonRequest = match serde_json::from_slice(&body_bytes) {
             Ok(data) => data,
@@ -114,6 +139,14 @@ pub async fn citrus_disease_handler(
                     .into_response();
             }
         };
+
+        tracing::info!(
+            "citrus_disease JSON字段: has_IMAGE={} has_image={} has_username={} has_area={}",
+            payload.image_upper.as_ref().is_some_and(|x| !x.trim().is_empty()),
+            payload.image.as_ref().is_some_and(|x| !x.trim().is_empty()),
+            payload.username.as_ref().is_some_and(|x| !x.trim().is_empty()),
+            payload.area.as_ref().is_some_and(|x| !x.trim().is_empty())
+        );
 
         image_base64_text = payload.image_upper.or(payload.image);
         username = payload
@@ -148,6 +181,8 @@ pub async fn citrus_disease_handler(
         loop {
             match multipart.next_field().await {
                 Ok(Some(field)) => {
+                    let field_name = field.name().map(|x| x.to_string());
+                    tracing::debug!("citrus_disease multipart 字段: {:?}", field_name);
                     if field.name() == Some("image") {
                         let content_type = field
                             .content_type()
@@ -157,6 +192,11 @@ pub async fn citrus_disease_handler(
                             Ok(bytes) => {
                                 let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
                                 image_data = Some(format!("data:{};base64,{}", content_type, b64));
+                                tracing::info!(
+                                    "citrus_disease multipart image读取成功: mime={} size={} bytes",
+                                    content_type,
+                                    bytes.len()
+                                );
                             }
                             Err(e) => {
                                 tracing::error!("读取图片字段失败: {}", e);
@@ -173,7 +213,14 @@ pub async fn citrus_disease_handler(
                         }
                     } else if field.name() == Some("IMAGE") {
                         match field.text().await {
-                            Ok(text) => image_base64_text = Some(text),
+                            Ok(text) => {
+                                tracing::info!(
+                                    "citrus_disease multipart IMAGE读取成功: len={} preview={}...",
+                                    text.len(),
+                                    payload_preview(text.trim())
+                                );
+                                image_base64_text = Some(text)
+                            }
                             Err(e) => {
                                 tracing::error!("读取 IMAGE 字段失败: {}", e);
                                 return (
@@ -229,10 +276,25 @@ pub async fn citrus_disease_handler(
     }
 
     if image_data.is_none() && let Some(mut base64_image) = image_base64_text {
+        tracing::info!(
+            "citrus_disease 原始IMAGE: len={} has_data_uri={} preview={}...",
+            base64_image.len(),
+            base64_image.trim().to_ascii_lowercase().starts_with("data:image/"),
+            payload_preview(base64_image.trim())
+        );
         if !base64_image.starts_with("data:image/") {
             base64_image = format!("data:image/jpeg;base64,{}", base64_image);
+            tracing::info!(
+                "citrus_disease IMAGE补齐data-uri后: len={} preview={}...",
+                base64_image.len(),
+                payload_preview(base64_image.trim())
+            );
         }
         image_data = Some(base64_image);
+    }
+
+    if username.is_none() {
+        username = auth_username;
     }
 
     if image_data.is_none() {
@@ -262,17 +324,36 @@ pub async fn citrus_disease_handler(
                 predicted_class: predicted_class.clone(),
                 confidence,
                 is_citrus_leaf: prediction.is_citrus_leaf,
-                citrus_type: prediction.citrus_type,
+                citrus_type: prediction.citrus_type.clone(),
                 is_healthy: prediction.is_healthy,
-                disease_name: prediction.disease_name,
-                severity: prediction.severity,
-                treatment_suggestion: prediction.treatment_suggestion,
-                preventive_measures: prediction.preventive_measures,
-                image_quality_warning: prediction.image_quality_warning,
+                disease_name: prediction.disease_name.clone(),
+                severity: prediction.severity.clone(),
+                treatment_suggestion: prediction.treatment_suggestion.clone(),
+                preventive_measures: prediction.preventive_measures.clone(),
+                image_quality_warning: prediction.image_quality_warning.clone(),
                 username,
                 area,
             };
-            state.diagnosis_records.lock().unwrap().push(record);
+
+            let _ = sqlx::query(
+                "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)",
+            )
+            .bind(&record.id)
+            .bind(record.timestamp as i64)
+            .bind(&record.predicted_class)
+            .bind(record.confidence)
+            .bind(record.is_citrus_leaf)
+            .bind(&record.citrus_type)
+            .bind(record.is_healthy)
+            .bind(&record.disease_name)
+            .bind(&record.severity)
+            .bind(&record.treatment_suggestion)
+            .bind(&record.preventive_measures)
+            .bind(&record.image_quality_warning)
+            .bind(&record.username)
+            .bind(&record.area)
+            .execute(&state.db)
+            .await;
             tracing::info!("已记录识别结果: {} (置信度: {}%)", predicted_class, confidence);
 
             (
@@ -283,7 +364,15 @@ pub async fn citrus_disease_handler(
                     "data": {
                         "predicted_class": predicted_class,
                         "confidence": confidence,
-                        "stage": prediction.stage
+                        "stage": prediction.stage,
+                        "is_citrus_leaf": prediction.is_citrus_leaf,
+                        "citrus_type": prediction.citrus_type,
+                        "is_healthy": prediction.is_healthy,
+                        "disease_name": prediction.disease_name,
+                        "severity": prediction.severity,
+                        "treatment_suggestion": prediction.treatment_suggestion,
+                        "preventive_measures": prediction.preventive_measures,
+                        "image_quality_warning": prediction.image_quality_warning
                     },
                     "timestamp": timestamp
                 })),
@@ -307,7 +396,50 @@ pub async fn citrus_disease_handler(
 
 #[axum::debug_handler]
 pub async fn generate_handler(State(state): State<AppState>) -> impl IntoResponse {
-    let records = state.diagnosis_records.lock().unwrap().clone();
+    let rows = sqlx::query(
+        "SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 200",
+    )
+    .fetch_all(&state.db)
+    .await;
+
+    let records = match rows {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|r| DiagnosisRecord {
+                id: r.try_get::<String, _>("id").unwrap_or_default(),
+                timestamp: r.try_get::<i64, _>("timestamp").unwrap_or(0).max(0) as u64,
+                predicted_class: r.try_get::<String, _>("predicted_class").unwrap_or_default(),
+                confidence: r.try_get::<f64, _>("confidence").unwrap_or(0.0),
+                is_citrus_leaf: r.try_get::<bool, _>("is_citrus_leaf").unwrap_or(false),
+                citrus_type: r.try_get::<String, _>("citrus_type").unwrap_or_default(),
+                is_healthy: r.try_get::<bool, _>("is_healthy").unwrap_or(false),
+                disease_name: r.try_get::<String, _>("disease_name").unwrap_or_default(),
+                severity: r.try_get::<String, _>("severity").unwrap_or_default(),
+                treatment_suggestion: r
+                    .try_get::<String, _>("treatment_suggestion")
+                    .unwrap_or_default(),
+                preventive_measures: r
+                    .try_get::<String, _>("preventive_measures")
+                    .unwrap_or_default(),
+                image_quality_warning: r
+                    .try_get::<String, _>("image_quality_warning")
+                    .unwrap_or_default(),
+                username: r.try_get::<Option<String>, _>("username").unwrap_or(None),
+                area: r.try_get::<Option<String>, _>("area").unwrap_or(None),
+            })
+            .collect::<Vec<_>>(),
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({
+                    "code": 500,
+                    "message": format!("读取识别记录失败: {}", e),
+                    "data": null
+                })),
+            )
+                .into_response();
+        }
+    };
 
     match state.client.generate_fertilization_text(&records).await {
         Ok(text) => {

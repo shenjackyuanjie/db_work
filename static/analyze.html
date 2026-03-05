@@ -773,7 +773,7 @@
       try {
         const imageDataUrl = await fileToDataUrl(file);
         // 模拟网络延迟和响应，请确保你的后端路由正确
-        const resp = await fetch("/citrus/analyze", {
+        const resp = await fetch("/api/citrus-disease", {
           method: "POST",
           credentials: "same-origin",
           headers: {
@@ -786,26 +786,35 @@
         const data = await resp.json();
         els.rawResponse.textContent = JSON.stringify(data, null, 2);
 
-        if (!resp.ok || data.success === false) {
-          throw new Error(data.error || "识别失败");
+        if (!resp.ok || data.code !== 200) {
+          throw new Error(data.message || data.error || "识别失败");
         }
 
         // 解析结果
-        const result = data.data;
+        const result = data.data || {};
+        const predictedClass = result.predicted_class || "";
+        const isHealthy = result.is_healthy === true || predictedClass === "健康果树";
+        const isFruitTree = predictedClass !== "非果树";
 
-        const da = result.disease_analysis || {};
-        setBadge(els.isHealthy, da.is_healthy ? "健康" : "患病", da.is_healthy ? "success" : "danger");
-        els.diseaseName.textContent = da.disease_name || "无";
-        els.severity.textContent = da.severity || "-";
+        if (!isFruitTree) {
+          setBadge(els.isHealthy, "非果树", "warning");
+        } else {
+          setBadge(els.isHealthy, isHealthy ? "健康" : "患病", isHealthy ? "success" : "danger");
+        }
 
-        if (da.confidence) els.confidence.textContent = (da.confidence * 100).toFixed(1) + "%";
+        els.diseaseName.textContent = result.disease_name || predictedClass || "无";
+        els.severity.textContent = result.severity || (isFruitTree ? "-" : "无需分级");
 
-        els.treatment.textContent = da.treatment_suggestion || "暂无建议";
-        els.prevention.textContent = da.preventive_measures || "暂无建议";
+        if (typeof result.confidence === "number") {
+          els.confidence.textContent = `${result.confidence.toFixed(2)}%`;
+        }
+
+        els.treatment.textContent = result.treatment_suggestion || "暂无建议";
+        els.prevention.textContent = result.preventive_measures || "暂无建议";
         els.qualityWarning.textContent = result.image_quality_warning || "无";
 
-        els.duration.textContent = data.metrics?.duration_secs ?? "-";
-        els.tps.textContent = (data.metrics?.tokens_per_sec ?? "-") + " token/s";
+        els.duration.textContent = "-";
+        els.tps.textContent = result.stage || "-";
 
         clearInterval(progressInterval);
         progressBar.style.width = "100%";

@@ -9,6 +9,7 @@ use axum::{
 
 use serde::Deserialize;
 use serde_json::json;
+use sqlx::{PgPool, Row, postgres::PgPoolOptions};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::ServeDir;
@@ -22,22 +23,7 @@ use base64::Engine;
 pub struct AppState {
     pub client: OpenRouterClient,
     pub inference: crate::inference::InferenceRuntime,
-    pub users:
-        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, crate::models::User>>>,
-    pub invitations: std::sync::Arc<
-        std::sync::Mutex<std::collections::HashMap<String, crate::models::Invitation>>,
-    >,
-    pub pending_users: std::sync::Arc<
-        std::sync::Mutex<std::collections::HashMap<String, crate::models::PendingUser>>,
-    >,
-    pub tokens: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, String>>>, // token -> username
-    /// 识别请求记录列表（按时间顺序追加）
-    pub diagnosis_records: std::sync::Arc<std::sync::Mutex<Vec<DiagnosisRecord>>>,
-    /// 任务列表
-    pub tasks: std::sync::Arc<std::sync::Mutex<Vec<TaskRecord>>>,
-    /// 温湿度样本
-    pub temperature_humidity_records:
-        std::sync::Arc<std::sync::Mutex<Vec<TemperatureHumiditySample>>>,
+    pub db: PgPool,
 }
 
 #[derive(Debug, Clone)]
@@ -129,9 +115,110 @@ fn api_success(data: serde_json::Value) -> Response {
     api_response(StatusCode::OK, 200, "success", data)
 }
 
-fn user_exists(state: &AppState, username: &str) -> bool {
-    let users = state.users.lock().unwrap();
-    users.contains_key(username)
+async fn user_exists(state: &AppState, username: &str) -> bool {
+    sqlx::query("SELECT 1 FROM app_users WHERE username = $1 LIMIT 1")
+        .bind(username)
+        .fetch_optional(&state.db)
+        .await
+        .ok()
+        .flatten()
+        .is_some()
+}
+
+async fn username_by_token(state: &AppState, token: &str) -> Option<String> {
+    sqlx::query("SELECT username FROM app_sessions WHERE token = $1 LIMIT 1")
+        .bind(token)
+        .fetch_optional(&state.db)
+        .await
+        .ok()
+        .flatten()
+        .and_then(|r| r.try_get::<String, _>("username").ok())
+}
+
+async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
+    let ddl = [
+        r#"CREATE TABLE IF NOT EXISTS app_users (
+            username TEXT PRIMARY KEY,
+            password_hash TEXT NOT NULL,
+            is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at BIGINT NOT NULL,
+            session_token TEXT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS app_sessions (
+            token TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            created_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_app_sessions_username ON app_sessions(username)"#,
+        r#"CREATE TABLE IF NOT EXISTS app_invitations (
+            code TEXT PRIMARY KEY,
+            used BOOLEAN NOT NULL DEFAULT FALSE,
+            expires_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS app_pending_users (
+            username TEXT PRIMARY KEY,
+            password_hash TEXT NOT NULL,
+            created_at BIGINT NOT NULL,
+            requested_role TEXT NOT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS app_tasks (
+            id TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            risk_level TEXT NOT NULL,
+            task_type TEXT NOT NULL,
+            source TEXT NOT NULL,
+            is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at BIGINT NOT NULL,
+            completed_at BIGINT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_app_tasks_username_created ON app_tasks(username, created_at DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS app_temperature_humidity (
+            id BIGSERIAL PRIMARY KEY,
+            username TEXT NULL,
+            timestamp BIGINT NOT NULL,
+            temperature DOUBLE PRECISION NOT NULL,
+            humidity DOUBLE PRECISION NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_app_temp_humidity_user_time ON app_temperature_humidity(username, timestamp DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS app_diagnosis_records (
+            id TEXT PRIMARY KEY,
+            timestamp BIGINT NOT NULL,
+            predicted_class TEXT NOT NULL,
+            confidence DOUBLE PRECISION NOT NULL,
+            is_citrus_leaf BOOLEAN NOT NULL,
+            citrus_type TEXT NOT NULL,
+            is_healthy BOOLEAN NOT NULL,
+            disease_name TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            treatment_suggestion TEXT NOT NULL,
+            preventive_measures TEXT NOT NULL,
+            image_quality_warning TEXT NOT NULL,
+            username TEXT NULL,
+            area TEXT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_app_diag_user_time ON app_diagnosis_records(username, timestamp DESC)"#,
+    ];
+
+    for stmt in ddl {
+        sqlx::query(stmt)
+            .execute(pool)
+            .await
+            .map_err(|e| anyhow::anyhow!("初始化数据库表失败: {}", e))?;
+    }
+
+    sqlx::query(
+        "INSERT INTO app_invitations (code, used, expires_at) VALUES ($1, $2, $3) ON CONFLICT (code) DO NOTHING",
+    )
+    .bind("1111")
+    .bind(false)
+    .bind(i64::MAX)
+    .execute(pool)
+    .await
+    .map_err(|e| anyhow::anyhow!("写入默认邀请码失败: {}", e))?;
+
+    Ok(())
 }
 
 fn time_label_from_millis(millis: u64) -> String {
@@ -249,7 +336,7 @@ fn classify_environment_risk(temperature: f64, humidity: f64) -> (&'static str, 
 include!("server/handlers_core.rs");
 include!("server/handlers_ai.rs");
 
-pub fn create_router(config: &crate::config::AppConfig) -> Router {
+pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
     let api_key = config.ai.openrouter_api_key.clone();
 
     let client = OpenRouterClient::new(api_key);
@@ -257,26 +344,8 @@ pub fn create_router(config: &crate::config::AppConfig) -> Router {
     let state = AppState {
         client,
         inference,
-        users: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
-        invitations: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
-        pending_users: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
-        tokens: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
-        diagnosis_records: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
-        tasks: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
-        temperature_humidity_records: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
+        db,
     };
-
-    {
-        let mut invites = state.invitations.lock().unwrap();
-        invites.insert(
-            "1111".to_string(),
-            crate::models::Invitation {
-                code: "1111".to_string(),
-                used: false,
-                expires_at: u64::MAX,
-            },
-        );
-    }
 
     Router::new()
         .route("/health", get(health_handler))
@@ -384,7 +453,14 @@ pub async fn run_server(config: crate::config::AppConfig) -> anyhow::Result<()> 
         .addr
         .parse()
         .map_err(|e| anyhow::anyhow!("解析 server.addr 失败: {}", e))?;
-    let app = create_router(&config);
+    let db = PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&config.database.postgres_url)
+        .await
+        .map_err(|e| anyhow::anyhow!("连接 PostgreSQL 失败: {}", e))?;
+    init_database(&db).await?;
+
+    let app = create_router(&config, db);
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await

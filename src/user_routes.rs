@@ -7,32 +7,24 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sqlx::Row;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::{info, warn};
+use tracing::info;
 use uuid::Uuid;
 
-use crate::models::{Invitation, PendingUser, RequestedRole, User};
+use crate::models::RequestedRole;
 use crate::server::AppState;
 
 const SESSION_COOKIE_NAME: &str = "session_token";
 const SESSION_HEADER_NAME: &str = "x-session-token";
 const SESSION_MAX_AGE_SECONDS: u64 = 30 * 24 * 60 * 60;
 
-/// Request payload for login
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
     pub username: String,
     pub password: String,
 }
 
-/// Response payload for login
-#[derive(Debug, Serialize)]
-pub struct LoginResponse {
-    pub token: String,
-    pub is_admin: bool,
-}
-
-/// Request payload for registration
 #[derive(Debug, Deserialize)]
 pub struct RegisterRequest {
     pub username: String,
@@ -43,26 +35,22 @@ pub struct RegisterRequest {
     pub requested_role: RequestedRole,
 }
 
-/// Request payload for admin to set a user's admin flag
 #[derive(Debug, Deserialize)]
 pub struct SetAdminRequest {
     pub target_username: String,
     pub make_admin: bool,
 }
 
-/// Request payload for admin to create invitation
 #[derive(Debug, Deserialize)]
 pub struct CreateInvitationRequest {
     pub ttl_seconds: Option<u64>,
 }
 
-/// Request payload for admin to approve pending user
 #[derive(Debug, Deserialize)]
 pub struct ApprovePendingUserRequest {
     pub username: String,
 }
 
-/// Request payload for admin to reject pending user
 #[derive(Debug, Deserialize)]
 pub struct RejectPendingUserRequest {
     pub username: String,
@@ -82,17 +70,14 @@ pub struct PendingPublicUser {
     pub requested_role: RequestedRole,
 }
 
-/// Generate a UUID v4 token
 fn generate_token() -> String {
     Uuid::new_v4().to_string()
 }
 
-/// Password hashing using blake3
 fn hash_password(pw: &str) -> String {
     blake3::hash(pw.as_bytes()).to_string()
 }
 
-/// Validate password
 fn verify_password(hash: &str, pw: &str) -> bool {
     hash == blake3::hash(pw.as_bytes()).to_string()
 }
@@ -100,12 +85,52 @@ fn verify_password(hash: &str, pw: &str) -> bool {
 fn now_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .unwrap_or_default()
         .as_secs()
+}
+
+fn now_millis() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+fn app_response(
+    code: u16,
+    message: impl Into<String>,
+    data: serde_json::Value,
+) -> serde_json::Value {
+    json!({
+        "code": code,
+        "message": message.into(),
+        "data": data,
+        "timestamp": now_millis()
+    })
 }
 
 fn requested_role_label(role: &RequestedRole) -> &'static str {
     if role.is_admin() { "admin" } else { "user" }
+}
+
+fn parse_requested_role(text: &str) -> RequestedRole {
+    if text.eq_ignore_ascii_case("admin") {
+        RequestedRole::Admin
+    } else {
+        RequestedRole::User
+    }
+}
+
+fn user_payload(username: &str, created_at: u64) -> serde_json::Value {
+    json!({
+        "id": username,
+        "username": username,
+        "email": null,
+        "orchard_address": null,
+        "latitude": null,
+        "longitude": null,
+        "created_at": created_at
+    })
 }
 
 fn build_login_cookie(token: &str) -> Result<HeaderValue, (StatusCode, serde_json::Value)> {
@@ -150,7 +175,7 @@ pub fn extract_auth_token(headers: &HeaderMap) -> Option<String> {
         .or_else(|| token_from_cookie(headers))
 }
 
-fn ensure_authenticated(
+pub async fn ensure_authenticated(
     state: &AppState,
     headers: &HeaderMap,
 ) -> Result<(String, String), (StatusCode, serde_json::Value)> {
@@ -164,9 +189,19 @@ fn ensure_authenticated(
         }
     };
 
-    let tokens = state.tokens.lock().unwrap();
-    let username = match tokens.get(&token) {
-        Some(name) => name.clone(),
+    let row = sqlx::query("SELECT username FROM app_sessions WHERE token = $1 LIMIT 1")
+        .bind(&token)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                json!({ "error": "Session lookup failed" }),
+            )
+        })?;
+
+    let username = match row.and_then(|r| r.try_get::<String, _>("username").ok()) {
+        Some(name) => name,
         None => {
             return Err((
                 StatusCode::UNAUTHORIZED,
@@ -178,23 +213,28 @@ fn ensure_authenticated(
     Ok((token, username))
 }
 
-fn ensure_admin(
+pub async fn ensure_admin(
     state: &AppState,
     headers: &HeaderMap,
 ) -> Result<String, (StatusCode, serde_json::Value)> {
-    let (_, admin_username) = ensure_authenticated(state, headers)?;
+    let (_, admin_username) = ensure_authenticated(state, headers).await?;
 
-    let users = state.users.lock().unwrap();
-    let admin_user = match users.get(&admin_username) {
-        Some(u) => u,
-        None => {
-            return Err((
-                StatusCode::UNAUTHORIZED,
-                json!({ "error": "Admin user not found" }),
-            ));
-        }
-    };
-    if !admin_user.is_admin {
+    let row = sqlx::query("SELECT is_admin FROM app_users WHERE username = $1 LIMIT 1")
+        .bind(&admin_username)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(|_| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                json!({ "error": "Admin lookup failed" }),
+            )
+        })?;
+
+    let is_admin = row
+        .and_then(|r| r.try_get::<bool, _>("is_admin").ok())
+        .unwrap_or(false);
+
+    if !is_admin {
         return Err((
             StatusCode::FORBIDDEN,
             json!({ "error": "User is not an admin" }),
@@ -203,7 +243,6 @@ fn ensure_admin(
     Ok(admin_username)
 }
 
-/// Login handler
 pub async fn login_handler(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
@@ -213,49 +252,93 @@ pub async fn login_handler(
     info!("用户请求登录: username={}", username);
 
     if username.is_empty() || password.is_empty() {
-        warn!(
-            "登录失败: username={}, reason=missing_username_or_password",
-            username
-        );
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({"error":"Username and password are required"})),
+            Json(app_response(
+                400,
+                "Username and password are required",
+                serde_json::Value::Null,
+            )),
         )
             .into_response();
     }
 
-    let mut users = state.users.lock().unwrap();
-    let user = match users.get_mut(username) {
-        Some(u) => u,
-        None => {
-            warn!("登录失败: username={}, reason=user_not_found", username);
+    let row = match sqlx::query(
+        "SELECT password_hash, is_admin, created_at FROM app_users WHERE username = $1 LIMIT 1",
+    )
+    .bind(username)
+    .fetch_optional(&state.db)
+    .await
+    {
+        Ok(v) => v,
+        Err(e) => {
             return (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({"error":"Invalid credentials"})),
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(app_response(
+                    500,
+                    format!("db error: {}", e),
+                    serde_json::Value::Null,
+                )),
             )
                 .into_response();
         }
     };
 
-    if !verify_password(&user.password_hash, password) {
-        warn!("登录失败: username={}, reason=invalid_password", username);
+    let Some(row) = row else {
         return (
             StatusCode::UNAUTHORIZED,
-            Json(json!({"error":"Invalid credentials"})),
+            Json(app_response(
+                401,
+                "Invalid credentials",
+                serde_json::Value::Null,
+            )),
+        )
+            .into_response();
+    };
+
+    let password_hash: String = row.try_get("password_hash").unwrap_or_default();
+    let is_admin: bool = row.try_get("is_admin").unwrap_or(false);
+    let created_at: i64 = row.try_get("created_at").unwrap_or(0);
+
+    if !verify_password(&password_hash, password) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(app_response(
+                401,
+                "Invalid credentials",
+                serde_json::Value::Null,
+            )),
         )
             .into_response();
     }
 
     let token = generate_token();
-    user.session_token = Some(token.clone());
-    let is_admin = user.is_admin;
-    drop(users);
+    let now = now_secs() as i64;
 
-    state
-        .tokens
-        .lock()
-        .unwrap()
-        .insert(token.clone(), username.to_string());
+    if let Err(e) =
+        sqlx::query("INSERT INTO app_sessions (token, username, created_at) VALUES ($1, $2, $3)")
+            .bind(&token)
+            .bind(username)
+            .bind(now)
+            .execute(&state.db)
+            .await
+    {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(app_response(
+                500,
+                format!("session save failed: {}", e),
+                serde_json::Value::Null,
+            )),
+        )
+            .into_response();
+    }
+
+    let _ = sqlx::query("UPDATE app_users SET session_token = $1 WHERE username = $2")
+        .bind(&token)
+        .bind(username)
+        .execute(&state.db)
+        .await;
 
     let cookie_header = match build_login_cookie(&token) {
         Ok(v) => v,
@@ -265,143 +348,236 @@ pub async fn login_handler(
     let mut headers = HeaderMap::new();
     headers.insert(header::SET_COOKIE, cookie_header);
 
-    info!("登录成功: username={}, is_admin={}", username, is_admin);
-
-    let resp = LoginResponse { token, is_admin };
-    (StatusCode::OK, headers, Json(resp)).into_response()
+    (
+        StatusCode::OK,
+        headers,
+        Json(app_response(
+            200,
+            "Login successful",
+            json!({
+                "id": username,
+                "username": username,
+                "email": null,
+                "orchard_address": null,
+                "latitude": null,
+                "longitude": null,
+                "created_at": created_at.max(0) as u64,
+                "token": token,
+                "is_admin": is_admin
+            }),
+        )),
+    )
+        .into_response()
 }
 
-/// Register handler
 pub async fn register_handler(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> impl IntoResponse {
     let username = payload.username.trim().to_string();
     let password = payload.password.trim().to_string();
-    let has_invitation = !payload.invitation_code.trim().is_empty();
-    let requested_role = requested_role_label(&payload.requested_role);
-
-    info!(
-        "用户请求注册: username={}, requested_role={}, has_invitation={}",
-        username, requested_role, has_invitation
-    );
 
     if username.is_empty() || password.is_empty() {
-        warn!(
-            "注册失败: username={}, reason=missing_username_or_password",
-            username
-        );
         return (
             StatusCode::BAD_REQUEST,
-            Json(json!({"error":"Username and password are required"})),
+            Json(app_response(
+                400,
+                "Username and password are required",
+                serde_json::Value::Null,
+            )),
         )
             .into_response();
     }
 
-    {
-        let users = state.users.lock().unwrap();
-        if users.contains_key(&username) {
-            warn!("注册失败: username={}, reason=username_exists", username);
-            return (
-                StatusCode::CONFLICT,
-                Json(json!({"error":"Username already exists"})),
-            )
-                .into_response();
-        }
+    let exists = sqlx::query("SELECT 1 FROM app_users WHERE username = $1 LIMIT 1")
+        .bind(&username)
+        .fetch_optional(&state.db)
+        .await
+        .ok()
+        .flatten()
+        .is_some();
+    if exists {
+        return (
+            StatusCode::CONFLICT,
+            Json(app_response(
+                409,
+                "Username already exists",
+                serde_json::Value::Null,
+            )),
+        )
+            .into_response();
     }
 
-    {
-        let pending = state.pending_users.lock().unwrap();
-        if pending.contains_key(&username) {
-            warn!(
-                "注册失败: username={}, reason=username_already_pending",
-                username
-            );
-            return (
-                StatusCode::CONFLICT,
-                Json(json!({"error":"Username already pending approval"})),
-            )
-                .into_response();
-        }
+    let pending_exists = sqlx::query("SELECT 1 FROM app_pending_users WHERE username = $1 LIMIT 1")
+        .bind(&username)
+        .fetch_optional(&state.db)
+        .await
+        .ok()
+        .flatten()
+        .is_some();
+    if pending_exists {
+        return (
+            StatusCode::CONFLICT,
+            Json(app_response(
+                409,
+                "Username already pending approval",
+                serde_json::Value::Null,
+            )),
+        )
+            .into_response();
     }
 
+    let now = now_secs();
+    let password_hash = hash_password(&password);
     let invitation_code = payload.invitation_code.trim();
-    if invitation_code.is_empty() {
-        let pending_user = PendingUser {
-            username: username.clone(),
-            password_hash: hash_password(&password),
-            created_at: now_secs(),
-            requested_role: payload.requested_role.clone(),
-        };
-        state
-            .pending_users
-            .lock()
-            .unwrap()
-            .insert(username.clone(), pending_user);
 
-        info!(
-            "注册进入审核队列: username={}, requested_role={}",
-            username, requested_role
-        );
+    if invitation_code.is_empty() {
+        if !payload.requested_role.is_admin() {
+            let result = sqlx::query(
+                "INSERT INTO app_users (username, password_hash, is_admin, created_at, session_token) VALUES ($1, $2, $3, $4, NULL)",
+            )
+            .bind(&username)
+            .bind(&password_hash)
+            .bind(false)
+            .bind(now as i64)
+            .execute(&state.db)
+            .await;
+
+            if let Err(e) = result {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(app_response(
+                        500,
+                        format!("db error: {}", e),
+                        serde_json::Value::Null,
+                    )),
+                )
+                    .into_response();
+            }
+
+            return (
+                StatusCode::OK,
+                Json(app_response(
+                    200,
+                    "Registration successful",
+                    user_payload(&username, now),
+                )),
+            )
+                .into_response();
+        }
+
+        let result = sqlx::query(
+            "INSERT INTO app_pending_users (username, password_hash, created_at, requested_role) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(&username)
+        .bind(&password_hash)
+        .bind(now as i64)
+        .bind(requested_role_label(&payload.requested_role))
+        .execute(&state.db)
+        .await;
+
+        if let Err(e) = result {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(app_response(
+                    500,
+                    format!("db error: {}", e),
+                    serde_json::Value::Null,
+                )),
+            )
+                .into_response();
+        }
 
         return (
             StatusCode::ACCEPTED,
-            Json(json!({
-                "status":"pending_approval",
-                "requested_role": payload.requested_role
-            })),
+            Json(app_response(
+                202,
+                "pending_approval",
+                json!({ "requested_role": payload.requested_role }),
+            )),
         )
             .into_response();
     }
 
-    let mut invites = state.invitations.lock().unwrap();
-    match invites.get_mut(invitation_code) {
-        Some(inv) if !inv.used && inv.expires_at > now_secs() => {
-            inv.used = true;
-        }
-        _ => {
-            warn!(
-                "注册失败: username={}, reason=invalid_or_expired_invitation",
-                username
-            );
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error":"Invalid or expired invitation",
-                    "hint":"邀请码错误时可清空邀请码并提交审核申请"
-                })),
-            )
-                .into_response();
-        }
-    }
-    drop(invites);
+    let invite_row =
+        match sqlx::query("SELECT used, expires_at FROM app_invitations WHERE code = $1 LIMIT 1")
+            .bind(invitation_code)
+            .fetch_optional(&state.db)
+            .await
+        {
+            Ok(v) => v,
+            Err(e) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(app_response(
+                        500,
+                        format!("db error: {}", e),
+                        serde_json::Value::Null,
+                    )),
+                )
+                    .into_response();
+            }
+        };
 
-    let user = User {
-        username: username.clone(),
-        password_hash: hash_password(&password),
-        is_admin: payload.requested_role.is_admin(),
-        created_at: now_secs(),
-        session_token: None,
+    let Some(invite_row) = invite_row else {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(app_response(
+                400,
+                "Invalid or expired invitation",
+                json!({ "hint": "邀请码错误时可清空邀请码并提交审核申请" }),
+            )),
+        )
+            .into_response();
     };
-    state.users.lock().unwrap().insert(username.clone(), user);
 
-    info!(
-        "注册成功: username={}, is_admin={}, via_invitation=true",
-        username,
-        payload.requested_role.is_admin()
-    );
+    let used: bool = invite_row.try_get("used").unwrap_or(true);
+    let expires_at: i64 = invite_row.try_get("expires_at").unwrap_or(0);
+    if used || expires_at <= now as i64 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(app_response(
+                400,
+                "Invalid or expired invitation",
+                json!({ "hint": "邀请码错误时可清空邀请码并提交审核申请" }),
+            )),
+        )
+            .into_response();
+    }
+
+    let _ = sqlx::query("UPDATE app_invitations SET used = TRUE WHERE code = $1")
+        .bind(invitation_code)
+        .execute(&state.db)
+        .await;
+
+    if let Err(e) = sqlx::query(
+        "INSERT INTO app_users (username, password_hash, is_admin, created_at, session_token) VALUES ($1, $2, $3, $4, NULL)",
+    )
+    .bind(&username)
+    .bind(&password_hash)
+    .bind(payload.requested_role.is_admin())
+    .bind(now as i64)
+    .execute(&state.db)
+    .await
+    {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
+        )
+            .into_response();
+    }
 
     (
-        StatusCode::CREATED,
-        Json(json!({
-            "status":"registered",
-            "is_admin": payload.requested_role.is_admin()
-        })),
+        StatusCode::OK,
+        Json(app_response(
+            200,
+            "Registration successful",
+            user_payload(&username, now),
+        )),
     )
         .into_response()
 }
 
-/// Logout handler
 pub async fn logout_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -409,7 +585,6 @@ pub async fn logout_handler(
     let token = match extract_auth_token(&headers) {
         Some(t) => t,
         None => {
-            warn!("登出失败: reason=missing_token");
             return (
                 StatusCode::BAD_REQUEST,
                 Json(json!({"error":"Missing token"})),
@@ -426,27 +601,40 @@ pub async fn logout_handler(
     let mut res_headers = HeaderMap::new();
     res_headers.insert(header::SET_COOKIE, clear_cookie);
 
-    let removed_username = state.tokens.lock().unwrap().remove(&token);
-    if let Some(username) = removed_username {
-        info!("登出成功: username={}", username);
-        (
-            StatusCode::OK,
-            res_headers,
-            Json(json!({"status":"logged out"})),
-        )
-            .into_response()
-    } else {
-        warn!("登出失败: reason=invalid_token");
-        (
+    let removed = sqlx::query("DELETE FROM app_sessions WHERE token = $1")
+        .bind(&token)
+        .execute(&state.db)
+        .await;
+
+    match removed {
+        Ok(res) if res.rows_affected() > 0 => {
+            let _ =
+                sqlx::query("UPDATE app_users SET session_token = NULL WHERE session_token = $1")
+                    .bind(&token)
+                    .execute(&state.db)
+                    .await;
+            (
+                StatusCode::OK,
+                res_headers,
+                Json(json!({"status":"logged out"})),
+            )
+                .into_response()
+        }
+        Ok(_) => (
             StatusCode::BAD_REQUEST,
             res_headers,
             Json(json!({"error":"Invalid token"})),
         )
-            .into_response()
+            .into_response(),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            res_headers,
+            Json(json!({"error":"Failed to logout"})),
+        )
+            .into_response(),
     }
 }
 
-/// Validate token handler
 pub async fn validate_token_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -456,48 +644,65 @@ pub async fn validate_token_handler(
         None => return (StatusCode::OK, Json(json!({"valid": false}))).into_response(),
     };
 
-    let tokens = state.tokens.lock().unwrap();
-    if let Some(username) = tokens.get(&token) {
-        let users = state.users.lock().unwrap();
-        if let Some(user) = users.get(username) {
-            return (
-                StatusCode::OK,
-                Json(json!({
-                    "valid": true,
-                    "username": user.username,
-                    "is_admin": user.is_admin
-                })),
-            )
-                .into_response();
-        }
-    }
+    let row = sqlx::query(
+        "SELECT u.username, u.is_admin FROM app_sessions s JOIN app_users u ON u.username = s.username WHERE s.token = $1 LIMIT 1",
+    )
+    .bind(&token)
+    .fetch_optional(&state.db)
+    .await;
 
-    (StatusCode::OK, Json(json!({"valid": false}))).into_response()
+    match row {
+        Ok(Some(r)) => (
+            StatusCode::OK,
+            Json(json!({
+                "valid": true,
+                "username": r.try_get::<String, _>("username").unwrap_or_default(),
+                "is_admin": r.try_get::<bool, _>("is_admin").unwrap_or(false)
+            })),
+        )
+            .into_response(),
+        _ => (StatusCode::OK, Json(json!({"valid": false}))).into_response(),
+    }
 }
 
-/// Current user info
 pub async fn me_handler(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
-    let (_, username) = match ensure_authenticated(&state, &headers) {
+    let (_, username) = match ensure_authenticated(&state, &headers).await {
         Ok(v) => v,
         Err((code, body)) => return (code, Json(body)).into_response(),
     };
 
-    let users = state.users.lock().unwrap();
-    let user = users.get(&username).unwrap();
-    (
-        StatusCode::OK,
-        Json(json!({
-            "username": user.username,
-            "is_admin": user.is_admin,
-            "created_at": user.created_at
-        })),
+    let row = sqlx::query(
+        "SELECT username, is_admin, created_at FROM app_users WHERE username = $1 LIMIT 1",
     )
-        .into_response()
+    .bind(&username)
+    .fetch_optional(&state.db)
+    .await;
+
+    match row {
+        Ok(Some(r)) => (
+            StatusCode::OK,
+            Json(json!({
+                "username": r.try_get::<String, _>("username").unwrap_or(username),
+                "is_admin": r.try_get::<bool, _>("is_admin").unwrap_or(false),
+                "created_at": r.try_get::<i64, _>("created_at").unwrap_or(0)
+            })),
+        )
+            .into_response(),
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error":"User not found"})),
+        )
+            .into_response(),
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error":"Failed to get current user"})),
+        )
+            .into_response(),
+    }
 }
 
 include!("user_routes/admin.rs");
 
-/// Build the router for all user-related endpoints
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/login", post(login_handler))
