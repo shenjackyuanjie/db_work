@@ -309,7 +309,7 @@ pub async fn citrus_disease_handler(
             .into_response();
     }
 
-    match state.inference.predict_citrus_disease(image_data).await {
+    match state.inference.predict_citrus_disease(image_data.clone()).await {
         Ok(prediction) => {
             let predicted_class = prediction.predicted_class;
             let confidence = prediction.confidence;
@@ -318,8 +318,42 @@ pub async fn citrus_disease_handler(
                 .map(|d| d.as_millis() as u64)
                 .unwrap_or(0);
 
+            let record_id = uuid::Uuid::new_v4().to_string();
+
+            // 保存图片到 static/uploads/<id>.jpg
+            let saved_image_path: Option<String> = if let Some(ref data_url) = image_data {
+                let save_result = (|| -> anyhow::Result<String> {
+                    let b64 = if let Some(pos) = data_url.find(",") {
+                        &data_url[pos + 1..]
+                    } else {
+                        data_url.as_str()
+                    };
+                    let bytes = base64::engine::general_purpose::STANDARD.decode(b64.trim())
+                        .map_err(|e| anyhow::anyhow!("base64解码失败: {}", e))?;
+                    let rel_path = format!("uploads/{}.jpg", record_id);
+                    let full_path = format!("static/{}", rel_path);
+                    std::fs::create_dir_all("static/uploads")
+                        .map_err(|e| anyhow::anyhow!("创建目录失败: {}", e))?;
+                    std::fs::write(&full_path, &bytes)
+                        .map_err(|e| anyhow::anyhow!("写入图片失败: {}", e))?;
+                    Ok(format!("/uploads/{}.jpg", record_id))
+                })();
+                match save_result {
+                    Ok(path) => {
+                        tracing::info!("识别图片已保存: {}", path);
+                        Some(path)
+                    }
+                    Err(e) => {
+                        tracing::error!("识别图片保存失败: {}", e);
+                        None
+                    }
+                }
+            } else {
+                None
+            };
+
             let record = DiagnosisRecord {
-                id: uuid::Uuid::new_v4().to_string(),
+                id: record_id,
                 timestamp,
                 predicted_class: predicted_class.clone(),
                 confidence,
@@ -333,10 +367,11 @@ pub async fn citrus_disease_handler(
                 image_quality_warning: prediction.image_quality_warning.clone(),
                 username,
                 area,
+                image_path: saved_image_path,
             };
 
-            let _ = sqlx::query(
-                "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)",
+            match sqlx::query(
+                "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
             )
             .bind(&record.id)
             .bind(record.timestamp as i64)
@@ -352,9 +387,39 @@ pub async fn citrus_disease_handler(
             .bind(&record.image_quality_warning)
             .bind(&record.username)
             .bind(&record.area)
+            .bind(&record.image_path)
             .execute(&state.db)
-            .await;
-            tracing::info!("已记录识别结果: {} (置信度: {}%)", predicted_class, confidence);
+            .await {
+                Ok(_) => tracing::info!("已记录识别结果: {} (置信度: {}%)", predicted_class, confidence),
+                Err(e) => tracing::error!("识别结果写入数据库失败: {}", e),
+            }
+
+            // 若检测到病害且有用户名，自动生成治理任务
+            if !record.is_healthy && record.predicted_class != "非果树" {
+                if let Some(ref uname) = record.username {
+                    let task_title = format!("{}治理", record.disease_name);
+                    let task_description = disease_treatment_text(&record.disease_name).to_string();
+                    let task_id = uuid::Uuid::new_v4().to_string();
+                    match sqlx::query(
+                        "INSERT INTO app_tasks (id, username, title, description, risk_level, task_type, source, is_completed, created_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+                    )
+                    .bind(&task_id)
+                    .bind(uname)
+                    .bind(&task_title)
+                    .bind(&task_description)
+                    .bind("高风险")
+                    .bind("疾病识别")
+                    .bind("自动生成")
+                    .bind(false)
+                    .bind(record.timestamp as i64)
+                    .bind(None::<i64>)
+                    .execute(&state.db)
+                    .await {
+                        Ok(_) => tracing::info!("已自动生成治理任务: {}", task_title),
+                        Err(e) => tracing::error!("自动生成任务失败: {}", e),
+                    }
+                }
+            }
 
             (
                 StatusCode::OK,
@@ -397,7 +462,7 @@ pub async fn citrus_disease_handler(
 #[axum::debug_handler]
 pub async fn generate_handler(State(state): State<AppState>) -> impl IntoResponse {
     let rows = sqlx::query(
-        "SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 200",
+        "SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 200",
     )
     .fetch_all(&state.db)
     .await;
@@ -426,6 +491,7 @@ pub async fn generate_handler(State(state): State<AppState>) -> impl IntoRespons
                     .unwrap_or_default(),
                 username: r.try_get::<Option<String>, _>("username").unwrap_or(None),
                 area: r.try_get::<Option<String>, _>("area").unwrap_or(None),
+                image_path: r.try_get::<Option<String>, _>("image_path").unwrap_or(None),
             })
             .collect::<Vec<_>>(),
         Err(e) => {

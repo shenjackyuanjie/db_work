@@ -129,7 +129,7 @@ fn decode_image_data(image_data: &str) -> anyhow::Result<Vec<u8>> {
     let input = image_data.trim();
     let preview: String = input.chars().take(48).collect();
     let input_lower = input.to_ascii_lowercase();
-    tracing::info!(
+    tracing::debug!(
         "onnx decode输入: len={} has_data_uri={} preview={}...",
         input.len(),
         input_lower.starts_with("data:"),
@@ -139,7 +139,7 @@ fn decode_image_data(image_data: &str) -> anyhow::Result<Vec<u8>> {
     if let Some((header, encoded)) = input.split_once(',') {
         let header_lower = header.trim().to_ascii_lowercase();
         if header_lower.starts_with("data:") && header_lower.contains(";base64") {
-            tracing::info!(
+            tracing::debug!(
                 "onnx decode 走 data-uri 路径: header={} encoded_len={}",
                 header,
                 encoded.trim().len()
@@ -151,11 +151,11 @@ fn decode_image_data(image_data: &str) -> anyhow::Result<Vec<u8>> {
     }
 
     if Path::new(input).exists() {
-        tracing::info!("onnx decode 走本地文件路径: {}", input);
+        tracing::debug!("onnx decode 走本地文件路径: {}", input);
         return std::fs::read(input).map_err(|e| anyhow::anyhow!("读取图片文件失败: {}", e));
     }
 
-    tracing::info!("onnx decode 走纯base64路径: len={}", input.len());
+    tracing::debug!("onnx decode 走纯base64路径: len={}", input.len());
 
     base64::engine::general_purpose::STANDARD
         .decode(input)

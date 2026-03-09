@@ -213,7 +213,7 @@ pub async fn recognition_records_api_handler(
     }
 
     let rows = sqlx::query(
-        "SELECT id, predicted_class, area, confidence, timestamp FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp DESC LIMIT 20",
+        "SELECT id, predicted_class, area, confidence, timestamp, image_path FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp DESC LIMIT 20",
     )
     .bind(username.unwrap_or_default())
     .fetch_all(&state.db)
@@ -227,7 +227,7 @@ pub async fn recognition_records_api_handler(
                     let predicted_class = record.try_get::<String, _>("predicted_class").unwrap_or_default();
                     serde_json::json!({
                         "id": record.try_get::<String, _>("id").unwrap_or_default(),
-                        "imagePath": "",
+                        "imagePath": record.try_get::<Option<String>, _>("image_path").unwrap_or(None).unwrap_or_default(),
                         "diseaseName": predicted_class,
                         "area": record.try_get::<Option<String>, _>("area").unwrap_or(None).unwrap_or_else(|| "未指定区域".to_string()),
                         "riskLevel": risk_from_disease_name(&record.try_get::<String, _>("predicted_class").unwrap_or_default()),

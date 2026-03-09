@@ -433,7 +433,7 @@
           return;
         }
 
-        if (data.status === "pending_approval") {
+        if (res.status === 202 || data.status === "pending_approval" || data.message === "pending_approval") {
           const roleText = requested_role === "admin" ? "管理员" : "用户";
           setMsg(registerMsg, `已提交${roleText}申请，等待管理员审核`, "success");
           return;

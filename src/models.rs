@@ -314,6 +314,8 @@ pub struct DiagnosisRecord {
     pub username: Option<String>,
     /// 区域（可选）
     pub area: Option<String>,
+    /// 保存的图片路径（可选）
+    pub image_path: Option<String>,
 }
 
 /// 施肥方案生成请求

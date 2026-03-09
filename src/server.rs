@@ -208,6 +208,13 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             .map_err(|e| anyhow::anyhow!("初始化数据库表失败: {}", e))?;
     }
 
+    // 迁移：为旧库补充 image_path 列
+    let _ = sqlx::query(
+        "ALTER TABLE app_diagnosis_records ADD COLUMN IF NOT EXISTS image_path TEXT NULL",
+    )
+    .execute(pool)
+    .await;
+
     sqlx::query(
         "INSERT INTO app_invitations (code, used, expires_at) VALUES ($1, $2, $3) ON CONFLICT (code) DO NOTHING",
     )

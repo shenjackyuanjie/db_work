@@ -432,40 +432,7 @@ pub async fn register_handler(
     let invitation_code = payload.invitation_code.trim();
 
     if invitation_code.is_empty() {
-        if !payload.requested_role.is_admin() {
-            let result = sqlx::query(
-                "INSERT INTO app_users (username, password_hash, is_admin, created_at, session_token) VALUES ($1, $2, $3, $4, NULL)",
-            )
-            .bind(&username)
-            .bind(&password_hash)
-            .bind(false)
-            .bind(now as i64)
-            .execute(&state.db)
-            .await;
-
-            if let Err(e) = result {
-                return (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(app_response(
-                        500,
-                        format!("db error: {}", e),
-                        serde_json::Value::Null,
-                    )),
-                )
-                    .into_response();
-            }
-
-            return (
-                StatusCode::OK,
-                Json(app_response(
-                    200,
-                    "Registration successful",
-                    user_payload(&username, now),
-                )),
-            )
-                .into_response();
-        }
-
+        // 没有提供邀请码，一律进待审批队列
         let result = sqlx::query(
             "INSERT INTO app_pending_users (username, password_hash, created_at, requested_role) VALUES ($1, $2, $3, $4)",
         )
@@ -476,27 +443,22 @@ pub async fn register_handler(
         .execute(&state.db)
         .await;
 
-        if let Err(e) = result {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
+        return match result {
+            Ok(_) => (
+                StatusCode::ACCEPTED,
                 Json(app_response(
-                    500,
-                    format!("db error: {}", e),
-                    serde_json::Value::Null,
+                    202,
+                    "pending_approval",
+                    json!({ "requested_role": payload.requested_role }),
                 )),
             )
-                .into_response();
-        }
-
-        return (
-            StatusCode::ACCEPTED,
-            Json(app_response(
-                202,
-                "pending_approval",
-                json!({ "requested_role": payload.requested_role }),
-            )),
-        )
-            .into_response();
+                .into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
+            )
+                .into_response(),
+        };
     }
 
     let invite_row =
@@ -519,30 +481,43 @@ pub async fn register_handler(
             }
         };
 
-    let Some(invite_row) = invite_row else {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(app_response(
-                400,
-                "Invalid or expired invitation",
-                json!({ "hint": "邀请码错误时可清空邀请码并提交审核申请" }),
-            )),
-        )
-            .into_response();
+    let invite_valid = match invite_row {
+        Some(ref row) => {
+            let used: bool = row.try_get("used").unwrap_or(true);
+            let expires_at: i64 = row.try_get("expires_at").unwrap_or(0);
+            !used && expires_at > now as i64
+        }
+        None => false,
     };
 
-    let used: bool = invite_row.try_get("used").unwrap_or(true);
-    let expires_at: i64 = invite_row.try_get("expires_at").unwrap_or(0);
-    if used || expires_at <= now as i64 {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(app_response(
-                400,
-                "Invalid or expired invitation",
-                json!({ "hint": "邀请码错误时可清空邀请码并提交审核申请" }),
-            )),
+    if !invite_valid {
+        // 邀请码无效或已过期，加入待审批队列
+        let result = sqlx::query(
+            "INSERT INTO app_pending_users (username, password_hash, created_at, requested_role) VALUES ($1, $2, $3, $4)",
         )
-            .into_response();
+        .bind(&username)
+        .bind(&password_hash)
+        .bind(now as i64)
+        .bind(requested_role_label(&payload.requested_role))
+        .execute(&state.db)
+        .await;
+
+        return match result {
+            Ok(_) => (
+                StatusCode::ACCEPTED,
+                Json(app_response(
+                    202,
+                    "pending_approval",
+                    json!({ "requested_role": payload.requested_role }),
+                )),
+            )
+                .into_response(),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
+            )
+                .into_response(),
+        };
     }
 
     let _ = sqlx::query("UPDATE app_invitations SET used = TRUE WHERE code = $1")
