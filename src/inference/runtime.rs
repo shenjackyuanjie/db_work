@@ -1,6 +1,6 @@
 use crate::{client::OpenRouterClient, config::InferenceMode};
 
-use super::{onnx::OnnxInference, remote::RemoteInference, types::DiseasePrediction};
+use super::{onnx::OnnxInference, remote::RemoteInference, types::{DiseasePrediction, FruitTreeGatePrediction}};
 
 #[derive(Clone)]
 pub enum InferenceRuntime {
@@ -30,6 +30,17 @@ impl InferenceRuntime {
         match self {
             InferenceRuntime::Remote(remote) => remote.predict_citrus_disease(image_data).await,
             InferenceRuntime::Onnx(onnx) => onnx.predict_citrus_disease(image_data).await,
+        }
+    }
+
+    /// 使用 model_1 判断是否为果树（用于混合推理流程的第一步）
+    pub async fn predict_fruit_tree(
+        &self,
+        image_data: Option<String>,
+    ) -> anyhow::Result<FruitTreeGatePrediction> {
+        match self {
+            InferenceRuntime::Remote(remote) => remote.predict_fruit_tree(image_data).await,
+            InferenceRuntime::Onnx(onnx) => onnx.predict_fruit_tree(image_data).await,
         }
     }
 }

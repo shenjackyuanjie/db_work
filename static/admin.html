@@ -474,11 +474,31 @@
     
     function copyText(text) {
       if (!text) return;
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('邀请码已复制到剪贴板');
-      }).catch(() => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('邀请码已复制到剪贴板');
+        }).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) showToast('邀请码已复制到剪贴板');
+        else showToast('复制失败，请手动选择复制', 'error');
+      } catch {
         showToast('复制失败，请手动选择复制', 'error');
-      });
+      }
     }
 
     function formatDate(unixSeconds) {
@@ -490,11 +510,7 @@
     function copyInviteCode() {
       const code = $('generatedCode').innerText;
       if (!code) return;
-      navigator.clipboard.writeText(code).then(() => {
-        showToast('邀请码已复制到剪贴板');
-      }).catch(() => {
-        showToast('复制失败，请手动选择复制', 'error');
-      });
+      copyText(code);
     }
 
     function logout() {
@@ -699,10 +715,10 @@
     // --- 全新优化的雷达扫描风果园地图绘制 ---
     function renderOrchardMap() {
       const dataCounts =[
-        { label: "健康果树", count: 300, color: "#10b981" },
-        { label: "黄龙病预警", count: 18, color: "#ef4444" },
-        { label: "溃疡病预警", count: 15, color: "#f59e0b" },
-        { label: "沙皮病预警", count: 12, color: "#8b5cf6" }
+        { label: "健康果树", count: 103, color: "#10b981" },
+        { label: "黄龙病预警", count: 2, color: "#ef4444" },
+        { label: "溃疡病预警", count: 0, color: "#f59e0b" },
+        { label: "沙皮病预警", count: 1, color: "#8b5cf6" }
       ];
 
       // 图例升级：加入辉光，颜色高亮
@@ -726,86 +742,85 @@
       seed = 987654321; 
 
       // --- 1. 使用 FBM 生成自然起伏的科技感背景 ---
-      // 2D Hash 函数
       function hash(x, y) {
         const dot = x * 12.9898 + y * 78.233;
         const sin = Math.sin(dot) * 43758.5453;
         return sin - Math.floor(sin);
       }
 
-      // Smoothstep 2D Value Noise
+      // Smootherstep (5阶) Value Noise，比 smoothstep(3阶) 在边界处更平滑
       function vnoise(x, y) {
         const i = Math.floor(x);
         const j = Math.floor(y);
-        const f_x = x - i;
-        const f_y = y - j;
-        
-        const u = f_x * f_x * (3.0 - 2.0 * f_x);
-        const v = f_y * f_y * (3.0 - 2.0 * f_y);
-
+        const fx = x - i;
+        const fy = y - j;
+        // 5阶 smootherstep：导数在 0/1 处均为 0，曲线更连续
+        const u = fx * fx * fx * (fx * (fx * 6.0 - 15.0) + 10.0);
+        const v = fy * fy * fy * (fy * (fy * 6.0 - 15.0) + 10.0);
         const n00 = hash(i, j);
         const n10 = hash(i + 1.0, j);
         const n01 = hash(i, j + 1.0);
         const n11 = hash(i + 1.0, j + 1.0);
-
-        const nx0 = n00 + u * (n10 - n00);
-        const nx1 = n01 + u * (n11 - n01);
-
-        return nx0 + v * (nx1 - nx0);
+        return n00 + u * (n10 - n00) + v * ((n01 + u * (n11 - n01)) - (n00 + u * (n10 - n00)));
       }
 
-      // FBM叠加，形成无规律自然地形
+      // FBM 6层八倍频，高频细节更丰富
       function fbm(x, y) {
-        let val = 0.0;
-        let amp = 0.5;
-        let freq = 1.0;
-        let maxVal = 0.0;
-        for (let i = 0; i < 4; i++) {
+        let val = 0.0, amp = 0.5, freq = 1.0, maxVal = 0.0;
+        for (let i = 0; i < 6; i++) {
           val += amp * vnoise(x * freq, y * freq);
           maxVal += amp;
           freq *= 2.0;
           amp *= 0.5;
         }
-        return val / maxVal; // 归一化到 0.0 ~ 1.0
+        return val / maxVal;
       }
 
-      // 替换生硬的地形配色，改为适应背景色的深层暗科技色系
+      // 色阶定义（同原配色）
       const topoColors = [
-        [15, 23, 42],   // 最底层水系/凹陷区
-        [18, 28, 50],[21, 34, 57],
-        [24, 40, 62],[28, 48, 65],[32, 56, 65],
-        [36, 64, 62]    // 偏青色的最高处
+        [15, 23, 42],
+        [18, 28, 50], [21, 34, 57],
+        [24, 40, 62], [28, 48, 65], [32, 56, 65],
+        [36, 64, 62]
       ];
-      const levels = topoColors.length;
+      const numColors = topoColors.length;
 
-      // 使用3x3的方块渲染既有像素网格的美感，又极大提高了加载速度
-      const blockSize = 3; 
-      const cols = Math.ceil(W / blockSize);
-      const rows = Math.ceil(H / blockSize);
-      const scale = 0.015; // 控制起伏密集度
+      // 逐像素写入 ImageData，消除方块感，实现真正的像素级平滑
+      const imgData = ctx.createImageData(W, H);
+      const pxData = imgData.data;
+      const scale = 0.012;
 
-      for (let y = 0; y < rows; y++) {
-        for (let x = 0; x < cols; x++) {
-          const val = fbm(x * blockSize * scale, y * blockSize * scale);
-          
-          let levelIdx = Math.floor(val * levels);
-          if (levelIdx >= levels) levelIdx = levels - 1;
-          if (levelIdx < 0) levelIdx = 0;
+      for (let py = 0; py < H; py++) {
+        for (let px = 0; px < W; px++) {
+          const val = fbm(px * scale, py * scale);
 
-          let[r, g, b] = topoColors[levelIdx];
-          
-          // 给等高线边缘加上微光特效
-          const isEdge = (val * levels) % 1 < 0.15;
-          if (isEdge) {
-            r = Math.min(255, r + 15);
-            g = Math.min(255, g + 25);
-            b = Math.min(255, b + 35);
-          }
+          // 在相邻色阶之间做线性插值，消除硬跳变
+          const pos = val * (numColors - 1);
+          const lo = Math.min(Math.floor(pos), numColors - 2);
+          const hi = lo + 1;
+          const t = pos - lo;
+          const c0 = topoColors[lo];
+          const c1 = topoColors[hi];
+          let r = c0[0] + (c1[0] - c0[0]) * t;
+          let g = c0[1] + (c1[1] - c0[1]) * t;
+          let b = c0[2] + (c1[2] - c0[2]) * t;
 
-          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-          ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+          // 等高线软辉光：距整数色阶边界越近越亮（无硬截断）
+          const frac = pos % 1.0;
+          const edgeDist = Math.abs(frac - 0.5); // 0.5 = 远离边界, 0 = 恰在边界
+          const glow = Math.max(0.0, (0.2 - edgeDist) / 0.2); // 0~1 软渐变
+          r = Math.min(255, r + glow * 18);
+          g = Math.min(255, g + glow * 28);
+          b = Math.min(255, b + glow * 42);
+
+          const off = (py * W + px) * 4;
+          pxData[off]     = r;
+          pxData[off + 1] = g;
+          pxData[off + 2] = b;
+          pxData[off + 3] = 255;
         }
       }
+      ctx.putImageData(imgData, 0, 0);
 
       // --- 2. 绘制网格线与雷达探测角 ---
       ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
@@ -840,9 +855,14 @@
         for (let i = 0; i < category.count; i++) {
           let x, y;
           if (cIdx === 0) {
-            // 健康树全局离散
-            x = seededRandom() * W;
-            y = seededRandom() * H;
+            // MC区块风格：21列×5行网格，格内随机抖动，模拟规律种植但不完全整齐的效果
+            const numCols = 21;
+            const cellW = W / numCols;   // ≈54.8px 每格宽
+            const cellH = H / 5;         // 64px 每格高
+            const col = i % numCols;
+            const row = Math.floor(i / numCols);
+            x = (col + 0.5) * cellW + (seededRandom() - 0.5) * cellW * 0.55;
+            y = (row + 0.5) * cellH + (seededRandom() - 0.5) * cellH * 0.55;
           } else {
             // 病害预警呈现聚集性爆发特征
             const targetCenters = centers.filter(c => c.type === cIdx);

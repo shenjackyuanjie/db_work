@@ -772,8 +772,7 @@
 
       try {
         const imageDataUrl = await fileToDataUrl(file);
-        // 模拟网络延迟和响应，请确保你的后端路由正确
-        const resp = await fetch("/api/citrus-disease", {
+        const resp = await fetch("/api/citrus-disease-v2", {
           method: "POST",
           credentials: "same-origin",
           headers: {

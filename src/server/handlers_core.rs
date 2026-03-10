@@ -225,9 +225,12 @@ pub async fn recognition_records_api_handler(
                 .into_iter()
                 .map(|record| {
                     let predicted_class = record.try_get::<String, _>("predicted_class").unwrap_or_default();
+                    let image_path = record
+                        .try_get::<Option<String>, _>("image_path")
+                        .unwrap_or(None);
                     serde_json::json!({
                         "id": record.try_get::<String, _>("id").unwrap_or_default(),
-                        "imagePath": record.try_get::<Option<String>, _>("image_path").unwrap_or(None).unwrap_or_default(),
+                        "imagePath": normalize_recognition_record_image_path(image_path.as_deref()).unwrap_or_default(),
                         "diseaseName": predicted_class,
                         "area": record.try_get::<Option<String>, _>("area").unwrap_or(None).unwrap_or_else(|| "未指定区域".to_string()),
                         "riskLevel": risk_from_disease_name(&record.try_get::<String, _>("predicted_class").unwrap_or_default()),
@@ -321,20 +324,21 @@ pub async fn get_tasks_api_handler(
             let list = rows
                 .into_iter()
                 .map(|x| {
-                    serde_json::json!({
-                        "id": x.try_get::<String, _>("id").unwrap_or_default(),
-                        "title": x.try_get::<String, _>("title").unwrap_or_default(),
-                        "description": x.try_get::<String, _>("description").unwrap_or_default(),
-                        "risk_level": x.try_get::<String, _>("risk_level").unwrap_or_default(),
-                        "task_type": x.try_get::<String, _>("task_type").unwrap_or_default(),
-                        "source": x.try_get::<String, _>("source").unwrap_or_default(),
-                        "is_completed": x.try_get::<bool, _>("is_completed").unwrap_or(false),
-                        "created_at": x.try_get::<i64, _>("created_at").unwrap_or(0),
-                        "completed_at": x.try_get::<Option<i64>, _>("completed_at").unwrap_or(None)
-                    })
+                    task_payload(
+                        &x.try_get::<String, _>("id").unwrap_or_default(),
+                        &x.try_get::<String, _>("title").unwrap_or_default(),
+                        &x.try_get::<String, _>("description").unwrap_or_default(),
+                        &x.try_get::<String, _>("risk_level").unwrap_or_default(),
+                        &x.try_get::<String, _>("task_type").unwrap_or_default(),
+                        &x.try_get::<String, _>("source").unwrap_or_default(),
+                        x.try_get::<bool, _>("is_completed").unwrap_or(false),
+                        x.try_get::<i64, _>("created_at").unwrap_or(0),
+                        x.try_get::<Option<i64>, _>("completed_at").unwrap_or(None),
+                    )
                 })
                 .collect::<Vec<_>>();
-
+            tracing::debug!("查询到 {} 的 {} 条任务记录", username, list.len());
+            tracing::debug!("任务列表: {:#?}", list);
             api_success(serde_json::Value::Array(list))
         }
         Err(e) => api_response(
@@ -414,17 +418,17 @@ pub async fn add_task_api_handler(
         StatusCode::OK,
         200,
         "Task created successfully",
-        serde_json::json!({
-            "id": task.id,
-            "title": task.title,
-            "description": task.description,
-            "risk_level": task.risk_level,
-            "task_type": task.task_type,
-            "source": task.source,
-            "is_completed": task.is_completed,
-            "created_at": task.created_at,
-            "completed_at": task.completed_at
-        }),
+        task_payload(
+            &task.id,
+            &task.title,
+            &task.description,
+            &task.risk_level,
+            &task.task_type,
+            &task.source,
+            task.is_completed,
+            task.created_at as i64,
+            task.completed_at.map(|x| x as i64),
+        ),
     )
 }
 
@@ -458,17 +462,17 @@ pub async fn complete_task_api_handler(
                     StatusCode::OK,
                     200,
                     "Task completed successfully",
-                    serde_json::json!({
-                        "id": task.try_get::<String, _>("id").unwrap_or_default(),
-                        "title": task.try_get::<String, _>("title").unwrap_or_default(),
-                        "description": task.try_get::<String, _>("description").unwrap_or_default(),
-                        "risk_level": task.try_get::<String, _>("risk_level").unwrap_or_default(),
-                        "task_type": task.try_get::<String, _>("task_type").unwrap_or_default(),
-                        "source": task.try_get::<String, _>("source").unwrap_or_default(),
-                        "is_completed": task.try_get::<bool, _>("is_completed").unwrap_or(true),
-                        "created_at": task.try_get::<i64, _>("created_at").unwrap_or(0),
-                        "completed_at": task.try_get::<Option<i64>, _>("completed_at").unwrap_or(None)
-                    }),
+                    task_payload(
+                        &task.try_get::<String, _>("id").unwrap_or_default(),
+                        &task.try_get::<String, _>("title").unwrap_or_default(),
+                        &task.try_get::<String, _>("description").unwrap_or_default(),
+                        &task.try_get::<String, _>("risk_level").unwrap_or_default(),
+                        &task.try_get::<String, _>("task_type").unwrap_or_default(),
+                        &task.try_get::<String, _>("source").unwrap_or_default(),
+                        task.try_get::<bool, _>("is_completed").unwrap_or(true),
+                        task.try_get::<i64, _>("created_at").unwrap_or(0),
+                        task.try_get::<Option<i64>, _>("completed_at").unwrap_or(None),
+                    ),
                 )
                 .into_response();
             }
@@ -577,17 +581,17 @@ pub async fn generate_task_from_disease_api_handler(
         StatusCode::OK,
         200,
         "Task created successfully",
-        serde_json::json!({
-            "id": task.id,
-            "title": task.title,
-            "description": task.description,
-            "risk_level": task.risk_level,
-            "task_type": task.task_type,
-            "source": task.source,
-            "is_completed": task.is_completed,
-            "created_at": task.created_at,
-            "completed_at": task.completed_at
-        }),
+        task_payload(
+            &task.id,
+            &task.title,
+            &task.description,
+            &task.risk_level,
+            &task.task_type,
+            &task.source,
+            task.is_completed,
+            task.created_at as i64,
+            task.completed_at.map(|x| x as i64),
+        ),
     )
 }
 
@@ -679,16 +683,16 @@ pub async fn generate_task_from_environment_api_handler(
         StatusCode::OK,
         200,
         "Task created successfully",
-        serde_json::json!({
-            "id": task.id,
-            "title": task.title,
-            "description": task.description,
-            "risk_level": task.risk_level,
-            "task_type": task.task_type,
-            "source": task.source,
-            "is_completed": task.is_completed,
-            "created_at": task.created_at,
-            "completed_at": task.completed_at
-        }),
+        task_payload(
+            &task.id,
+            &task.title,
+            &task.description,
+            &task.risk_level,
+            &task.task_type,
+            &task.source,
+            task.is_completed,
+            task.created_at as i64,
+            task.completed_at.map(|x| x as i64),
+        ),
     )
 }

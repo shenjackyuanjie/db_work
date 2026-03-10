@@ -1,11 +1,11 @@
 use crate::client::OpenRouterClient;
 
-use super::{onnx::OnnxInference, types::DiseasePrediction};
+use super::{onnx::OnnxInference, types::{DiseasePrediction, FruitTreeGatePrediction}};
 
 #[derive(Clone)]
 pub struct RemoteInference {
     client: OpenRouterClient,
-    fruit_tree_gate: OnnxInference,
+    pub fruit_tree_gate: OnnxInference,
 }
 
 impl RemoteInference {
@@ -14,6 +14,13 @@ impl RemoteInference {
             client,
             fruit_tree_gate: OnnxInference::new(model_1_path, model_2_path),
         }
+    }
+
+    pub async fn predict_fruit_tree(
+        &self,
+        image_data: Option<String>,
+    ) -> anyhow::Result<FruitTreeGatePrediction> {
+        self.fruit_tree_gate.predict_fruit_tree(image_data).await
     }
 
     pub async fn predict_citrus_disease(

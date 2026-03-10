@@ -7,6 +7,7 @@ use axum::{
     routing::{get, post},
 };
 
+use chrono::{SecondsFormat, TimeZone, Utc};
 use serde::Deserialize;
 use serde_json::json;
 use sqlx::{PgPool, Row, postgres::PgPoolOptions};
@@ -91,6 +92,93 @@ fn now_millis() -> u64 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0)
+}
+
+fn format_drf_datetime(timestamp_millis: i64) -> String {
+    Utc.timestamp_millis_opt(timestamp_millis)
+        .single()
+        .map(|dt| dt.to_rfc3339_opts(SecondsFormat::Millis, true))
+        .unwrap_or_default()
+}
+
+const RECOGNITION_RECORDS_MEDIA_PREFIX: &str = "/media/recognition_records";
+const RECOGNITION_RECORDS_UPLOAD_DIR: &str = "static/uploads";
+
+fn recognition_record_public_path(file_name: &str) -> String {
+    format!(
+        "{}/{}",
+        RECOGNITION_RECORDS_MEDIA_PREFIX,
+        file_name.trim_start_matches('/')
+    )
+}
+
+fn normalize_recognition_record_image_path(path: Option<&str>) -> Option<String> {
+    let trimmed = path?.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        return Some(trimmed.to_string());
+    }
+
+    if trimmed.starts_with("/uploads/")
+        || trimmed.starts_with("uploads/")
+        || trimmed.starts_with("/media/recognition_records/")
+        || trimmed.starts_with("media/recognition_records/")
+    {
+        return trimmed
+            .rsplit('/')
+            .next()
+            .filter(|file_name| !file_name.is_empty())
+            .map(recognition_record_public_path);
+    }
+
+    Some(trimmed.to_string())
+}
+
+fn save_recognition_record_image(record_id: &str, data_url: &str) -> anyhow::Result<String> {
+    let b64 = if let Some(pos) = data_url.find(',') {
+        &data_url[pos + 1..]
+    } else {
+        data_url
+    };
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(b64.trim())
+        .map_err(|e| anyhow::anyhow!("base64解码失败: {}", e))?;
+    let file_name = format!("{}.jpg", record_id);
+    let full_path = format!("{}/{}", RECOGNITION_RECORDS_UPLOAD_DIR, file_name);
+
+    std::fs::create_dir_all(RECOGNITION_RECORDS_UPLOAD_DIR)
+        .map_err(|e| anyhow::anyhow!("创建目录失败: {}", e))?;
+    std::fs::write(&full_path, &bytes).map_err(|e| anyhow::anyhow!("写入图片失败: {}", e))?;
+
+    Ok(recognition_record_public_path(&file_name))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn task_payload(
+    id: &str,
+    title: &str,
+    description: &str,
+    risk_level: &str,
+    task_type: &str,
+    source: &str,
+    is_completed: bool,
+    created_at: i64,
+    completed_at: Option<i64>,
+) -> serde_json::Value {
+    serde_json::json!({
+        "id": id,
+        "title": title,
+        "description": description,
+        "risk_level": risk_level,
+        "task_type": task_type,
+        "source": source,
+        "is_completed": is_completed,
+        "created_at": format_drf_datetime(created_at),
+        "completed_at": completed_at.map(format_drf_datetime)
+    })
 }
 
 fn api_response(
@@ -215,15 +303,15 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
     .execute(pool)
     .await;
 
-    sqlx::query(
-        "INSERT INTO app_invitations (code, used, expires_at) VALUES ($1, $2, $3) ON CONFLICT (code) DO NOTHING",
-    )
-    .bind("1111")
-    .bind(false)
-    .bind(i64::MAX)
-    .execute(pool)
-    .await
-    .map_err(|e| anyhow::anyhow!("写入默认邀请码失败: {}", e))?;
+    // sqlx::query(
+    //     "INSERT INTO app_invitations (code, used, expires_at) VALUES ($1, $2, $3) ON CONFLICT (code) DO NOTHING",
+    // )
+    // .bind("1111")
+    // .bind(false)
+    // .bind(i64::MAX)
+    // .execute(pool)
+    // .await
+    // .map_err(|e| anyhow::anyhow!("写入默认邀请码失败: {}", e))?;
 
     Ok(())
 }
@@ -379,6 +467,7 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         .route("/analyze.html", get(analyze_page_handler))
         .route("/citrus/analyze", post(citrus_analyze_handler))
         .route("/api/citrus-disease", post(citrus_disease_handler))
+        .route("/api/citrus-disease-v2", post(citrus_disease_advanced_handler))
         .route(
             "/api/recognition-records",
             get(recognition_records_api_handler),
@@ -401,6 +490,10 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             post(generate_fertilization_plan_handler),
         )
         .nest("/user", crate::user_routes::router(state.clone()))
+        .nest_service(
+            "/media/recognition_records",
+            ServeDir::new(RECOGNITION_RECORDS_UPLOAD_DIR),
+        )
         .fallback_service(ServeDir::new("static"))
         .with_state(state)
         .layer(
