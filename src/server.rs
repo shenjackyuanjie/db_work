@@ -1,15 +1,15 @@
-use crate::models::{DiagnosisRecord, FertilizationPlanRequest};
 use axum::{
     Json, Router,
-    extract::{Query, State},
-    http::{HeaderMap, StatusCode},
-    response::{Html, IntoResponse, Redirect, Response},
+    http::{Request, StatusCode, Method, Uri, HeaderMap},
+    response::{IntoResponse, Response},
     routing::{get, post},
+    middleware::Next,
+    body::Body,
+    extract::State,
 };
 
 use chrono::{SecondsFormat, TimeZone, Utc};
 use serde::Deserialize;
-use serde_json::json;
 use sqlx::{PgPool, Row, postgres::PgPoolOptions};
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
@@ -17,14 +17,18 @@ use tower_http::services::ServeDir;
 use tracing_subscriber::EnvFilter;
 
 use crate::client::OpenRouterClient;
-use crate::models::ChatApiRequest;
 use base64::Engine;
+
+mod handlers_ai;
+mod handlers_core;
 
 #[derive(Clone)]
 pub struct AppState {
     pub client: OpenRouterClient,
     pub inference: crate::inference::InferenceRuntime,
     pub db: PgPool,
+    pub proxy_enabled: bool,
+    pub proxy_target_url: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -428,8 +432,91 @@ fn classify_environment_risk(temperature: f64, humidity: f64) -> (&'static str, 
     }
 }
 
-include!("server/handlers_core.rs");
-include!("server/handlers_ai.rs");
+async fn log_request_path(
+    req: Request<Body>,
+    next: Next,
+) -> Response {
+    let method = req.method().clone();
+    let uri = req.uri().clone();
+    
+    println!("[REQUEST] {} {}", method, uri);
+    
+    next.run(req).await
+}
+
+async fn proxy_middleware(
+    State(state): State<AppState>,
+    req: Request<Body>,
+    next: Next,
+) -> Response {
+    if state.proxy_enabled {
+        if let Some(target_url) = &state.proxy_target_url {
+            let method = req.method().clone();
+            let uri = req.uri().clone();
+            let headers = req.headers().clone();
+            
+            match forward_request(method, uri, &headers, target_url).await {
+                Ok(response) => {
+                    return response;
+                }
+                Err(e) => {
+                    eprintln!("[PROXY ERROR] Failed to forward request: {}", e);
+                }
+            }
+        }
+    }
+    
+    next.run(req).await
+}
+
+async fn forward_request(
+    method: Method,
+    uri: Uri,
+    headers: &HeaderMap,
+    target_url: &str,
+) -> anyhow::Result<Response> {
+    let client = reqwest::Client::new();
+    let path_and_query = uri.path_and_query()
+        .map(|pq| pq.as_str())
+        .unwrap_or("/");
+    
+    let full_url = format!("{}{}", target_url.trim_end_matches('/'), path_and_query);
+    
+    println!("[PROXY] Forwarding {} to {}", method, full_url);
+    
+    let mut request_builder = match method {
+        Method::GET => client.get(&full_url),
+        Method::POST => client.post(&full_url),
+        Method::PUT => client.put(&full_url),
+        Method::DELETE => client.delete(&full_url),
+        Method::PATCH => client.patch(&full_url),
+        _ => {
+            return Err(anyhow::anyhow!("Unsupported method: {}", method));
+        }
+    };
+    
+    for (name, value) in headers {
+        if let Ok(value_str) = value.to_str() {
+            request_builder = request_builder.header(name.as_str(), value_str);
+        }
+    }
+    
+    let response = request_builder.send().await?;
+    let status = response.status();
+    let headers_map = response.headers().clone();
+    let body_bytes = response.bytes().await?;
+    
+    let mut response_builder = Response::builder().status(status.as_u16());
+    
+    for (name, value) in headers_map {
+        if let Some(name) = name {
+            response_builder = response_builder.header(name, value);
+        }
+    }
+    
+    let response = response_builder.body(Body::from(body_bytes))?;
+    Ok(response)
+}
 
 pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
     let api_key = config.ai.openrouter_api_key.clone();
@@ -440,10 +527,12 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         client,
         inference,
         db,
+        proxy_enabled: config.server.proxy.enabled,
+        proxy_target_url: config.server.proxy.target_url.clone(),
     };
 
     Router::new()
-        .route("/health", get(health_handler))
+        .route("/health", get(handlers_core::health_handler))
         .route(
             "/",
             get(|| async { axum::response::Redirect::temporary("/index.html") }),
@@ -455,39 +544,54 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             "/api/validate",
             post(crate::user_routes::validate_token_handler),
         )
-        .route("/api/user", get(api_user_handler))
-        .route("/api/home", get(home_api_handler))
-        .route("/api/growth-tracking", get(growth_tracking_api_handler))
-        .route("/api/diagnose", get(diagnose_api_handler))
+        .route("/api/user", get(handlers_core::api_user_handler))
+        .route("/api/home", get(handlers_core::home_api_handler))
+        .route(
+            "/api/growth-tracking",
+            get(handlers_core::growth_tracking_api_handler),
+        )
+        .route("/api/diagnose", get(handlers_core::diagnose_api_handler))
         .route(
             "/api/temperature-humidity",
-            get(temperature_humidity_api_handler),
+            get(handlers_core::temperature_humidity_api_handler),
         )
-        .route("/admin.html", get(admin_page_handler))
-        .route("/analyze.html", get(analyze_page_handler))
-        .route("/citrus/analyze", post(citrus_analyze_handler))
-        .route("/api/citrus-disease", post(citrus_disease_handler))
-        .route("/api/citrus-disease-v2", post(citrus_disease_advanced_handler))
+        .route("/admin.html", get(handlers_core::admin_page_handler))
+        .route("/analyze.html", get(handlers_core::analyze_page_handler))
+        .route("/citrus/analyze", post(handlers_ai::citrus_analyze_handler))
+        .route(
+            "/api/citrus-disease",
+            post(handlers_ai::citrus_disease_handler),
+        )
+        .route(
+            "/api/citrus-disease-v2",
+            post(handlers_ai::citrus_disease_advanced_handler),
+        )
         .route(
             "/api/recognition-records",
-            get(recognition_records_api_handler),
+            get(handlers_core::recognition_records_api_handler),
         )
-        .route("/api/disease-treatment", get(disease_treatment_api_handler))
-        .route("/api/tasks", get(get_tasks_api_handler))
-        .route("/api/tasks/add", post(add_task_api_handler))
-        .route("/api/tasks/complete", post(complete_task_api_handler))
+        .route(
+            "/api/disease-treatment",
+            get(handlers_core::disease_treatment_api_handler),
+        )
+        .route("/api/tasks", get(handlers_core::get_tasks_api_handler))
+        .route("/api/tasks/add", post(handlers_core::add_task_api_handler))
+        .route(
+            "/api/tasks/complete",
+            post(handlers_core::complete_task_api_handler),
+        )
         .route(
             "/api/tasks/generate/disease",
-            post(generate_task_from_disease_api_handler),
+            post(handlers_core::generate_task_from_disease_api_handler),
         )
         .route(
             "/api/tasks/generate/environment",
-            post(generate_task_from_environment_api_handler),
+            post(handlers_core::generate_task_from_environment_api_handler),
         )
-        .route("/api/generate", get(generate_handler))
+        .route("/api/generate", get(handlers_ai::generate_handler))
         .route(
             "/api/generate/fertilization-plan",
-            post(generate_fertilization_plan_handler),
+            post(handlers_ai::generate_fertilization_plan_handler),
         )
         .nest("/user", crate::user_routes::router(state.clone()))
         .nest_service(
@@ -495,13 +599,15 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             ServeDir::new(RECOGNITION_RECORDS_UPLOAD_DIR),
         )
         .fallback_service(ServeDir::new("static"))
-        .with_state(state)
+        .layer(axum::middleware::from_fn(log_request_path))
         .layer(
             CorsLayer::new()
                 .allow_origin(Any)
                 .allow_methods(Any)
                 .allow_headers(Any),
         )
+        .with_state(state.clone())
+        .layer(axum::middleware::from_fn_with_state(state, proxy_middleware))
 }
 
 pub fn init_tracing(log_level: &str) {

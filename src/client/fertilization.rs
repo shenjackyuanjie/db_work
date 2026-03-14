@@ -1,3 +1,9 @@
+use super::{ChatOptions, OpenRouterClient, SimpleChatRequest};
+use crate::models::{
+    DiagnosisRecord, FertilizationPlanLlmOutput, FertilizationPlanRequest,
+    FertilizationPlanResponse,
+};
+
 impl OpenRouterClient {
     /// 根据最近识别记录生成施肥方案摘要文本（用于 GET /api/generate）
     pub async fn generate_fertilization_text(

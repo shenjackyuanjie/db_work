@@ -1,3 +1,21 @@
+use axum::{
+    Json,
+    extract::{Query, State},
+    http::{HeaderMap, StatusCode},
+    response::{Html, IntoResponse, Redirect, Response},
+};
+use serde_json::json;
+use sqlx::Row;
+
+use super::{
+    AddTaskRequest, AppState, CompleteTaskRequest, DiseaseTreatmentQuery,
+    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, TaskRecord,
+    TemperatureHumiditySample, UsernameQuery, api_response, api_success,
+    build_temp_humidity_payload, default_temperature_samples,
+    classify_environment_risk, disease_treatment_text, normalize_recognition_record_image_path,
+    now_millis, risk_from_disease_name, task_payload, user_exists, username_by_token,
+};
+
 pub async fn health_handler() -> impl IntoResponse {
     (
         StatusCode::OK,

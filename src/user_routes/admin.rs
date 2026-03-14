@@ -1,7 +1,22 @@
+use axum::{
+    Json,
+    extract::{Json as AxumJson, State},
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+};
+use serde_json::json;
+use sqlx::Row;
+use tracing::info;
+use uuid::Uuid;
+
+use crate::server::AppState;
+
+use super::*;
+
 pub async fn set_admin_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(payload): Json<SetAdminRequest>,
+    AxumJson(payload): AxumJson<super::SetAdminRequest>,
 ) -> impl IntoResponse {
     let admin_username = match ensure_admin(&state, &headers).await {
         Ok(name) => name,
@@ -38,7 +53,7 @@ pub async fn set_admin_handler(
 pub async fn create_invitation_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(payload): Json<CreateInvitationRequest>,
+    AxumJson(payload): AxumJson<super::CreateInvitationRequest>,
 ) -> impl IntoResponse {
     let admin_username = match ensure_admin(&state, &headers).await {
         Ok(name) => name,
@@ -181,7 +196,7 @@ pub async fn list_pending_users_handler(
 pub async fn approve_pending_user_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(payload): Json<ApprovePendingUserRequest>,
+    AxumJson(payload): AxumJson<super::ApprovePendingUserRequest>,
 ) -> impl IntoResponse {
     let admin_username = match ensure_admin(&state, &headers).await {
         Ok(name) => name,
@@ -267,7 +282,7 @@ pub async fn approve_pending_user_handler(
 pub async fn reject_pending_user_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(payload): Json<RejectPendingUserRequest>,
+    AxumJson(payload): AxumJson<super::RejectPendingUserRequest>,
 ) -> impl IntoResponse {
     let admin_username = match ensure_admin(&state, &headers).await {
         Ok(name) => name,

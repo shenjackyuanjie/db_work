@@ -15,6 +15,8 @@ use uuid::Uuid;
 use crate::models::RequestedRole;
 use crate::server::AppState;
 
+mod admin;
+
 const SESSION_COOKIE_NAME: &str = "session_token";
 const SESSION_HEADER_NAME: &str = "x-session-token";
 const SESSION_MAX_AGE_SECONDS: u64 = 30 * 24 * 60 * 60;
@@ -676,8 +678,6 @@ pub async fn me_handler(State(state): State<AppState>, headers: HeaderMap) -> im
     }
 }
 
-include!("./admin.rs");
-
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/login", post(login_handler))
@@ -685,12 +685,24 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route("/logout", post(logout_handler))
         .route("/validate", post(validate_token_handler))
         .route("/me", post(me_handler))
-        .route("/admin/set_admin", post(set_admin_handler))
-        .route("/admin/invitations/create", post(create_invitation_handler))
-        .route("/admin/invitations/list", post(list_invitations_handler))
-        .route("/admin/users/list", post(list_users_handler))
-        .route("/admin/pending/list", post(list_pending_users_handler))
-        .route("/admin/pending/approve", post(approve_pending_user_handler))
-        .route("/admin/pending/reject", post(reject_pending_user_handler))
+        .route("/admin/set_admin", post(admin::set_admin_handler))
+        .route(
+            "/admin/invitations/create",
+            post(admin::create_invitation_handler),
+        )
+        .route(
+            "/admin/invitations/list",
+            post(admin::list_invitations_handler),
+        )
+        .route("/admin/users/list", post(admin::list_users_handler))
+        .route("/admin/pending/list", post(admin::list_pending_users_handler))
+        .route(
+            "/admin/pending/approve",
+            post(admin::approve_pending_user_handler),
+        )
+        .route(
+            "/admin/pending/reject",
+            post(admin::reject_pending_user_handler),
+        )
         .with_state(state)
 }

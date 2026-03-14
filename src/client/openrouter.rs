@@ -1,10 +1,8 @@
 use crate::models::{
-    ChatMessage, ChatRequest, ChatResponse, CitrusAnalysisResponse, DiagnosisRecord,
-    FertilizationPlanLlmOutput, FertilizationPlanRequest, FertilizationPlanResponse,
-    ResponseFormat,
+    ChatMessage, ChatRequest, ChatResponse, CitrusAnalysisResponse, ResponseFormat,
 };
 use reqwest::header::{AUTHORIZATION, CONTENT_TYPE, HeaderMap, HeaderName};
-use serde_json::{Value, json};
+use serde_json::Value;
 use std::str::FromStr;
 use std::time::Instant;
 
@@ -48,11 +46,6 @@ impl ChatOptions {
         self
     }
 
-    pub fn with_system_message(self, _message: &str) -> Self {
-        // 标记需要 system message，实际内容在调用时处理
-        self
-    }
-
     /// 启用流式传输
     pub fn stream(mut self, enabled: bool) -> Self {
         self.stream = Some(enabled);
@@ -62,18 +55,6 @@ impl ChatOptions {
     /// 设置供应商偏好
     pub fn with_provider(mut self, provider: crate::models::ProviderPreferences) -> Self {
         self.provider = Some(provider);
-        self
-    }
-
-    /// 设置请求转换
-    pub fn with_transforms(mut self, transforms: Vec<String>) -> Self {
-        self.transforms = Some(transforms);
-        self
-    }
-
-    /// 使用 middle-out 转换（用于截断长对话）
-    pub fn middle_out_transform(mut self) -> Self {
-        self.transforms = Some(vec!["middle-out".to_string()]);
         self
     }
 }
@@ -115,6 +96,7 @@ impl SimpleChatRequest {
 
 /// 聊天响应结果（简化版）
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct SimpleChatResponse {
     pub id: String,
     pub model: String,
@@ -145,24 +127,6 @@ impl OpenRouterClient {
             timeout_secs: 60,
             default_provider: None,
         }
-    }
-
-    /// 设置默认模型
-    pub fn with_model(mut self, model: impl Into<String>) -> Self {
-        self.model = model.into();
-        self
-    }
-
-    /// 设置请求超时时间
-    pub fn with_timeout(mut self, secs: u64) -> Self {
-        self.timeout_secs = secs;
-        self
-    }
-
-    /// 设置默认供应商偏好
-    pub fn with_default_provider(mut self, provider: crate::models::ProviderPreferences) -> Self {
-        self.default_provider = Some(provider);
-        self
     }
 
     /// 构建请求头
@@ -303,23 +267,8 @@ impl OpenRouterClient {
         })
     }
 
-    /// 将 SimpleChatResponse 转为统一的 JSON（供 server/cli 复用）
-    fn simple_chat_response_to_json(resp: &SimpleChatResponse) -> Value {
-        let mut obj = json!({
-            "id": resp.id,
-            "model": resp.model,
-            "message": resp.content,
-            "usage": resp.usage,
-        });
-
-        if let (Some(provider), Some(map)) = (&resp.provider, obj.as_object_mut()) {
-            map.insert("provider".to_string(), json!(provider));
-        }
-
-        obj
-    }
-
     /// 从 HTTP API 风格的 ChatApiRequest 统一执行聊天并返回 SimpleChatResponse
+    #[allow(dead_code)]
     pub async fn exec_chat_from_api(
         &self,
         api_req: crate::models::ChatApiRequest,
@@ -358,57 +307,27 @@ impl OpenRouterClient {
         Ok(resp)
     }
 
-    /// 供 server 使用的包装方法：接受 ChatApiRequest，返回 serde_json::Value
-    pub async fn exec_chat_api(
-        &self,
-        api_req: crate::models::ChatApiRequest,
-    ) -> anyhow::Result<Value> {
-        let start_time = Instant::now();
-        let resp = self.exec_chat_from_api(api_req).await?;
-        let duration = start_time.elapsed();
-
-        let total_tokens = resp.usage.total_tokens as f64;
-        let tps = if duration.as_secs_f64() > 0.0 {
-            total_tokens / duration.as_secs_f64()
-        } else {
-            0.0
-        };
-
-        let mut json_val = Self::simple_chat_response_to_json(&resp);
-        if let Some(obj) = json_val.as_object_mut() {
-            obj.insert(
-                "metrics".to_string(),
-                json!({
-                    "duration_secs": duration.as_secs_f64(),
-                    "tokens_per_sec": tps
-                }),
-            );
-        }
-
-        Ok(json_val)
-    }
-
     /// 构建柑橘分析用的请求（供 analyze_citrus 使用）
     fn build_citrus_request(&self, image: Option<impl Into<String>>) -> SimpleChatRequest {
         const CITRUS_SYSTEM_MESSAGE: &str = r#"你是柑橘方面专家。现在要诊断柑橘和它的相关病症
 请分析用户上传的图片，并严格按JSON格式返回以下结构，不要返回其他内容、不要使用Markdown代码块、不要添加额外字段：
 {
-  "is_citrus_leaf": true/false,                     // 是否为柑橘叶片
-  "citrus_type": "脐橙|砂糖橘|柚子|柠檬|其他|非柑橘",  // 非柑橘时必须为 "非柑橘"
-  "disease_analysis": {
-    "is_healthy": true/false,    // 健康则为 true
-    "disease_name": "string",    // 健康时填空字符串
-    "severity": "健康|轻度|中度|重度",    // 健康时必须为 "健康"
-    "confidence": 0~1,                 // 置信度，0 到 1 的小数
-    "treatment_suggestion": "string",  // 健康时给出日常养护建议
-    "preventive_measures": "string"    // 预防措施
+  \"is_citrus_leaf\": true/false,                     // 是否为柑橘叶片
+  \"citrus_type\": \"脐橙|砂糖橘|柚子|柠檬|其他|非柑橘\",  // 非柑橘时必须为 \"非柑橘\"
+  \"disease_analysis\": {
+    \"is_healthy\": true/false,    // 健康则为 true
+    \"disease_name\": \"string\",    // 健康时填空字符串
+    \"severity\": \"健康|轻度|中度|重度\",    // 健康时必须为 \"健康\"
+    \"confidence\": 0~1,                 // 置信度，0 到 1 的小数
+    \"treatment_suggestion\": \"string\",  // 健康时给出日常养护建议
+    \"preventive_measures\": \"string\"    // 预防措施
   },
-  "image_quality_warning": "string" // 图片质量告警；无则填空字符串
+  \"image_quality_warning\": \"string\" // 图片质量告警；无则填空字符串
 }
 辅助诊断要点：
 1. 柑橘叶片识别：柑橘叶片通常为卵形或椭圆形，叶片边缘有波浪状，叶片有光泽，叶脉明显
 2. 常见病害特征：
-   - 黄龙病：叶片黄化、斑驳、不对称，叶片变厚变脆；果实变小、畸形、着色不均（"红鼻果"或"青头果"），果皮变厚、汁少味酸
+   - 黄龙病：叶片黄化、斑驳、不对称，叶片变厚变脆；果实变小、畸形、着色不均（\"红鼻果\"或\"青头果\"），果皮变厚、汁少味酸
    - 溃疡病：叶片出现圆形黄色晕圈，中间有棕色或黑色凹陷斑点
    - 炭疽病：叶片出现圆形或椭圆形褐色斑点，边缘有黄色晕圈
    - 红蜘蛛危害：叶片出现白色或黄色斑点，叶片背面可见红色小点
@@ -476,5 +395,3 @@ impl OpenRouterClient {
         })
     }
 }
-
-include!("client/fertilization.rs");

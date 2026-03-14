@@ -1,8 +1,26 @@
+use axum::{
+    Json,
+    extract::{Json as AxumJson, State},
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+};
+use base64::Engine;
+use serde::Deserialize;
+use serde_json::json;
+use sqlx::Row;
+
+use crate::models::{ChatApiRequest, DiagnosisRecord, FertilizationPlanRequest};
+
+use super::{
+    AppState, disease_treatment_text, normalize_recognition_record_image_path, now_millis,
+    save_recognition_record_image, username_by_token,
+};
+
 // #[axum::debug_handler]
 pub async fn citrus_analyze_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(request): Json<ChatApiRequest>,
+    AxumJson(request): AxumJson<ChatApiRequest>,
 ) -> impl IntoResponse {
     let token = match crate::user_routes::extract_auth_token(&headers).or(request.token.clone()) {
         Some(t) => t,
