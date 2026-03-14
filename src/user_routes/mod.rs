@@ -676,7 +676,7 @@ pub async fn me_handler(State(state): State<AppState>, headers: HeaderMap) -> im
     }
 }
 
-include!("user_routes/admin.rs");
+include!("./admin.rs");
 
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
