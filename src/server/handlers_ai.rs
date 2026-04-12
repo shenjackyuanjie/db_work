@@ -10,11 +10,68 @@ use serde_json::json;
 use sqlx::Row;
 
 use crate::models::{ChatApiRequest, DiagnosisRecord, FertilizationPlanRequest};
+use crate::system_settings::load_system_settings;
 
 use super::{
     AppState, disease_treatment_text, normalize_recognition_record_image_path, now_millis,
     save_recognition_record_image, username_by_token,
 };
+
+async fn confidence_threshold_percent(state: &AppState) -> f64 {
+    load_system_settings(&state.db)
+        .await
+        .map(|settings| settings.confidence_threshold_percent())
+        .unwrap_or(75.0)
+}
+
+fn apply_review_threshold_to_prediction(
+    prediction: &mut crate::inference::types::DiseasePrediction,
+    threshold_percent: f64,
+) -> bool {
+    if prediction.predicted_class == "非果树" || prediction.confidence >= threshold_percent {
+        return false;
+    }
+
+    prediction.predicted_class = "待人工复核".to_string();
+    prediction.is_healthy = false;
+    prediction.disease_name = "待人工复核".to_string();
+    prediction.severity = "待复核".to_string();
+    prediction.treatment_suggestion = "当前识别结果低于管理员设定的置信度阈值，请重新拍摄或人工复核。".to_string();
+    prediction.preventive_measures = "建议保证叶片主体清晰、居中、无遮挡，并在自然光下重新采集图片。".to_string();
+    if prediction.image_quality_warning.is_empty() {
+        prediction.image_quality_warning = "识别置信度较低，建议复核".to_string();
+    }
+
+    true
+}
+
+fn apply_review_threshold_to_fields(
+    predicted_class: &mut String,
+    is_healthy: &mut bool,
+    disease_name: &mut String,
+    severity: &mut String,
+    treatment_suggestion: &mut String,
+    preventive_measures: &mut String,
+    image_quality_warning: &mut String,
+    confidence: f64,
+    threshold_percent: f64,
+) -> bool {
+    if predicted_class == "非果树" || confidence >= threshold_percent {
+        return false;
+    }
+
+    *predicted_class = "待人工复核".to_string();
+    *is_healthy = false;
+    *disease_name = "待人工复核".to_string();
+    *severity = "待复核".to_string();
+    *treatment_suggestion = "当前识别结果低于管理员设定的置信度阈值，请重新拍摄或人工复核。".to_string();
+    *preventive_measures = "建议保证叶片主体清晰、居中、无遮挡，并在自然光下重新采集图片。".to_string();
+    if image_quality_warning.is_empty() {
+        *image_quality_warning = "识别置信度较低，建议复核".to_string();
+    }
+
+    true
+}
 
 // #[axum::debug_handler]
 pub async fn citrus_analyze_handler(
@@ -329,6 +386,9 @@ pub async fn citrus_disease_handler(
 
     match state.inference.predict_citrus_disease(image_data.clone()).await {
         Ok(prediction) => {
+            let threshold_percent = confidence_threshold_percent(&state).await;
+            let mut prediction = prediction;
+            let review_required = apply_review_threshold_to_prediction(&mut prediction, threshold_percent);
             let predicted_class = prediction.predicted_class;
             let confidence = prediction.confidence;
             let timestamp = std::time::SystemTime::now()
@@ -372,55 +432,58 @@ pub async fn citrus_disease_handler(
                 image_path: saved_image_path,
             };
 
-            match sqlx::query(
-                "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
-            )
-            .bind(&record.id)
-            .bind(record.timestamp as i64)
-            .bind(&record.predicted_class)
-            .bind(record.confidence)
-            .bind(record.is_citrus_leaf)
-            .bind(&record.citrus_type)
-            .bind(record.is_healthy)
-            .bind(&record.disease_name)
-            .bind(&record.severity)
-            .bind(&record.treatment_suggestion)
-            .bind(&record.preventive_measures)
-            .bind(&record.image_quality_warning)
-            .bind(&record.username)
-            .bind(&record.area)
-            .bind(&record.image_path)
-            .execute(&state.db)
-            .await {
-                Ok(_) => tracing::info!("已记录识别结果: {} (置信度: {}%)", predicted_class, confidence),
-                Err(e) => tracing::error!("识别结果写入数据库失败: {}", e),
-            }
-
-            // 若检测到病害且有用户名，自动生成治理任务
-            if !record.is_healthy && record.predicted_class != "非果树"
-                && let Some(ref uname) = record.username {
-                    let task_title = format!("{}治理", record.disease_name);
-                    let task_description = disease_treatment_text(&record.disease_name).to_string();
-                    let task_id = uuid::Uuid::new_v4().to_string();
-                    match sqlx::query(
-                        "INSERT INTO app_tasks (id, username, title, description, risk_level, task_type, source, is_completed, created_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
-                    )
-                    .bind(&task_id)
-                    .bind(uname)
-                    .bind(&task_title)
-                    .bind(&task_description)
-                    .bind("高风险")
-                    .bind("疾病识别")
-                    .bind("自动生成")
-                    .bind(false)
-                    .bind(record.timestamp as i64)
-                    .bind(None::<i64>)
-                    .execute(&state.db)
-                    .await {
-                        Ok(_) => tracing::info!("已自动生成治理任务: {}", task_title),
-                        Err(e) => tracing::error!("自动生成任务失败: {}", e),
-                    }
+            // 只在是柑橘叶片时才插入数据库记录
+            if record.is_citrus_leaf {
+                match sqlx::query(
+                    "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
+                )
+                .bind(&record.id)
+                .bind(record.timestamp as i64)
+                .bind(&record.predicted_class)
+                .bind(record.confidence)
+                .bind(record.is_citrus_leaf)
+                .bind(&record.citrus_type)
+                .bind(record.is_healthy)
+                .bind(&record.disease_name)
+                .bind(&record.severity)
+                .bind(&record.treatment_suggestion)
+                .bind(&record.preventive_measures)
+                .bind(&record.image_quality_warning)
+                .bind(&record.username)
+                .bind(&record.area)
+                .bind(&record.image_path)
+                .execute(&state.db)
+                .await {
+                    Ok(_) => tracing::info!("已记录识别结果: {} (置信度: {}%)", predicted_class, confidence),
+                    Err(e) => tracing::error!("识别结果写入数据库失败: {}", e),
                 }
+
+                // 若检测到病害且有用户名，自动生成治理任务
+                if !record.is_healthy && record.predicted_class != "非果树" && record.predicted_class != "待人工复核"
+                    && let Some(ref uname) = record.username {
+                        let task_title = format!("{}治理", record.disease_name);
+                        let task_description = disease_treatment_text(&record.disease_name).to_string();
+                        let task_id = uuid::Uuid::new_v4().to_string();
+                        match sqlx::query(
+                            "INSERT INTO app_tasks (id, username, title, description, risk_level, task_type, source, is_completed, created_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+                        )
+                        .bind(&task_id)
+                        .bind(uname)
+                        .bind(&task_title)
+                        .bind(&task_description)
+                        .bind("高风险")
+                        .bind("疾病识别")
+                        .bind("自动生成")
+                        .bind(false)
+                        .bind(record.timestamp as i64)
+                        .bind(None::<i64>)
+                        .execute(&state.db)
+                        .await {
+                            Ok(_) => tracing::info!("已自动生成治理任务: {}", task_title),
+                            Err(e) => tracing::error!("自动生成任务失败: {}", e),
+                        }
+                    }
+            }
 
             (
                 StatusCode::OK,
@@ -438,7 +501,8 @@ pub async fn citrus_disease_handler(
                         "severity": prediction.severity,
                         "treatment_suggestion": prediction.treatment_suggestion,
                         "preventive_measures": prediction.preventive_measures,
-                        "image_quality_warning": prediction.image_quality_warning
+                        "image_quality_warning": prediction.image_quality_warning,
+                        "review_required": review_required
                     },
                     "timestamp": timestamp
                 })),
@@ -938,12 +1002,24 @@ pub async fn citrus_disease_advanced_handler(
     let confidence = analysis.disease_analysis.confidence * 100.0;
     let is_citrus_leaf = analysis.is_citrus_leaf;
     let citrus_type = format!("{:?}", analysis.citrus_type);
-    let is_healthy = analysis.disease_analysis.is_healthy;
-    let disease_name = analysis.disease_analysis.disease_name.clone();
-    let severity = format!("{:?}", analysis.disease_analysis.severity);
-    let treatment_suggestion = analysis.disease_analysis.treatment_suggestion.clone();
-    let preventive_measures = analysis.disease_analysis.preventive_measures.clone();
-    let image_quality_warning = analysis.image_quality_warning.clone();
+    let mut is_healthy = analysis.disease_analysis.is_healthy;
+    let mut disease_name = analysis.disease_analysis.disease_name.clone();
+    let mut severity = format!("{:?}", analysis.disease_analysis.severity);
+    let mut treatment_suggestion = analysis.disease_analysis.treatment_suggestion.clone();
+    let mut preventive_measures = analysis.disease_analysis.preventive_measures.clone();
+    let mut image_quality_warning = analysis.image_quality_warning.clone();
+    let mut predicted_class = predicted_class;
+    let review_required = apply_review_threshold_to_fields(
+        &mut predicted_class,
+        &mut is_healthy,
+        &mut disease_name,
+        &mut severity,
+        &mut treatment_suggestion,
+        &mut preventive_measures,
+        &mut image_quality_warning,
+        confidence,
+        confidence_threshold_percent(&state).await,
+    );
 
     let timestamp = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -1010,7 +1086,7 @@ pub async fn citrus_disease_advanced_handler(
     }
 
     // 若检测到病害且有用户名，自动生成治理任务
-    if !record.is_healthy && record.predicted_class != "非果树"
+    if !record.is_healthy && record.predicted_class != "非果树" && record.predicted_class != "待人工复核"
         && let Some(ref uname) = record.username {
             let task_title = format!("{}治理", record.disease_name);
             let task_description = disease_treatment_text(&record.disease_name).to_string();
@@ -1051,11 +1127,11 @@ pub async fn citrus_disease_advanced_handler(
                 "severity": severity,
                 "treatment_suggestion": treatment_suggestion,
                 "preventive_measures": preventive_measures,
-                "image_quality_warning": image_quality_warning
+                "image_quality_warning": image_quality_warning,
+                "review_required": review_required
             },
             "timestamp": timestamp
         })),
     )
         .into_response()
 }
-

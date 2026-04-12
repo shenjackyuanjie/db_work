@@ -115,7 +115,6 @@ fn recognition_record_public_path(file_name: &str) -> String {
         file_name.trim_start_matches('/')
     )
 }
-
 fn normalize_recognition_record_image_path(path: Option<&str>) -> Option<String> {
     let trimmed = path?.trim();
     if trimmed.is_empty() {
@@ -124,6 +123,11 @@ fn normalize_recognition_record_image_path(path: Option<&str>) -> Option<String>
 
     if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
         return Some(trimmed.to_string());
+    }
+
+    // 如果是形似 /xxxxxx 的路径（以斜杠开头但不是特定的前缀）
+    if trimmed.starts_with('/') {
+        return Some(format!("http://shenjack.top:11000{}", trimmed));
     }
 
     if trimmed.starts_with("/uploads/")
@@ -137,6 +141,7 @@ fn normalize_recognition_record_image_path(path: Option<&str>) -> Option<String>
             .filter(|file_name| !file_name.is_empty())
             .map(recognition_record_public_path);
     }
+
 
     Some(trimmed.to_string())
 }
@@ -291,6 +296,25 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             area TEXT NULL
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_app_diag_user_time ON app_diagnosis_records(username, timestamp DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS app_system_settings (
+            id SMALLINT PRIMARY KEY,
+            open_registration BOOLEAN NOT NULL DEFAULT TRUE,
+            invite_bypass_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+            maintenance_mode BOOLEAN NOT NULL DEFAULT FALSE,
+            default_invite_ttl_seconds BIGINT NOT NULL DEFAULT 86400,
+            confidence_threshold DOUBLE PRECISION NOT NULL DEFAULT 0.75,
+            log_retention_days INTEGER NOT NULL DEFAULT 30,
+            updated_at BIGINT NOT NULL,
+            updated_by TEXT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS app_admin_audit_logs (
+            id TEXT PRIMARY KEY,
+            log_type TEXT NOT NULL,
+            actor_username TEXT NULL,
+            message TEXT NOT NULL,
+            created_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_app_admin_audit_logs_created ON app_admin_audit_logs(created_at DESC)"#,
     ];
 
     for stmt in ddl {
@@ -306,6 +330,8 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
     )
     .execute(pool)
     .await;
+
+    crate::system_settings::ensure_default_settings(pool).await?;
 
     // sqlx::query(
     //     "INSERT INTO app_invitations (code, used, expires_at) VALUES ($1, $2, $3) ON CONFLICT (code) DO NOTHING",
@@ -438,9 +464,12 @@ async fn log_request_path(
 ) -> Response {
     let method = req.method().clone();
     let uri = req.uri().clone();
-    
-    println!("[REQUEST] {} {}", method, uri);
-    
+
+    const DO_LOG: bool = false;
+    if DO_LOG {
+        println!("[REQUEST] {} {}", method, uri);
+    }
+
     next.run(req).await
 }
 
@@ -454,7 +483,7 @@ async fn proxy_middleware(
             let method = req.method().clone();
             let uri = req.uri().clone();
             let headers = req.headers().clone();
-            
+
             match forward_request(method, uri, &headers, target_url).await {
                 Ok(response) => {
                     return response;
@@ -465,7 +494,7 @@ async fn proxy_middleware(
             }
         }
     }
-    
+
     next.run(req).await
 }
 
@@ -479,11 +508,11 @@ async fn forward_request(
     let path_and_query = uri.path_and_query()
         .map(|pq| pq.as_str())
         .unwrap_or("/");
-    
+
     let full_url = format!("{}{}", target_url.trim_end_matches('/'), path_and_query);
-    
+
     println!("[PROXY] Forwarding {} to {}", method, full_url);
-    
+
     let mut request_builder = match method {
         Method::GET => client.get(&full_url),
         Method::POST => client.post(&full_url),
@@ -494,26 +523,26 @@ async fn forward_request(
             return Err(anyhow::anyhow!("Unsupported method: {}", method));
         }
     };
-    
+
     for (name, value) in headers {
         if let Ok(value_str) = value.to_str() {
             request_builder = request_builder.header(name.as_str(), value_str);
         }
     }
-    
+
     let response = request_builder.send().await?;
     let status = response.status();
     let headers_map = response.headers().clone();
     let body_bytes = response.bytes().await?;
-    
+
     let mut response_builder = Response::builder().status(status.as_u16());
-    
+
     for (name, value) in headers_map {
         if let Some(name) = name {
             response_builder = response_builder.header(name, value);
         }
     }
-    
+
     let response = response_builder.body(Body::from(body_bytes))?;
     Ok(response)
 }
@@ -545,6 +574,7 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             post(crate::user_routes::validate_token_handler),
         )
         .route("/api/user", get(handlers_core::api_user_handler))
+        .route("/api/system-status", get(handlers_core::system_status_api_handler))
         .route("/api/home", get(handlers_core::home_api_handler))
         .route(
             "/api/growth-tracking",
@@ -607,7 +637,7 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
                 .allow_headers(Any),
         )
         .with_state(state.clone())
-        .layer(axum::middleware::from_fn_with_state(state, proxy_middleware))
+        // .layer(axum::middleware::from_fn_with_state(state, proxy_middleware))
 }
 
 pub fn init_tracing(log_level: &str) {

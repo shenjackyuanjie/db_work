@@ -2,7 +2,7 @@ use axum::{
     Router,
     extract::{Json, State},
     http::{HeaderMap, HeaderValue, StatusCode, header},
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing::post,
 };
 use serde::{Deserialize, Serialize};
@@ -14,6 +14,7 @@ use uuid::Uuid;
 
 use crate::models::RequestedRole;
 use crate::server::AppState;
+use crate::system_settings::SystemSettings;
 
 mod admin;
 
@@ -56,6 +57,16 @@ pub struct ApprovePendingUserRequest {
 #[derive(Debug, Deserialize)]
 pub struct RejectPendingUserRequest {
     pub username: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateSystemSettingsRequest {
+    pub open_registration: bool,
+    pub invite_bypass_enabled: bool,
+    pub maintenance_mode: bool,
+    pub default_invite_ttl_seconds: i64,
+    pub confidence_threshold: f64,
+    pub log_retention_days: i32,
 }
 
 #[derive(Debug, Serialize)]
@@ -133,6 +144,34 @@ fn user_payload(username: &str, created_at: u64) -> serde_json::Value {
         "longitude": null,
         "created_at": created_at
     })
+}
+
+async fn current_system_settings(state: &AppState) -> SystemSettings {
+    match crate::system_settings::load_system_settings(&state.db).await {
+        Ok(settings) => settings,
+        Err(err) => {
+            tracing::error!("读取系统设置失败，回退默认值: {}", err);
+            SystemSettings::default()
+        }
+    }
+}
+
+fn pending_approval_response(
+    requested_role: &RequestedRole,
+    hint: Option<&str>,
+) -> Response {
+    (
+        StatusCode::ACCEPTED,
+        Json(app_response(
+            202,
+            "pending_approval",
+            json!({
+                "requested_role": requested_role,
+                "hint": hint
+            }),
+        )),
+    )
+        .into_response()
 }
 
 fn build_login_cookie(token: &str) -> Result<HeaderValue, (StatusCode, serde_json::Value)> {
@@ -314,6 +353,21 @@ pub async fn login_handler(
             .into_response();
     }
 
+    let settings = current_system_settings(&state).await;
+    if settings.maintenance_mode && !is_admin {
+        return (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(app_response(
+                503,
+                "系统维护中，仅管理员可登录",
+                json!({
+                    "maintenance_mode": true
+                }),
+            )),
+        )
+            .into_response();
+    }
+
     let token = generate_token();
     let now = now_secs() as i64;
 
@@ -378,6 +432,7 @@ pub async fn register_handler(
 ) -> impl IntoResponse {
     let username = payload.username.trim().to_string();
     let password = payload.password.trim().to_string();
+    let settings = current_system_settings(&state).await;
 
     if username.is_empty() || password.is_empty() {
         return (
@@ -386,6 +441,20 @@ pub async fn register_handler(
                 400,
                 "Username and password are required",
                 serde_json::Value::Null,
+            )),
+        )
+            .into_response();
+    }
+
+    if !settings.open_registration {
+        return (
+            StatusCode::FORBIDDEN,
+            Json(app_response(
+                403,
+                "当前已关闭注册",
+                json!({
+                    "open_registration": false
+                }),
             )),
         )
             .into_response();
@@ -434,7 +503,6 @@ pub async fn register_handler(
     let invitation_code = payload.invitation_code.trim();
 
     if invitation_code.is_empty() {
-        // 没有提供邀请码，一律进待审批队列
         let result = sqlx::query(
             "INSERT INTO app_pending_users (username, password_hash, created_at, requested_role) VALUES ($1, $2, $3, $4)",
         )
@@ -446,15 +514,31 @@ pub async fn register_handler(
         .await;
 
         return match result {
-            Ok(_) => (
-                StatusCode::ACCEPTED,
-                Json(app_response(
-                    202,
-                    "pending_approval",
-                    json!({ "requested_role": payload.requested_role }),
-                )),
+            Ok(_) => pending_approval_response(&payload.requested_role, None),
+            Err(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
             )
                 .into_response(),
+        };
+    }
+
+    if !settings.invite_bypass_enabled {
+        let result = sqlx::query(
+            "INSERT INTO app_pending_users (username, password_hash, created_at, requested_role) VALUES ($1, $2, $3, $4)",
+        )
+        .bind(&username)
+        .bind(&password_hash)
+        .bind(now as i64)
+        .bind(requested_role_label(&payload.requested_role))
+        .execute(&state.db)
+        .await;
+
+        return match result {
+            Ok(_) => pending_approval_response(
+                &payload.requested_role,
+                Some("邀请码免审核当前已关闭，已进入审批队列"),
+            ),
             Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
@@ -493,7 +577,6 @@ pub async fn register_handler(
     };
 
     if !invite_valid {
-        // 邀请码无效或已过期，加入待审批队列
         let result = sqlx::query(
             "INSERT INTO app_pending_users (username, password_hash, created_at, requested_role) VALUES ($1, $2, $3, $4)",
         )
@@ -505,15 +588,10 @@ pub async fn register_handler(
         .await;
 
         return match result {
-            Ok(_) => (
-                StatusCode::ACCEPTED,
-                Json(app_response(
-                    202,
-                    "pending_approval",
-                    json!({ "requested_role": payload.requested_role }),
-                )),
-            )
-                .into_response(),
+            Ok(_) => pending_approval_response(
+                &payload.requested_role,
+                Some("邀请码无效或已过期，已进入审批队列"),
+            ),
             Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
@@ -616,9 +694,21 @@ pub async fn validate_token_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> impl IntoResponse {
+    let settings = current_system_settings(&state).await;
+
     let token = match extract_auth_token(&headers) {
         Some(t) => t,
-        None => return (StatusCode::OK, Json(json!({"valid": false}))).into_response(),
+        None => {
+            return (
+                StatusCode::OK,
+                Json(json!({
+                    "valid": false,
+                    "maintenance_mode": settings.maintenance_mode,
+                    "open_registration": settings.open_registration
+                })),
+            )
+                .into_response();
+        }
     };
 
     let row = sqlx::query(
@@ -634,11 +724,21 @@ pub async fn validate_token_handler(
             Json(json!({
                 "valid": true,
                 "username": r.try_get::<String, _>("username").unwrap_or_default(),
-                "is_admin": r.try_get::<bool, _>("is_admin").unwrap_or(false)
+                "is_admin": r.try_get::<bool, _>("is_admin").unwrap_or(false),
+                "maintenance_mode": settings.maintenance_mode,
+                "open_registration": settings.open_registration
             })),
         )
             .into_response(),
-        _ => (StatusCode::OK, Json(json!({"valid": false}))).into_response(),
+        _ => (
+            StatusCode::OK,
+            Json(json!({
+                "valid": false,
+                "maintenance_mode": settings.maintenance_mode,
+                "open_registration": settings.open_registration
+            })),
+        )
+            .into_response(),
     }
 }
 
@@ -695,6 +795,13 @@ pub fn router(state: AppState) -> Router<AppState> {
             post(admin::list_invitations_handler),
         )
         .route("/admin/users/list", post(admin::list_users_handler))
+        .route("/admin/settings/get", post(admin::get_system_settings_handler))
+        .route(
+            "/admin/settings/update",
+            post(admin::update_system_settings_handler),
+        )
+        .route("/admin/dashboard/stats", post(admin::dashboard_stats_handler))
+        .route("/admin/dashboard/logs", post(admin::dashboard_logs_handler))
         .route("/admin/pending/list", post(admin::list_pending_users_handler))
         .route(
             "/admin/pending/approve",
