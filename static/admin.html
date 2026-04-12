@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>管理员控制台</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+
+<body>
+  <header>
+    <h1>管理控制台 (Admin)</h1>
+    <nav>
+      <a href="/index.html" id="nav-home">前台首页</a>
+      <a href="/analyze.html">识别页面</a>
+      <a class="logout-btn" onclick="logout()">退出登录</a>
+    </nav>
+  </header>
+
+  <main class="layout-grid" style="grid-template-columns: 350px 1fr;">
+    <!-- 顶部全宽卡片：果园总览热力图 -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>园区监测大屏 (环境热力雷达)</h2>
+        <div id="orchardLegend" style="display: flex; gap: 16px; font-size: 13px; color: var(--muted);"></div>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <canvas id="orchardMap" width="1150" height="320" style="width: 100%; height: 320px; background: #0f172a; display: block;"></canvas>
+      </div>
+    </div>
+
+    <!-- 左侧：操作区 -->
+    <div class="left-panel">
+      <div class="card">
+        <div class="card-header">
+          <h2>生成邀请码</h2>
+        </div>
+        <div class="card-body">
+          <label>设置有效期</label>
+          <select id="ttlSelect" style="margin-bottom: 16px;">
+            <option value="3600">1 小时</option>
+            <option value="86400" selected>1 天 (24小时)</option>
+            <option value="604800">7 天</option>
+            <option value="2592000">30 天</option>
+            <option value="0">永久有效</option>
+          </select>
+          <button class="primary" id="btnCreateInvite">立即生成</button>
+
+          <div class="result-box" id="inviteResult">
+            <div style="font-size: 12px; color: var(--muted);">邀请码生成成功：</div>
+            <div class="code-display" id="generatedCode"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+              <span style="font-size: 12px; color: var(--muted);" id="generatedExpire"></span>
+              <button class="ghost" onclick="copyInviteCode()">复制代码</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：数据展示与管理区 -->
+    <div class="right-panel grid">
+
+      <!-- 待审批列表 -->
+      <div class="card">
+        <div class="card-header">
+          <h2>待审批申请</h2>
+          <button class="ghost" id="btnListPending">刷新</button>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive" id="pendingWrap"></div>
+        </div>
+      </div>
+
+      <!-- 用户管理 -->
+      <div class="card">
+        <div class="card-header">
+          <h2>用户管理</h2>
+          <button class="ghost" id="btnListUsers">刷新</button>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive" id="usersWrap"></div>
+        </div>
+      </div>
+
+      <!-- 邀请码列表 -->
+      <div class="card">
+        <div class="card-header">
+          <h2>历史邀请码</h2>
+          <button class="ghost" id="btnListInvites">刷新</button>
+        </div>
+        <div class="card-body" style="padding: 0;">
+          <div class="table-responsive" id="invitesWrap"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ====== 数据统计面板 (全宽) ====== -->
+    <div class="section-title">数据总览</div>
+
+    <!-- 统计数字卡片 -->
+    <div class="card full-width-section">
+      <div class="card-header">
+        <h2>业务数据统计</h2>
+        <button class="ghost" id="btnRefreshStats">刷新</button>
+      </div>
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">🔬</div>
+          <div class="stat-value" id="statDetections">--</div>
+          <div class="stat-label">总检测次数</div>
+          <div class="stat-trend neutral" id="statDetectionsTrend">加载中...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">🌿</div>
+          <div class="stat-value" id="statHealthy">--</div>
+          <div class="stat-label">健康检出率</div>
+          <div class="stat-trend neutral" id="statHealthyTrend">加载中...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">⚠️</div>
+          <div class="stat-value" id="statDiseased">--</div>
+          <div class="stat-label">病害预警数</div>
+          <div class="stat-trend neutral" id="statDiseasedTrend">加载中...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">👥</div>
+          <div class="stat-value" id="statUsers">--</div>
+          <div class="stat-label">注册用户数</div>
+          <div class="stat-trend neutral" id="statUsersTrend">加载中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 近期检测趋势 + 环境数据 -->
+    <div class="card" style="grid-column: 1 / span 1;">
+      <div class="card-header">
+        <h2>近7日检测趋势</h2>
+      </div>
+      <div class="card-body">
+        <div class="mini-bar-chart" id="detectionChart" style="height: 120px;"></div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--muted);">
+          <span id="chartLabelStart">--</span>
+          <span id="chartLabelEnd">今天</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column: 2 / -1;">
+      <div class="card-header">
+        <h2>环境监测数据</h2>
+        <button class="ghost" id="btnRefreshEnv">刷新</button>
+      </div>
+      <div class="card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="envGauges">
+          <div class="env-gauge">
+            <div class="gauge-ring" style="background: rgba(59,130,246,0.15); color: #3b82f6;" id="envTempRing">--</div>
+            <div class="gauge-info">
+              <div class="gauge-label">当前温度</div>
+              <div class="gauge-value" id="envTemp">-- °C</div>
+            </div>
+          </div>
+          <div class="env-gauge">
+            <div class="gauge-ring" style="background: rgba(14,165,233,0.15); color: #0ea5e9;" id="envHumRing">--</div>
+            <div class="gauge-info">
+              <div class="gauge-label">当前湿度</div>
+              <div class="gauge-value" id="envHumidity">-- %</div>
+            </div>
+          </div>
+          <div class="env-gauge">
+            <div class="gauge-ring" style="background: rgba(16,185,129,0.15); color: #10b981;" id="envHealthRing">--</div>
+            <div class="gauge-info">
+              <div class="gauge-label">果树健康度</div>
+              <div class="gauge-value" id="envHealth">-- 分</div>
+            </div>
+          </div>
+          <div class="env-gauge">
+            <div class="gauge-ring" style="background: rgba(245,158,11,0.15); color: #f59e0b;" id="envAlertRing">⚡</div>
+            <div class="gauge-info">
+              <div class="gauge-label">活跃预警</div>
+              <div class="gauge-value" id="envAlerts">-- 条</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 审计日志 ====== -->
+    <div class="section-title">审计与日志</div>
+
+    <div class="card full-width-section">
+      <div class="card-header">
+        <h2>操作日志</h2>
+        <div style="display: flex; gap: 8px;">
+          <select id="logFilter" style="width: auto; padding: 5px 10px; font-size: 12px;">
+            <option value="all">全部类型</option>
+            <option value="detect">识别记录</option>
+            <option value="action">管理操作</option>
+            <option value="warning">预警事件</option>
+          </select>
+          <button class="ghost" id="btnRefreshLogs">刷新</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding: 0;">
+        <div class="log-list" id="logList">
+          <div class="empty-state">加载中...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== 系统设置 ====== -->
+    <div class="section-title">系统设置</div>
+
+    <div class="card" style="grid-column: 1 / span 1;">
+      <div class="card-header">
+        <h2>注册与访问控制</h2>
+      </div>
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-title">开放注册</div>
+            <div class="setting-desc">关闭后，新用户无法注册或提交申请</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="settingOpenReg" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-title">免审核注册 (邀请码)</div>
+            <div class="setting-desc">持有正确邀请码的用户免去管理员审核</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="settingInviteBypass" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-title">维护模式</div>
+            <div class="setting-desc">开启后普通用户无法登录，仅管理员可访问</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="settingMaintenance">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column: 2 / -1;">
+      <div class="card-header">
+        <h2>默认参数配置</h2>
+      </div>
+      <div class="settings-group">
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-title">默认邀请码有效期</div>
+            <div class="setting-desc">新创建邀请码的默认过期时长</div>
+          </div>
+          <select id="settingDefaultTTL" style="width: 160px;">
+            <option value="3600">1 小时</option>
+            <option value="86400" selected>1 天</option>
+            <option value="604800">7 天</option>
+            <option value="2592000">30 天</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-title">识别置信度阈值</div>
+            <div class="setting-desc">低于此值的识别结果将标记为"不确定"</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; min-width: 180px;">
+            <input type="range" id="settingThreshold" min="0.3" max="0.99" step="0.01" value="0.75"
+              style="width: 120px; padding: 0;">
+            <span id="settingThresholdVal" style="font-size: 14px; font-weight: 600; min-width: 40px; text-align: right;">75%</span>
+          </div>
+        </div>
+        <div class="setting-item">
+          <div class="setting-info">
+            <div class="setting-title">最大日志保留天数</div>
+            <div class="setting-desc">超过此天数的操作日志将被自动清理</div>
+          </div>
+          <select id="settingLogRetention" style="width: 160px;">
+            <option value="7">7 天</option>
+            <option value="30" selected>30 天</option>
+            <option value="90">90 天</option>
+            <option value="365">1 年</option>
+          </select>
+        </div>
+      </div>
+      <div style="padding: 0 20px 20px; text-align: right;">
+        <button class="primary" id="btnSaveSettings" style="width: auto; padding: 10px 28px;">保存设置</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const SESSION_COOKIE = "session_token";
+
+    function unwrapApiPayload(payload) {
+      if (payload && typeof payload === 'object' && 'data' in payload && payload.data != null) {
+        return payload.data;
+      }
+      return payload || {};
+    }
+
+    function readErrorMessage(payload, fallback) {
+      return payload?.error || payload?.message || unwrapApiPayload(payload)?.error || fallback;
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    // --- 核心工具函数 ---
+    function showToast(message, type = 'success') {
+      const container = $('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function copyText(text) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('邀请码已复制到剪贴板');
+        }).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) showToast('邀请码已复制到剪贴板');
+        else showToast('复制失败，请手动选择复制', 'error');
+      } catch {
+        showToast('复制失败，请手动选择复制', 'error');
+      }
+    }
+
+    function formatDate(unixSeconds) {
+      if (!unixSeconds || unixSeconds <= 0 || unixSeconds > 4102444800) return "永久有效";
+      const d = new Date(unixSeconds * 1000);
+      return isNaN(d.getTime()) ? "未知时间" : d.toLocaleString();
+    }
+
+    function copyInviteCode() {
+      const code = $('generatedCode').innerText;
+      if (!code) return;
+      copyText(code);
+    }
+
+    function logout() {
+      document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
+      setTimeout(() => location.reload(), 80);
+    }
+
+    // --- 网络请求逻辑 ---
+    function getCookie(name) {
+      const prefix = `${name}=`;
+      const part = document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(prefix));
+      if (!part) return "";
+      return decodeURIComponent(part.slice(prefix.length));
+    }
+
+    function getToken() { return getCookie(SESSION_COOKIE); }
+
+    function requestHeaders(withJsonBody) {
+      const headers = {};
+      if (withJsonBody) headers["Content-Type"] = "application/json";
+      const token = getToken();
+      if (token) headers["X-Session-Token"] = token;
+      return headers;
+    }
+
+    async function postJson(url, body) {
+      const withBody = body !== undefined;
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: requestHeaders(withBody),
+          body: withBody ? JSON.stringify(body) : undefined,
+        });
+        const text = await res.text();
+        try { return { ok: res.ok, data: JSON.parse(text) }; }
+        catch { return { ok: res.ok, data: { raw: text } }; }
+      } catch (e) {
+        return { ok: false, data: { error: "网络请求失败" } };
+      }
+    }
+
+    async function validateAdmin() {
+      const token = getToken();
+      if (!token) return false;
+      const resp = await postJson("/user/validate");
+      return resp.ok && resp.data.valid && resp.data.is_admin;
+    }
+
+    // --- 业务逻辑 ---
+    async function createInvite() {
+      const btn = $('btnCreateInvite');
+      btn.disabled = true;
+      btn.innerText = "生成中...";
+
+      const ttlVal = Number($("ttlSelect").value);
+      const body = { ttl_seconds: ttlVal };
+
+      const resp = await postJson("/user/admin/invitations/create", body);
+      const payload = unwrapApiPayload(resp.data);
+      btn.disabled = false;
+      btn.innerText = "立即生成";
+
+      if (!resp.ok) {
+        showToast(readErrorMessage(resp.data, "生成失败"), "error");
+      } else {
+        showToast("邀请码生成成功");
+        $('inviteResult').classList.add('show');
+        $('generatedCode').innerText = payload.code || '';
+        $('generatedExpire').innerText = "过期于: " + formatDate(payload.expires_at);
+        await listInvites();
+      }
+    }
+
+    async function toggleAdmin(username, currentIsAdmin) {
+      if (!confirm(`确定要将 ${username} ${currentIsAdmin ? '降级为普通用户' : '设为管理员'} 吗？`)) return;
+
+      const resp = await postJson("/user/admin/set_admin", {
+        target_username: username,
+        make_admin: !currentIsAdmin,
+      });
+
+      if (!resp.ok) {
+        showToast(readErrorMessage(resp.data, "权限更新失败"), "error");
+      } else {
+        showToast(`已成功更新 ${username} 的权限`);
+        listUsers();
+      }
+    }
+
+    function renderInvites(list) {
+      if (!list || list.length === 0) {
+        $("invitesWrap").innerHTML = "<div class='empty-state'>暂无历史邀请码数据</div>";
+        return;
+      }
+      const rows = list.map(i => `
+          <tr>
+            <td style="font-family: monospace; letter-spacing: 0.5px;">${i.code}</td>
+            <td>${i.used ? "<span class='pill user'>已使用</span>" : "<span class='pill admin'>可用</span>"}</td>
+            <td>${formatDate(i.expires_at)}</td>
+            <td>
+              <button class="ghost" onclick="copyText('${i.code}')">复制</button>
+            </td>
+          </tr>
+        `).join("");
+
+      $("invitesWrap").innerHTML = `
+          <table>
+            <thead>
+              <tr>
+                <th>邀请码</th>
+                <th>状态</th>
+                <th>过期时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>`;
+    }
+
+    function renderUsers(list) {
+      if (!list || list.length === 0) {
+        $("usersWrap").innerHTML = "<div class='empty-state'>暂无用户数据</div>";
+        return;
+      }
+      const rows = list.map(u => {
+        const safeUsername = encodeURIComponent(u.username);
+        const actionBtn = u.is_admin
+          ? `<button class="ghost danger" onclick="toggleAdmin(decodeURIComponent('${safeUsername}'), true)">撤销管理</button>`
+          : `<button class="ghost" onclick="toggleAdmin(decodeURIComponent('${safeUsername}'), false)">设为管理</button>`;
+
+        return `
+          <tr>
+            <td>${u.username}</td>
+            <td>${u.is_admin ? "<span class='pill admin'>管理员</span>" : "<span class='pill user'>普通用户</span>"}</td>
+            <td>${formatDate(u.created_at)}</td>
+            <td>${actionBtn}</td>
+          </tr>
+        `}).join("");
+
+      $("usersWrap").innerHTML = `<table><thead><tr><th>用户名</th><th>身份</th><th>注册时间</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    function renderPending(list) {
+      if (!list || list.length === 0) {
+        $("pendingWrap").innerHTML = "<div class='empty-state'>当前没有需要审批的请求</div>";
+        return;
+      }
+      const rows = list.map((u) => {
+        const role = u.requested_role === "admin" ? "<span class='pill admin'>管理员申请</span>" : "<span class='pill user'>普通用户</span>";
+        const encoded = encodeURIComponent(u.username);
+        return `
+            <tr>
+              <td>${u.username}</td>
+              <td>${role}</td>
+              <td>${formatDate(u.created_at)}</td>
+              <td>
+                <button class="ghost" style="color:var(--success); border-color:var(--success);" onclick="approvePending(decodeURIComponent('${encoded}'))">通过</button>
+                <button class="ghost danger" onclick="rejectPending(decodeURIComponent('${encoded}'))">拒绝</button>
+              </td>
+            </tr>`;
+      }).join("");
+      $("pendingWrap").innerHTML = `<table><thead><tr><th>申请人</th><th>期望身份</th><th>申请时间</th><th>审批操作</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    async function listPending() {
+      const resp = await postJson("/user/admin/pending/list");
+      const payload = unwrapApiPayload(resp.data);
+      if (resp.ok) {
+        renderPending(payload.pending_users || []);
+        return true;
+      }
+      showToast(readErrorMessage(resp.data, "获取待审批列表失败"), "error");
+      return false;
+    }
+
+    async function listInvites() {
+      const resp = await postJson("/user/admin/invitations/list");
+      const payload = unwrapApiPayload(resp.data);
+      if (resp.ok) {
+        renderInvites(payload.invitations || []);
+        return true;
+      }
+      showToast(readErrorMessage(resp.data, "获取邀请码列表失败"), "error");
+      return false;
+    }
+
+    async function listUsers() {
+      const resp = await postJson("/user/admin/users/list");
+      const payload = unwrapApiPayload(resp.data);
+      if (resp.ok) {
+        renderUsers(payload.users || []);
+        return true;
+      }
+      showToast(readErrorMessage(resp.data, "获取用户列表失败"), "error");
+      return false;
+    }
+
+    async function approvePending(username) {
+      const resp = await postJson("/user/admin/pending/approve", { username });
+      if (resp.ok) { showToast(`已通过 ${username} 的申请`); listPending(); listUsers(); }
+      else showToast(readErrorMessage(resp.data, "操作失败"), "error");
+    }
+
+    async function rejectPending(username) {
+      if (!confirm(`确定要拒绝 ${username} 的申请吗？`)) return;
+      const resp = await postJson("/user/admin/pending/reject", { username });
+      if (resp.ok) { showToast(`已拒绝 ${username} 的申请`); listPending(); }
+      else showToast(readErrorMessage(resp.data, "操作失败"), "error");
+    }
+
+    let seed = 20260309;
+    function seededRandom() {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280.0;
+    }
+
+    // --- 全新优化的雷达扫描风果园地图绘制 ---
+    function renderOrchardMap() {
+      const dataCounts =[
+        { label: "健康果树", count: 103, color: "#10b981" },
+        { label: "黄龙病预警", count: 2, color: "#ef4444" },
+        { label: "溃疡病预警", count: 0, color: "#f59e0b" },
+        { label: "沙皮病预警", count: 1, color: "#8b5cf6" }
+      ];
+
+      // 图例升级：加入辉光，颜色高亮
+      const legend = $('orchardLegend');
+      if (legend) {
+        legend.innerHTML = dataCounts.map(d => `
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; background: ${d.color}; box-shadow: 0 0 8px ${d.color};"></div>
+            <span>${d.label} <strong style="color:var(--text)">${d.count}</strong></span>
+          </div>
+        `).join("");
+      }
+
+      const canvas = $('orchardMap');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+
+      // 每次绘制前重置种子
+      seed = 987654321;
+
+      // --- 1. 使用 FBM 生成自然起伏的科技感背景 ---
+      function hash(x, y) {
+        const dot = x * 12.9898 + y * 78.233;
+        const sin = Math.sin(dot) * 43758.5453;
+        return sin - Math.floor(sin);
+      }
+
+      // Smootherstep (5阶) Value Noise，比 smoothstep(3阶) 在边界处更平滑
+      function vnoise(x, y) {
+        const i = Math.floor(x);
+        const j = Math.floor(y);
+        const fx = x - i;
+        const fy = y - j;
+        // 5阶 smootherstep：导数在 0/1 处均为 0，曲线更连续
+        const u = fx * fx * fx * (fx * (fx * 6.0 - 15.0) + 10.0);
+        const v = fy * fy * fy * (fy * (fy * 6.0 - 15.0) + 10.0);
+        const n00 = hash(i, j);
+        const n10 = hash(i + 1.0, j);
+        const n01 = hash(i, j + 1.0);
+        const n11 = hash(i + 1.0, j + 1.0);
+        return n00 + u * (n10 - n00) + v * ((n01 + u * (n11 - n01)) - (n00 + u * (n10 - n00)));
+      }
+
+      // FBM 6层八倍频，高频细节更丰富
+      function fbm(x, y) {
+        let val = 0.0, amp = 0.5, freq = 1.0, maxVal = 0.0;
+        for (let i = 0; i < 6; i++) {
+          val += amp * vnoise(x * freq, y * freq);
+          maxVal += amp;
+          freq *= 2.0;
+          amp *= 0.5;
+        }
+        return val / maxVal;
+      }
+      // 色阶定义（绿到红渐变）- 调整为更淡的色调
+      const topoColors = [
+        [152, 251, 152],   // 淡绿色
+        [144, 238, 144],   // 浅绿色
+        [189, 252, 201],   // 薄荷绿
+        [255, 255, 224],   // 淡黄色
+        [255, 218, 185],   // 桃色
+        [255, 182, 193],   // 浅粉色
+        [255, 160, 122]    // 浅珊瑚色
+      ];
+      const numColors = topoColors.length;
+
+      // 逐像素写入 ImageData，消除方块感，实现真正的像素级平滑
+      const imgData = ctx.createImageData(W, H);
+      const pxData = imgData.data;
+      const scale = 0.012;
+
+      for (let py = 0; py < H; py++) {
+        for (let px = 0; px < W; px++) {
+          const val = fbm(px * scale, py * scale);
+
+          // 在相邻色阶之间做线性插值，消除硬跳变
+          const pos = val * (numColors - 1);
+          const lo = Math.min(Math.floor(pos), numColors - 2);
+          const hi = lo + 1;
+          const t = pos - lo;
+          const c0 = topoColors[lo];
+          const c1 = topoColors[hi];
+          let r = c0[0] + (c1[0] - c0[0]) * t;
+          let g = c0[1] + (c1[1] - c0[1]) * t;
+          let b = c0[2] + (c1[2] - c0[2]) * t;
+
+          // 等高线软辉光：距整数色阶边界越近越亮（无硬截断）
+          const frac = pos % 1.0;
+          const edgeDist = Math.abs(frac - 0.5); // 0.5 = 远离边界, 0 = 恰在边界
+          const glow = Math.max(0.0, (0.2 - edgeDist) / 0.2); // 0~1 软渐变
+          r = Math.min(255, r + glow * 18);
+          g = Math.min(255, g + glow * 28);
+          b = Math.min(255, b + glow * 42);
+
+          const off = (py * W + px) * 4;
+          pxData[off]     = r;
+          pxData[off + 1] = g;
+          pxData[off + 2] = b;
+          pxData[off + 3] = 255;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      // --- 2. 绘制网格线与雷达探测角 ---
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= W; i += 40) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke();
+      }
+      for (let j = 0; j <= H; j += 40) {
+        ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(W, j); ctx.stroke();
+      }
+
+      // 四个角的瞄准框装饰
+      ctx.strokeStyle = "rgba(59, 130, 246, 0.6)";
+      ctx.lineWidth = 2;
+      const len = 16;
+      ctx.beginPath(); ctx.moveTo(0, len); ctx.lineTo(0, 0); ctx.lineTo(len, 0); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W - len, 0); ctx.lineTo(W, 0); ctx.lineTo(W, len); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, H - len); ctx.lineTo(0, H); ctx.lineTo(len, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W - len, H); ctx.lineTo(W, H); ctx.lineTo(W, H - len); ctx.stroke();
+
+      // --- 3. 绘制带有光晕和阴影的传感器指示灯 ---
+      const centers =[];
+      for(let i=0; i<4; i++) {
+        centers.push({
+          x: seededRandom() * W,
+          y: seededRandom() * H,
+          type: seededRandom() > 0.6 ? 1 : (seededRandom() > 0.5 ? 2 : 3)
+        });
+      }
+
+      dataCounts.forEach((category, cIdx) => {
+        for (let i = 0; i < category.count; i++) {
+          let x, y;
+          if (cIdx === 0) {
+            // MC区块风格：21列×5行网格，格内随机抖动，模拟规律种植但不完全整齐的效果
+            const numCols = 21;
+            const cellW = W / numCols;   // ≈54.8px 每格宽
+            const cellH = H / 5;         // 64px 每格高
+            const col = i % numCols;
+            const row = Math.floor(i / numCols);
+            x = (col + 0.5) * cellW + (seededRandom() - 0.5) * cellW * 0.55;
+            y = (row + 0.5) * cellH + (seededRandom() - 0.5) * cellH * 0.55;
+          } else {
+            // 病害预警呈现聚集性爆发特征
+            const targetCenters = centers.filter(c => c.type === cIdx);
+            if (targetCenters.length > 0 && seededRandom() < 0.8) {
+              const center = targetCenters[Math.floor(seededRandom() * targetCenters.length)];
+              const radius = 30 + seededRandom() * 90;
+              const angle = seededRandom() * Math.PI * 2;
+              const dist = seededRandom() * radius;
+              x = center.x + Math.cos(angle) * dist;
+              y = center.y + Math.sin(angle) * dist;
+            } else {
+              x = seededRandom() * W;
+              y = seededRandom() * H;
+            }
+          }
+
+          x = Math.max(8, Math.min(W - 8, x));
+          y = Math.max(8, Math.min(H - 8, y));
+
+          // a. 病变预警点外围的辐射大光圈
+          if (cIdx !== 0) {
+            ctx.beginPath();
+            ctx.arc(x, y, 6 + seededRandom() * 6, 0, Math.PI * 2);
+            ctx.fillStyle = category.color;
+            ctx.globalAlpha = 0.15;
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+          }
+
+          // b. 核心发光指示灯
+          const r = (cIdx === 0) ? 2 : 2.5;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fillStyle = category.color;
+          ctx.shadowBlur = (cIdx === 0) ? 3 : 8;
+          ctx.shadowColor = category.color;
+          ctx.fill();
+
+          // c. 高亮白心，模拟 LED 质感
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.arc(x, y, r * 0.4, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(255,255,255,0.9)";
+          ctx.fill();
+        }
+      });
+    }
+
+    // --- 初始化绑定 ---
+    $("btnCreateInvite").addEventListener("click", createInvite);
+    $("btnListInvites").addEventListener("click", async () => { if (await listInvites()) showToast("邀请码已刷新"); });
+    $("btnListUsers").addEventListener("click", async () => { if (await listUsers()) showToast("用户列表已刷新"); });
+    $("btnListPending").addEventListener("click", async () => { if (await listPending()) showToast("待审批列表已刷新"); });
+
+    // =============================================
+    // ======= 模块2: 业务数据统计面板 =======
+    // =============================================
+    async function fetchStats() {
+      const resp = await postJson('/user/admin/dashboard/stats');
+      if (!resp.ok) {
+        showToast(readErrorMessage(resp.data, '获取统计数据失败'), 'error');
+        return false;
+      }
+
+      const payload = unwrapApiPayload(resp.data);
+      const totals = payload.totals || {};
+      const environment = payload.environment || {};
+      const dailyCounts = Array.isArray(payload.daily_counts) ? payload.daily_counts : [];
+
+      const total = Number(totals.detections || 0);
+      const healthyCount = Number(totals.healthy_count || 0);
+      const diseasedCount = Number(totals.diseased_count || 0);
+      const healthyRate = Number(totals.healthy_rate || 0);
+      const userCount = Number(totals.users || 0);
+      const adminCount = Number(totals.admins || 0);
+      const pendingCount = Number(totals.pending_users || 0);
+
+      $('statDetections').textContent = total;
+      $('statDetectionsTrend').textContent = `近7天共 ${dailyCounts.reduce((sum, item) => sum + Number(item.count || 0), 0)} 条`;
+      $('statDetectionsTrend').className = 'stat-trend neutral';
+
+      $('statHealthy').textContent = healthyRate + '%';
+      $('statHealthyTrend').textContent = `${healthyCount} / ${total} 为健康`;
+      $('statHealthyTrend').className = healthyRate > 70 ? 'stat-trend up' : 'stat-trend down';
+
+      $('statDiseased').textContent = diseasedCount;
+      $('statDiseasedTrend').textContent = diseasedCount > 0 ? `当前 ${pendingCount} 条待处理事项` : `暂无病害`;
+      $('statDiseasedTrend').className = diseasedCount > 0 ? 'stat-trend down' : 'stat-trend up';
+
+      $('statUsers').textContent = userCount;
+      $('statUsersTrend').textContent = `${adminCount} 位管理员`;
+      $('statUsersTrend').className = 'stat-trend neutral';
+
+      renderDetectionChart(dailyCounts);
+
+      const temp = environment.current_temperature;
+      const hum = environment.current_humidity;
+      const healthScore = environment.health_score;
+      const alerts = environment.active_alerts;
+
+      $('envTemp').textContent = Number.isFinite(temp) ? temp + ' °C' : '-- °C';
+      $('envTempRing').textContent = Number.isFinite(temp) ? Math.round(temp) : '--';
+      $('envHumidity').textContent = Number.isFinite(hum) ? hum + ' %' : '-- %';
+      $('envHumRing').textContent = Number.isFinite(hum) ? Math.round(hum) : '--';
+
+      $('envHealth').textContent = Number.isFinite(healthScore) ? healthScore + ' 分' : '-- 分';
+      $('envHealthRing').textContent = Number.isFinite(healthScore) ? healthScore : '--';
+      const alertCount = Number(alerts || 0);
+      $('envAlerts').textContent = alertCount + ' 条';
+      $('envAlertRing').textContent = alertCount > 0 ? '⚡' : '✓';
+      return true;
+    }
+
+    function renderDetectionChart(series) {
+      const chart = $('detectionChart');
+      if (!chart) return;
+
+      if (!Array.isArray(series) || series.length === 0) {
+        chart.innerHTML = '<div class="empty-state" style="width:100%; padding:24px 0;">暂无趋势数据</div>';
+        $('chartLabelStart').textContent = '--';
+        $('chartLabelEnd').textContent = '--';
+        return;
+      }
+
+      const counts = series.map((item) => Number(item.count || 0));
+      const labels = series.map((item) => item.date || '--');
+
+      const max = Math.max(...counts, 1);
+      $('chartLabelStart').textContent = labels[0];
+      $('chartLabelEnd').textContent = labels[labels.length - 1];
+
+      chart.innerHTML = counts.map((c, i) => {
+        const h = Math.max(4, (c / max) * 100);
+        const isToday = i === counts.length - 1;
+        const color = isToday ? 'var(--primary)' : 'rgba(59,130,246,0.4)';
+        return `<div class="bar" style="height:${h}%; background:${color};" title="${escapeHtml(labels[i])}: ${c} 次检测"></div>`;
+      }).join('');
+    }
+
+    // =============================================
+    // ======= 模块3: 审计操作日志 =======
+    // =============================================
+    let allLogs = [];
+
+    async function fetchLogs() {
+      const resp = await postJson('/user/admin/dashboard/logs');
+      if (!resp.ok) {
+        showToast(readErrorMessage(resp.data, '获取日志失败'), 'error');
+        return false;
+      }
+
+      const payload = unwrapApiPayload(resp.data);
+      allLogs = Array.isArray(payload.logs) ? payload.logs : [];
+      renderLogs();
+      return true;
+    }
+
+    function parseTimestamp(t) {
+      if (!t) return 0;
+      if (typeof t === 'number') return t > 1e12 ? t : t * 1000;
+      const d = new Date(t);
+      return isNaN(d.getTime()) ? 0 : d.getTime();
+    }
+
+    function parseTime(t) {
+      if (!t) return '未知时间';
+      let d;
+      if (typeof t === 'number') d = new Date(t > 1e12 ? t : t * 1000);
+      else d = new Date(t);
+      return isNaN(d.getTime()) ? '未知时间' : d.toLocaleString();
+    }
+
+    function renderLogs() {
+      const filter = $('logFilter').value;
+      const filtered = filter === 'all' ? allLogs : allLogs.filter(l => l.type === filter);
+
+      if (filtered.length === 0) {
+        $('logList').innerHTML = '<div class="empty-state">暂无日志记录</div>';
+        return;
+      }
+
+      $('logList').innerHTML = filtered.slice(0, 100).map(l => `
+        <div class="log-item">
+          <div class="log-dot ${escapeHtml(l.type || 'action')}"></div>
+          <div class="log-content">
+            <div class="log-text">${escapeHtml(l.message || '')}</div>
+            <div class="log-time">${parseTime(l.created_at)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // =============================================
+    // ======= 模块4: 系统全局设置 =======
+    // =============================================
+    function applySettingsToForm(settings) {
+      $('settingOpenReg').checked = Boolean(settings.open_registration);
+      $('settingInviteBypass').checked = Boolean(settings.invite_bypass_enabled);
+      $('settingMaintenance').checked = Boolean(settings.maintenance_mode);
+      $('settingDefaultTTL').value = String(settings.default_invite_ttl_seconds || 86400);
+      $('settingThreshold').value = String(settings.confidence_threshold || 0.75);
+      $('settingThresholdVal').textContent = Math.round(Number(settings.confidence_threshold || 0.75) * 100) + '%';
+      $('settingLogRetention').value = String(settings.log_retention_days || 30);
+      $('ttlSelect').value = String(settings.default_invite_ttl_seconds || 86400);
+    }
+
+    async function loadSettings() {
+      const resp = await postJson('/user/admin/settings/get');
+      if (!resp.ok) {
+        showToast(readErrorMessage(resp.data, '获取系统设置失败'), 'error');
+        return false;
+      }
+
+      const payload = unwrapApiPayload(resp.data);
+      applySettingsToForm(payload.settings || payload);
+      return true;
+    }
+
+    async function saveSettings() {
+      const btn = $('btnSaveSettings');
+      btn.disabled = true;
+      btn.innerText = '保存中...';
+
+      const resp = await postJson('/user/admin/settings/update', {
+        open_registration: $('settingOpenReg').checked,
+        invite_bypass_enabled: $('settingInviteBypass').checked,
+        maintenance_mode: $('settingMaintenance').checked,
+        default_invite_ttl_seconds: Number($('settingDefaultTTL').value),
+        confidence_threshold: Number($('settingThreshold').value),
+        log_retention_days: Number($('settingLogRetention').value),
+      });
+
+      btn.disabled = false;
+      btn.innerText = '保存设置';
+
+      if (!resp.ok) {
+        showToast(readErrorMessage(resp.data, '保存设置失败'), 'error');
+        return;
+      }
+
+      const payload = unwrapApiPayload(resp.data);
+      applySettingsToForm(payload.settings || payload);
+      await fetchLogs();
+      showToast('设置已保存');
+    }
+
+    $('settingThreshold').addEventListener('input', function () {
+      $('settingThresholdVal').textContent = Math.round(this.value * 100) + '%';
+    });
+
+    $('btnSaveSettings').addEventListener('click', saveSettings);
+
+    $('btnRefreshStats').addEventListener('click', async () => { if (await fetchStats()) showToast('统计数据已刷新'); });
+    $('btnRefreshEnv').addEventListener('click', async () => { if (await fetchStats()) showToast('环境数据已刷新'); });
+    $('btnRefreshLogs').addEventListener('click', async () => { if (await fetchLogs()) showToast('日志已刷新'); });
+    $('logFilter').addEventListener('change', renderLogs);
+
+    (async function initPage() {
+      if (!(await validateAdmin())) {
+        alert("无权限访问或登录已过期，请重新登录。");
+        window.location.href = '/index.html';
+        return;
+      }
+      await Promise.all([listInvites(), listUsers(), listPending()]);
+      renderOrchardMap(); // 初始化果园分布图
+      await Promise.all([loadSettings(), fetchStats(), fetchLogs()]);
+    })();
+  </script>
+</body>
+
+</html>
