@@ -42,6 +42,53 @@ fn count_from_row(row: Option<sqlx::postgres::PgRow>, field: &str) -> i64 {
     row.and_then(|item| item.try_get::<i64, _>(field).ok()).unwrap_or(0)
 }
 
+fn orchard_status_from_snapshot(
+    health_index: Option<f64>,
+    predicted_class: Option<&str>,
+) -> (&'static str, &'static str, &'static str) {
+    if let Some(label) = predicted_class.map(str::trim).filter(|label| !label.is_empty()) {
+        match label {
+            "黄龙病" => return ("critical", "黄龙病预警", "#ef4444"),
+            "溃疡病" => return ("warning", "溃疡病预警", "#f59e0b"),
+            "沙皮病" => return ("critical", "沙皮病预警", "#8b5cf6"),
+            "待人工复核" => return ("attention", "待人工复核", "#38bdf8"),
+            _ => {}
+        }
+    }
+
+    match health_index {
+        Some(value) if value >= 0.85 => ("healthy", "健康果树", "#10b981"),
+        Some(value) if value >= 0.72 => ("attention", "轻度异常", "#f59e0b"),
+        Some(value) if value >= 0.60 => ("warning", "中度异常", "#ef4444"),
+        Some(_) => ("critical", "重度异常", "#8b5cf6"),
+        None => ("offline", "暂无采样", "#64748b"),
+    }
+}
+
+fn orchard_status_priority(level: &str) -> i32 {
+    match level {
+        "healthy" => 0,
+        "attention" => 1,
+        "warning" => 2,
+        "critical" => 3,
+        _ => 4,
+    }
+}
+
+fn push_orchard_legend(
+    legend: &mut Vec<(String, String, String, i64)>,
+    label: &str,
+    level: &str,
+    color: &str,
+) {
+    if let Some(item) = legend.iter_mut().find(|item| item.0 == label) {
+        item.3 += 1;
+        return;
+    }
+
+    legend.push((label.to_string(), level.to_string(), color.to_string(), 1));
+}
+
 pub async fn set_admin_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
@@ -590,6 +637,198 @@ pub async fn dashboard_stats_handler(
                 "health_score": healthy_rate,
                 "active_alerts": diseased_count + pending_count
             }
+        })),
+    )
+        .into_response()
+}
+
+pub async fn orchard_overview_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    if let Err((code, body)) = ensure_admin(&state, &headers).await {
+        return (code, Json(body)).into_response();
+    }
+
+    let rows = match sqlx::query(
+        r#"
+        SELECT
+            t.id,
+            t.tree_code,
+            t.pos_x,
+            t.pos_y,
+            t.terrain_height,
+            t.variety,
+            latest_sensor.sampled_at,
+            latest_sensor.temperature,
+            latest_sensor.humidity,
+            latest_sensor.nitrogen,
+            latest_sensor.phosphorus,
+            latest_sensor.potassium,
+            latest_sensor.health_index,
+            latest_diagnosis.predicted_class,
+            latest_diagnosis.disease_name,
+            latest_diagnosis.diagnosis_timestamp,
+            latest_diagnosis.confidence AS diagnosis_confidence
+        FROM app_orchard_trees t
+        LEFT JOIN LATERAL (
+            SELECT
+                sampled_at,
+                temperature,
+                humidity,
+                nitrogen,
+                phosphorus,
+                potassium,
+                health_index
+            FROM app_tree_sensor_records
+            WHERE tree_id = t.id
+            ORDER BY sampled_at DESC
+            LIMIT 1
+        ) latest_sensor ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT
+                predicted_class,
+                disease_name,
+                timestamp AS diagnosis_timestamp,
+                confidence
+            FROM app_diagnosis_records
+            WHERE area = t.tree_code
+            ORDER BY timestamp DESC
+            LIMIT 1
+        ) latest_diagnosis ON TRUE
+        WHERE t.is_active = TRUE
+        ORDER BY t.id ASC
+        "#,
+    )
+    .fetch_all(&state.db)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(err) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": format!("Failed to load orchard overview: {}", err) })),
+            )
+                .into_response();
+        }
+    };
+
+    let mut trees = Vec::new();
+    let mut legend = Vec::new();
+    let mut online_trees = 0_i64;
+    let mut health_sum = 0.0_f64;
+    let mut health_count = 0_i64;
+    let mut last_sampled_at = 0_i64;
+
+    for row in rows {
+        let tree_id = row.try_get::<i64, _>("id").unwrap_or_default();
+        let tree_code = row.try_get::<String, _>("tree_code").unwrap_or_default();
+        let pos_x = row.try_get::<f64, _>("pos_x").unwrap_or(0.0);
+        let pos_y = row.try_get::<f64, _>("pos_y").unwrap_or(0.0);
+        let terrain_height = row.try_get::<f64, _>("terrain_height").unwrap_or(0.0);
+        let variety = row.try_get::<String, _>("variety").unwrap_or_else(|_| "未知品种".to_string());
+        let sampled_at = row.try_get::<Option<i64>, _>("sampled_at").unwrap_or(None);
+        let health_index = row.try_get::<Option<f64>, _>("health_index").unwrap_or(None);
+        let predicted_class = row
+            .try_get::<Option<String>, _>("predicted_class")
+            .unwrap_or(None)
+            .filter(|value| !value.trim().is_empty() && value != "健康果树" && value != "非果树");
+        let disease_name = row
+            .try_get::<Option<String>, _>("disease_name")
+            .unwrap_or(None)
+            .filter(|value| !value.trim().is_empty());
+        let diagnosis_label = disease_name.as_deref().or(predicted_class.as_deref());
+        let (status_level, status_label, status_color) =
+            orchard_status_from_snapshot(health_index, diagnosis_label);
+
+        push_orchard_legend(&mut legend, status_label, status_level, status_color);
+
+        if let Some(sampled_at) = sampled_at {
+            online_trees += 1;
+            last_sampled_at = last_sampled_at.max(sampled_at);
+        }
+        if let Some(health_index) = health_index {
+            health_sum += health_index;
+            health_count += 1;
+        }
+
+        let latest_sensor = sampled_at.map(|sampled_at| {
+            json!({
+                "sampled_at": sampled_at,
+                "temperature": row.try_get::<f64, _>("temperature").unwrap_or(0.0),
+                "humidity": row.try_get::<f64, _>("humidity").unwrap_or(0.0),
+                "nitrogen": row.try_get::<f64, _>("nitrogen").unwrap_or(0.0),
+                "phosphorus": row.try_get::<f64, _>("phosphorus").unwrap_or(0.0),
+                "potassium": row.try_get::<f64, _>("potassium").unwrap_or(0.0),
+                "health_index": health_index.unwrap_or(0.0),
+            })
+        });
+
+        let diagnosis_timestamp = row
+            .try_get::<Option<i64>, _>("diagnosis_timestamp")
+            .unwrap_or(None);
+        let latest_diagnosis = diagnosis_timestamp.map(|timestamp| {
+            json!({
+                "timestamp": timestamp,
+                "predicted_class": predicted_class,
+                "disease_name": disease_name,
+                "confidence": row.try_get::<Option<f64>, _>("diagnosis_confidence").unwrap_or(None),
+            })
+        });
+
+        trees.push(json!({
+            "id": tree_id,
+            "tree_code": tree_code,
+            "position": {
+                "x": pos_x,
+                "y": pos_y,
+            },
+            "terrain_height": terrain_height,
+            "variety": variety,
+            "status": {
+                "level": status_level,
+                "label": status_label,
+                "color": status_color,
+            },
+            "latest_sensor": latest_sensor,
+            "latest_diagnosis": latest_diagnosis,
+        }));
+    }
+
+    legend.sort_by(|left, right| {
+        orchard_status_priority(&left.1)
+            .cmp(&orchard_status_priority(&right.1))
+            .then(left.0.cmp(&right.0))
+    });
+
+    let average_health_index = if health_count > 0 {
+        (health_sum / health_count as f64 * 100.0).round() / 100.0
+    } else {
+        0.0
+    };
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "coordinate_range": {
+                "min_x": 0,
+                "max_x": 500,
+                "min_y": 0,
+                "max_y": 500,
+            },
+            "summary": {
+                "total_trees": trees.len(),
+                "online_trees": online_trees,
+                "average_health_index": average_health_index,
+                "last_sampled_at": if last_sampled_at > 0 { Some(last_sampled_at) } else { None::<i64> },
+            },
+            "legend": legend.into_iter().map(|(label, level, color, count)| json!({
+                "label": label,
+                "level": level,
+                "color": color,
+                "count": count,
+            })).collect::<Vec<_>>(),
+            "trees": trees,
         })),
     )
         .into_response()

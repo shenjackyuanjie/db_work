@@ -800,6 +800,7 @@ pub fn router(state: AppState) -> Router<AppState> {
             "/admin/settings/update",
             post(admin::update_system_settings_handler),
         )
+        .route("/admin/orchard/overview", post(admin::orchard_overview_handler))
         .route("/admin/dashboard/stats", post(admin::dashboard_stats_handler))
         .route("/admin/dashboard/logs", post(admin::dashboard_logs_handler))
         .route("/admin/pending/list", post(admin::list_pending_users_handler))

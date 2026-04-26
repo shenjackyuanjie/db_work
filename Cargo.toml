@@ -25,5 +25,3 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 tract-onnx = "0.22.1"
 multer = "3.1.0"
 futures-util = "0.3.32"
-
-

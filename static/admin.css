@@ -126,6 +126,20 @@ main {
   padding: 20px;
 }
 
+.orchard-map-shell {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.orchard-map-shell canvas {
+  display: block;
+}
+
+.orchard-map-shell canvas.is-hovering {
+  cursor: pointer;
+}
+
 label {
   display: block;
   margin-bottom: 8px;
@@ -622,4 +636,103 @@ tbody tr:last-child td {
 .env-gauge .gauge-info .gauge-value {
   font-size: 18px;
   font-weight: 600;
+}
+
+.orchard-tooltip {
+  --orchard-tooltip-border: rgba(148, 163, 184, 0.22);
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid var(--orchard-tooltip-border);
+  box-shadow: 0 24px 60px -24px rgba(2, 6, 23, 0.98);
+  backdrop-filter: blur(14px);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 18px)) scale(0.96);
+  transform-origin: bottom center;
+  transition: opacity 0.14s ease, transform 0.14s ease;
+  z-index: 3;
+}
+
+.orchard-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: rgba(15, 23, 42, 0.94);
+  border-right: 1px solid var(--orchard-tooltip-border);
+  border-bottom: 1px solid var(--orchard-tooltip-border);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.orchard-tooltip.show {
+  opacity: 1;
+  transform: translate(-50%, calc(-100% - 18px)) scale(1);
+}
+
+.orchard-tooltip.below {
+  transform: translate(-50%, 18px) scale(0.96);
+  transform-origin: top center;
+}
+
+.orchard-tooltip.show.below {
+  transform: translate(-50%, 18px) scale(1);
+}
+
+.orchard-tooltip.below::after {
+  top: -7px;
+  bottom: auto;
+  border-right: none;
+  border-bottom: none;
+  border-left: 1px solid var(--orchard-tooltip-border);
+  border-top: 1px solid var(--orchard-tooltip-border);
+}
+
+.orchard-tooltip__eyebrow {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.orchard-tooltip__title {
+  margin-top: 3px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.orchard-tooltip__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.orchard-tooltip__meta-item {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.orchard-tooltip__meta-item span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.orchard-tooltip__meta-item strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
 }
