@@ -32,16 +32,6 @@ impl ProviderPreferences {
             data_collection: None,
         }
     }
-
-    /// 只使用指定的供应商，不允许回退
-    pub fn strict_order(providers: Vec<String>) -> Self {
-        Self {
-            order: Some(providers),
-            allow_fallbacks: Some(false),
-            require_parameters: None,
-            data_collection: None,
-        }
-    }
 }
 
 /// OpenRouter 路由配置

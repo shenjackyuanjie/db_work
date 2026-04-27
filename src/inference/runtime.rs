@@ -1,6 +1,10 @@
 use crate::{client::OpenRouterClient, config::InferenceMode};
 
-use super::{onnx::OnnxInference, remote::RemoteInference, types::{DiseasePrediction, FruitTreeGatePrediction}};
+use super::{
+    onnx::OnnxInference,
+    remote::RemoteInference,
+    types::{DiseasePrediction, FruitTreeGatePrediction},
+};
 
 #[derive(Clone)]
 pub enum InferenceRuntime {
@@ -26,10 +30,15 @@ impl InferenceRuntime {
     pub async fn predict_citrus_disease(
         &self,
         image_data: Option<String>,
+        temperature: Option<f64>,
+        humidity: Option<f64>,
     ) -> anyhow::Result<DiseasePrediction> {
         match self {
             InferenceRuntime::Remote(remote) => remote.predict_citrus_disease(image_data).await,
-            InferenceRuntime::Onnx(onnx) => onnx.predict_citrus_disease(image_data).await,
+            InferenceRuntime::Onnx(onnx) => {
+                onnx.predict_citrus_disease(image_data, temperature, humidity)
+                    .await
+            }
         }
     }
 

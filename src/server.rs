@@ -1,11 +1,11 @@
 use axum::{
     Json, Router,
-    http::{Request, StatusCode, Method, Uri, HeaderMap},
-    response::{IntoResponse, Response},
-    routing::{get, post},
-    middleware::Next,
     body::Body,
     extract::State,
+    http::{HeaderMap, Method, Request, StatusCode, Uri},
+    middleware::Next,
+    response::{IntoResponse, Response},
+    routing::{get, post},
 };
 
 use chrono::{SecondsFormat, TimeZone, Utc};
@@ -141,7 +141,6 @@ fn normalize_recognition_record_image_path(path: Option<&str>) -> Option<String>
             .filter(|file_name| !file_name.is_empty())
             .map(recognition_record_public_path);
     }
-
 
     Some(trimmed.to_string())
 }
@@ -321,7 +320,7 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             pos_x DOUBLE PRECISION NOT NULL CHECK (pos_x >= 0 AND pos_x <= 500),
             pos_y DOUBLE PRECISION NOT NULL CHECK (pos_y >= 0 AND pos_y <= 500),
             terrain_height DOUBLE PRECISION NOT NULL DEFAULT 0,
-            variety TEXT NOT NULL DEFAULT '柠檬',
+
             is_active BOOLEAN NOT NULL DEFAULT TRUE,
             created_at BIGINT NOT NULL,
             updated_at BIGINT NOT NULL
@@ -381,30 +380,29 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
     if tree_count == 0 {
         let now = now_millis() as i64;
         let demo_trees = [
-            ("LEMON-001", 42.0, 74.0, 13.4, "尤力克柠檬"),
-            ("LEMON-002", 86.0, 92.0, 12.8, "尤力克柠檬"),
-            ("LEMON-003", 128.0, 68.0, 12.2, "香水柠檬"),
-            ("LEMON-004", 171.0, 106.0, 11.9, "香水柠檬"),
-            ("LEMON-005", 214.0, 82.0, 11.4, "北京柠檬"),
-            ("LEMON-006", 258.0, 118.0, 11.0, "北京柠檬"),
-            ("LEMON-007", 304.0, 88.0, 10.7, "尤力克柠檬"),
-            ("LEMON-008", 346.0, 134.0, 10.5, "尤力克柠檬"),
-            ("LEMON-009", 392.0, 96.0, 10.1, "香水柠檬"),
-            ("LEMON-010", 428.0, 148.0, 9.8, "香水柠檬"),
-            ("LEMON-011", 462.0, 116.0, 9.6, "北京柠檬"),
-            ("LEMON-012", 486.0, 172.0, 9.3, "北京柠檬"),
+            ("NAVEL-001", 42.0, 70.0, 13.4),
+            ("NAVEL-002", 86.0, 210.0, 12.8),
+            ("NAVEL-003", 128.0, 370.0, 12.2),
+            ("NAVEL-004", 171.0, 70.0, 11.9),
+            ("NAVEL-005", 214.0, 210.0, 11.4),
+            ("NAVEL-006", 258.0, 370.0, 11.0),
+            ("NAVEL-007", 304.0, 70.0, 10.7),
+            ("NAVEL-008", 346.0, 210.0, 10.5),
+            ("NAVEL-009", 392.0, 370.0, 10.1),
+            ("NAVEL-010", 428.0, 70.0, 9.8),
+            ("NAVEL-011", 462.0, 210.0, 9.6),
+            ("NAVEL-012", 486.0, 370.0, 9.3),
         ];
 
-        for (index, (tree_code, pos_x, pos_y, terrain_height, variety)) in demo_trees.iter().enumerate() {
+        for (index, (tree_code, pos_x, pos_y, terrain_height)) in demo_trees.iter().enumerate() {
             let created_at = now.saturating_sub(((demo_trees.len() - index) as i64) * 60_000);
             sqlx::query(
-                "INSERT INTO app_orchard_trees (tree_code, pos_x, pos_y, terrain_height, variety, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, TRUE, $6, $7)",
+                "INSERT INTO app_orchard_trees (tree_code, pos_x, pos_y, terrain_height, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, TRUE, $5, $6)",
             )
             .bind(*tree_code)
             .bind(*pos_x)
             .bind(*pos_y)
             .bind(*terrain_height)
-            .bind(*variety)
             .bind(created_at)
             .bind(created_at)
             .execute(pool)
@@ -413,11 +411,10 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
         }
     }
 
-    let sensor_count =
-        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM app_tree_sensor_records")
-            .fetch_one(pool)
-            .await
-            .map_err(|e| anyhow::anyhow!("查询果树传感器表失败: {}", e))?;
+    let sensor_count = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM app_tree_sensor_records")
+        .fetch_one(pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("查询果树传感器表失败: {}", e))?;
 
     if sensor_count == 0 {
         let now = now_millis() as i64;
@@ -425,7 +422,9 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
             .fetch_all(pool)
             .await
             .map_err(|e| anyhow::anyhow!("读取果树主数据失败: {}", e))?;
-        let base_health = [0.98, 0.95, 0.93, 0.89, 0.86, 0.82, 0.79, 0.74, 0.69, 0.64, 0.58, 0.48];
+        let base_health = [
+            0.98, 0.95, 0.93, 0.89, 0.86, 0.82, 0.79, 0.74, 0.69, 0.64, 0.58, 0.48,
+        ];
 
         for (index, row) in tree_rows.iter().enumerate() {
             let tree_id = row.try_get::<i64, _>("id").unwrap_or_default();
@@ -439,7 +438,8 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
                 let nitrogen = 118.0 - index as f64 * 2.8 + wave * 1.3;
                 let phosphorus = 54.0 - index as f64 * 1.2 + wave * 0.7;
                 let potassium = 142.0 - index as f64 * 3.5 + wave * 1.5;
-                let health_index = (health_anchor - (1.0 - sample_index as f64) * 0.015).clamp(0.0, 1.0);
+                let health_index =
+                    (health_anchor - (1.0 - sample_index as f64) * 0.015).clamp(0.0, 1.0);
 
                 sqlx::query(
                     "INSERT INTO app_tree_sensor_records (tree_id, sampled_at, temperature, humidity, nitrogen, phosphorus, potassium, health_index, source) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'seed')",
@@ -574,10 +574,7 @@ fn classify_environment_risk(temperature: f64, humidity: f64) -> (&'static str, 
     }
 }
 
-async fn log_request_path(
-    req: Request<Body>,
-    next: Next,
-) -> Response {
+async fn log_request_path(req: Request<Body>, next: Next) -> Response {
     let method = req.method().clone();
     let uri = req.uri().clone();
 
@@ -621,9 +618,7 @@ async fn forward_request(
     target_url: &str,
 ) -> anyhow::Result<Response> {
     let client = reqwest::Client::new();
-    let path_and_query = uri.path_and_query()
-        .map(|pq| pq.as_str())
-        .unwrap_or("/");
+    let path_and_query = uri.path_and_query().map(|pq| pq.as_str()).unwrap_or("/");
 
     let full_url = format!("{}{}", target_url.trim_end_matches('/'), path_and_query);
 
@@ -690,7 +685,10 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             post(crate::user_routes::validate_token_handler),
         )
         .route("/api/user", get(handlers_core::api_user_handler))
-        .route("/api/system-status", get(handlers_core::system_status_api_handler))
+        .route(
+            "/api/system-status",
+            get(handlers_core::system_status_api_handler),
+        )
         .route("/api/home", get(handlers_core::home_api_handler))
         .route(
             "/api/growth-tracking",
@@ -753,7 +751,7 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
                 .allow_headers(Any),
         )
         .with_state(state.clone())
-        // .layer(axum::middleware::from_fn_with_state(state, proxy_middleware))
+    // .layer(axum::middleware::from_fn_with_state(state, proxy_middleware))
 }
 
 pub fn init_tracing(log_level: &str) {

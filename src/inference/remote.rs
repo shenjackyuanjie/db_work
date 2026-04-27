@@ -1,6 +1,9 @@
 use crate::client::OpenRouterClient;
 
-use super::{onnx::OnnxInference, types::{DiseasePrediction, FruitTreeGatePrediction}};
+use super::{
+    onnx::OnnxInference,
+    types::{DiseasePrediction, FruitTreeGatePrediction},
+};
 
 #[derive(Clone)]
 pub struct RemoteInference {
@@ -45,6 +48,9 @@ impl RemoteInference {
                 treatment_suggestion: "请上传清晰的果树叶片图片以便继续诊断".to_string(),
                 preventive_measures: "确保拍摄主体为单片叶片，光线充足、无遮挡。".to_string(),
                 image_quality_warning: String::new(),
+                image_predicted_class: None,
+                image_confidence: None,
+                climate_validation: None,
             });
         }
 
@@ -71,6 +77,9 @@ impl RemoteInference {
             treatment_suggestion: analysis.disease_analysis.treatment_suggestion,
             preventive_measures: analysis.disease_analysis.preventive_measures,
             image_quality_warning: analysis.image_quality_warning,
+            image_predicted_class: None,
+            image_confidence: None,
+            climate_validation: None,
         })
     }
 }

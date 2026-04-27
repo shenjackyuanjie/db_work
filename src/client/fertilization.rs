@@ -100,13 +100,18 @@ impl OpenRouterClient {
         );
 
         let request = SimpleChatRequest::new(&user_message)
-            .with_options(ChatOptions::new().temperature(0.3).top_p(0.9).json_response())
+            .with_options(
+                ChatOptions::new()
+                    .temperature(0.3)
+                    .top_p(0.9)
+                    .json_response(),
+            )
             .with_system(SYSTEM_MESSAGE);
 
         let response = self.chat(request).await?;
 
-        let llm_output: FertilizationPlanLlmOutput =
-            serde_json::from_str(&response.content).map_err(|e| {
+        let llm_output: FertilizationPlanLlmOutput = serde_json::from_str(&response.content)
+            .map_err(|e| {
                 anyhow::anyhow!("无法解析施肥方案JSON: {}, raw: {}", e, response.content)
             })?;
 

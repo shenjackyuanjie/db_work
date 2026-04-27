@@ -35,7 +35,9 @@ impl Default for SystemSettings {
 
 impl SystemSettings {
     pub fn sanitized(mut self) -> Self {
-        self.default_invite_ttl_seconds = self.default_invite_ttl_seconds.clamp(3600, 365 * 24 * 60 * 60);
+        self.default_invite_ttl_seconds = self
+            .default_invite_ttl_seconds
+            .clamp(3600, 365 * 24 * 60 * 60);
         self.confidence_threshold = self.confidence_threshold.clamp(0.30, 0.99);
         self.log_retention_days = self.log_retention_days.clamp(1, 365);
         self
@@ -127,7 +129,9 @@ pub async fn load_system_settings(pool: &PgPool) -> anyhow::Result<SystemSetting
             .try_get::<i32, _>("log_retention_days")
             .unwrap_or(DEFAULT_LOG_RETENTION_DAYS),
         updated_at: row.try_get::<i64, _>("updated_at").unwrap_or(0).max(0) as u64,
-        updated_by: row.try_get::<Option<String>, _>("updated_by").unwrap_or(None),
+        updated_by: row
+            .try_get::<Option<String>, _>("updated_by")
+            .unwrap_or(None),
     }
     .sanitized())
 }

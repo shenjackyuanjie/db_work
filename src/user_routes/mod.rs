@@ -156,10 +156,7 @@ async fn current_system_settings(state: &AppState) -> SystemSettings {
     }
 }
 
-fn pending_approval_response(
-    requested_role: &RequestedRole,
-    hint: Option<&str>,
-) -> Response {
+fn pending_approval_response(requested_role: &RequestedRole, hint: Option<&str>) -> Response {
     (
         StatusCode::ACCEPTED,
         Json(app_response(
@@ -517,7 +514,11 @@ pub async fn register_handler(
             Ok(_) => pending_approval_response(&payload.requested_role, None),
             Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
+                Json(app_response(
+                    500,
+                    format!("db error: {}", e),
+                    serde_json::Value::Null,
+                )),
             )
                 .into_response(),
         };
@@ -541,7 +542,11 @@ pub async fn register_handler(
             ),
             Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
+                Json(app_response(
+                    500,
+                    format!("db error: {}", e),
+                    serde_json::Value::Null,
+                )),
             )
                 .into_response(),
         };
@@ -594,7 +599,11 @@ pub async fn register_handler(
             ),
             Err(e) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(app_response(500, format!("db error: {}", e), serde_json::Value::Null)),
+                Json(app_response(
+                    500,
+                    format!("db error: {}", e),
+                    serde_json::Value::Null,
+                )),
             )
                 .into_response(),
         };
@@ -795,15 +804,27 @@ pub fn router(state: AppState) -> Router<AppState> {
             post(admin::list_invitations_handler),
         )
         .route("/admin/users/list", post(admin::list_users_handler))
-        .route("/admin/settings/get", post(admin::get_system_settings_handler))
+        .route(
+            "/admin/settings/get",
+            post(admin::get_system_settings_handler),
+        )
         .route(
             "/admin/settings/update",
             post(admin::update_system_settings_handler),
         )
-        .route("/admin/orchard/overview", post(admin::orchard_overview_handler))
-        .route("/admin/dashboard/stats", post(admin::dashboard_stats_handler))
+        .route(
+            "/admin/orchard/overview",
+            post(admin::orchard_overview_handler),
+        )
+        .route(
+            "/admin/dashboard/stats",
+            post(admin::dashboard_stats_handler),
+        )
         .route("/admin/dashboard/logs", post(admin::dashboard_logs_handler))
-        .route("/admin/pending/list", post(admin::list_pending_users_handler))
+        .route(
+            "/admin/pending/list",
+            post(admin::list_pending_users_handler),
+        )
         .route(
             "/admin/pending/approve",
             post(admin::approve_pending_user_handler),

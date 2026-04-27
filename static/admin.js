@@ -446,7 +446,6 @@ function buildOrchardTrees(width, height) {
       label: item?.status?.label || "果树",
       statusLevel: item?.status?.level || "offline",
       statusColor: item?.status?.color || palette.accent,
-      variety: item?.variety || "未知品种",
       rawX,
       rawY,
       x: mapped.x,
@@ -571,7 +570,7 @@ function showOrchardTooltip(tree, event) {
   const diagnosisText = tree.latestDiagnosis?.disease_name || tree.latestDiagnosis?.predicted_class || "无";
 
   tooltip.innerHTML = `
-    <div class="orchard-tooltip__eyebrow">${escapeHtml(tree.label)} · ${escapeHtml(tree.variety)}</div>
+    <div class="orchard-tooltip__eyebrow">${escapeHtml(tree.label)}</div>
     <div class="orchard-tooltip__title">${escapeHtml(tree.treeCode)} / ID ${escapeHtml(tree.dbId)}</div>
     <div class="orchard-tooltip__meta">
       <div class="orchard-tooltip__meta-item">
@@ -607,9 +606,50 @@ function showOrchardTooltip(tree, event) {
 
   tooltip.style.borderColor = `${tree.palette.accent}66`;
   tooltip.style.setProperty("--orchard-tooltip-border", `${tree.palette.accent}66`);
-  tooltip.style.left = `${Math.max(90, Math.min(rect.width - 90, offsetX))}px`;
-  tooltip.style.top = `${Math.max(24, Math.min(rect.height - 24, offsetY))}px`;
-  tooltip.classList.toggle("below", offsetY < 96);
+
+  // 测量 tooltip 实际尺寸（offsetWidth/Height 不受 transform / opacity 影响）
+  const tw = tooltip.offsetWidth;
+  const th = tooltip.offsetHeight;
+  const gap = 8;
+
+  // ── 水平方向 ──
+  // CSS 用 translate(-50%) 水平居中，tooltip 左边缘 = left - tw/2，右边缘 = left + tw/2
+  // 保证整个 tooltip 不溢出容器边界
+  const minLeft = Math.max(gap + tw / 2, 0);
+  const maxLeft = Math.min(rect.width - gap - tw / 2, rect.width);
+  const finalLeft = Math.max(minLeft, Math.min(maxLeft, offsetX));
+
+  // ── 垂直方向 ──
+  // "上方"模式（默认）：tooltip 下边缘在 top - 18（箭头间隙），上边缘在 top - 18 - th
+  // "下方"模式（below）：tooltip 上边缘在 top + 18，下边缘在 top + 18 + th
+  const fitsAbove = offsetY - 18 - th >= gap;
+  const fitsBelow = offsetY + 18 + th <= rect.height - gap;
+
+  let finalTop, showBelow;
+  if (fitsAbove) {
+    // 上方空间充足，放在上方
+    finalTop = offsetY;
+    showBelow = false;
+  } else if (fitsBelow) {
+    // 上方不足但下方充足，放在下方
+    finalTop = offsetY;
+    showBelow = true;
+  } else {
+    // 两侧空间都不够，选空间更大的一侧并 clamp
+    const roomAbove = offsetY - gap - 18 - th;
+    const roomBelow = rect.height - gap - (offsetY + 18 + th);
+    if (roomAbove >= roomBelow) {
+      finalTop = Math.max(gap + 18 + th, offsetY);
+      showBelow = false;
+    } else {
+      finalTop = Math.min(rect.height - gap - 18 - th, offsetY);
+      showBelow = true;
+    }
+  }
+
+  tooltip.style.left = `${finalLeft}px`;
+  tooltip.style.top = `${finalTop}px`;
+  tooltip.classList.toggle("below", showBelow);
   tooltip.classList.add("show");
   tooltip.setAttribute("aria-hidden", "false");
   canvas.classList.add("is-hovering");

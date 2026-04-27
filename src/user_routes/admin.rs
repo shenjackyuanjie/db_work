@@ -39,14 +39,18 @@ fn load_settings_or_error(err: anyhow::Error) -> impl IntoResponse {
 }
 
 fn count_from_row(row: Option<sqlx::postgres::PgRow>, field: &str) -> i64 {
-    row.and_then(|item| item.try_get::<i64, _>(field).ok()).unwrap_or(0)
+    row.and_then(|item| item.try_get::<i64, _>(field).ok())
+        .unwrap_or(0)
 }
 
 fn orchard_status_from_snapshot(
     health_index: Option<f64>,
     predicted_class: Option<&str>,
 ) -> (&'static str, &'static str, &'static str) {
-    if let Some(label) = predicted_class.map(str::trim).filter(|label| !label.is_empty()) {
+    if let Some(label) = predicted_class
+        .map(str::trim)
+        .filter(|label| !label.is_empty())
+    {
         match label {
             "黄龙病" => return ("critical", "黄龙病预警", "#ef4444"),
             "溃疡病" => return ("warning", "溃疡病预警", "#f59e0b"),
@@ -111,12 +115,19 @@ pub async fn set_admin_handler(
         .await
     {
         Ok(result) if result.rows_affected() > 0 => {
-            let role_text = if payload.make_admin { "管理员" } else { "普通用户" };
+            let role_text = if payload.make_admin {
+                "管理员"
+            } else {
+                "普通用户"
+            };
             let _ = append_audit_log(
                 &state.db,
                 "action",
                 Some(&admin_username),
-                &format!("管理员 {} 将用户 {} 调整为{}", admin_username, payload.target_username, role_text),
+                &format!(
+                    "管理员 {} 将用户 {} 调整为{}",
+                    admin_username, payload.target_username, role_text
+                ),
             )
             .await;
             (StatusCode::OK, Json(json!({ "status": "updated" }))).into_response()
@@ -153,28 +164,33 @@ pub async fn create_invitation_handler(
         .ttl_seconds
         .unwrap_or(settings.default_invite_ttl_seconds.max(3600) as u64);
     let code = Uuid::new_v4().to_string();
-    let expires_at = if ttl == 0 { i64::MAX as u64 } else { now_secs() + ttl };
+    let expires_at = if ttl == 0 {
+        i64::MAX as u64
+    } else {
+        now_secs() + ttl
+    };
 
     info!(
         "管理员请求创建邀请码: admin={}, ttl_seconds={}",
         admin_username, ttl
     );
 
-    match sqlx::query(
-        "INSERT INTO app_invitations (code, used, expires_at) VALUES ($1, $2, $3)",
-    )
-    .bind(&code)
-    .bind(false)
-    .bind(expires_at as i64)
-    .execute(&state.db)
-    .await
+    match sqlx::query("INSERT INTO app_invitations (code, used, expires_at) VALUES ($1, $2, $3)")
+        .bind(&code)
+        .bind(false)
+        .bind(expires_at as i64)
+        .execute(&state.db)
+        .await
     {
         Ok(_) => {
             let _ = append_audit_log(
                 &state.db,
                 "action",
                 Some(&admin_username),
-                &format!("管理员 {} 创建邀请码 {}，有效期 {} 秒", admin_username, code, ttl),
+                &format!(
+                    "管理员 {} 创建邀请码 {}，有效期 {} 秒",
+                    admin_username, code, ttl
+                ),
             )
             .await;
             (
@@ -235,9 +251,11 @@ pub async fn list_users_handler(
         return (code, Json(body)).into_response();
     }
 
-    match sqlx::query("SELECT username, is_admin, created_at FROM app_users ORDER BY created_at DESC")
-        .fetch_all(&state.db)
-        .await
+    match sqlx::query(
+        "SELECT username, is_admin, created_at FROM app_users ORDER BY created_at DESC",
+    )
+    .fetch_all(&state.db)
+    .await
     {
         Ok(rows) => {
             let users = rows
@@ -336,7 +354,9 @@ pub async fn approve_pending_user_handler(
     let username: String = row.try_get("username").unwrap_or_default();
     let password_hash: String = row.try_get("password_hash").unwrap_or_default();
     let created_at: i64 = row.try_get("created_at").unwrap_or(0);
-    let requested_role: String = row.try_get("requested_role").unwrap_or_else(|_| "user".to_string());
+    let requested_role: String = row
+        .try_get("requested_role")
+        .unwrap_or_else(|_| "user".to_string());
 
     let user_exists = sqlx::query("SELECT 1 FROM app_users WHERE username = $1 LIMIT 1")
         .bind(&username)
@@ -380,7 +400,10 @@ pub async fn approve_pending_user_handler(
         &state.db,
         "action",
         Some(&admin_username),
-        &format!("管理员 {} 通过了用户 {} 的注册申请", admin_username, payload.username),
+        &format!(
+            "管理员 {} 通过了用户 {} 的注册申请",
+            admin_username, payload.username
+        ),
     )
     .await;
 
@@ -412,7 +435,10 @@ pub async fn reject_pending_user_handler(
                 &state.db,
                 "action",
                 Some(&admin_username),
-                &format!("管理员 {} 拒绝了用户 {} 的注册申请", admin_username, payload.username),
+                &format!(
+                    "管理员 {} 拒绝了用户 {} 的注册申请",
+                    admin_username, payload.username
+                ),
             )
             .await;
             (StatusCode::OK, Json(json!({ "status": "rejected" }))).into_response()
@@ -569,10 +595,12 @@ pub async fn dashboard_stats_handler(
         "count",
     );
 
-    let detection_rows = sqlx::query("SELECT timestamp FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 500")
-        .fetch_all(&state.db)
-        .await
-        .unwrap_or_default();
+    let detection_rows = sqlx::query(
+        "SELECT timestamp FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 500",
+    )
+    .fetch_all(&state.db)
+    .await
+    .unwrap_or_default();
 
     let today = Utc::now().date_naive();
     let mut series = (0..7)
@@ -658,7 +686,7 @@ pub async fn orchard_overview_handler(
             t.pos_x,
             t.pos_y,
             t.terrain_height,
-            t.variety,
+
             latest_sensor.sampled_at,
             latest_sensor.temperature,
             latest_sensor.humidity,
@@ -726,9 +754,11 @@ pub async fn orchard_overview_handler(
         let pos_x = row.try_get::<f64, _>("pos_x").unwrap_or(0.0);
         let pos_y = row.try_get::<f64, _>("pos_y").unwrap_or(0.0);
         let terrain_height = row.try_get::<f64, _>("terrain_height").unwrap_or(0.0);
-        let variety = row.try_get::<String, _>("variety").unwrap_or_else(|_| "未知品种".to_string());
+
         let sampled_at = row.try_get::<Option<i64>, _>("sampled_at").unwrap_or(None);
-        let health_index = row.try_get::<Option<f64>, _>("health_index").unwrap_or(None);
+        let health_index = row
+            .try_get::<Option<f64>, _>("health_index")
+            .unwrap_or(None);
         let predicted_class = row
             .try_get::<Option<String>, _>("predicted_class")
             .unwrap_or(None)
@@ -784,7 +814,7 @@ pub async fn orchard_overview_handler(
                 "y": pos_y,
             },
             "terrain_height": terrain_height,
-            "variety": variety,
+
             "status": {
                 "level": status_level,
                 "label": status_label,
@@ -893,7 +923,9 @@ pub async fn dashboard_logs_handler(
     }
 
     for row in diagnosis_rows {
-        let predicted_class = row.try_get::<String, _>("predicted_class").unwrap_or_default();
+        let predicted_class = row
+            .try_get::<String, _>("predicted_class")
+            .unwrap_or_default();
         let confidence = row.try_get::<f64, _>("confidence").unwrap_or(0.0);
         let username = row
             .try_get::<Option<String>, _>("username")
@@ -916,7 +948,9 @@ pub async fn dashboard_logs_handler(
 
     for row in pending_rows {
         let username = row.try_get::<String, _>("username").unwrap_or_default();
-        let requested_role = row.try_get::<String, _>("requested_role").unwrap_or_else(|_| "user".to_string());
+        let requested_role = row
+            .try_get::<String, _>("requested_role")
+            .unwrap_or_else(|_| "user".to_string());
         let role_text = if requested_role.eq_ignore_ascii_case("admin") {
             "管理员"
         } else {
@@ -942,8 +976,14 @@ pub async fn dashboard_logs_handler(
     }
 
     logs.sort_by(|left, right| {
-        let right_ts = right.get("created_at").and_then(|value| value.as_i64()).unwrap_or(0);
-        let left_ts = left.get("created_at").and_then(|value| value.as_i64()).unwrap_or(0);
+        let right_ts = right
+            .get("created_at")
+            .and_then(|value| value.as_i64())
+            .unwrap_or(0);
+        let left_ts = left
+            .get("created_at")
+            .and_then(|value| value.as_i64())
+            .unwrap_or(0);
         right_ts.cmp(&left_ts)
     });
 

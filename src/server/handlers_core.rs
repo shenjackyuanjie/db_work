@@ -1,3 +1,4 @@
+use crate::system_settings::load_system_settings;
 use axum::{
     Json,
     extract::{Query, State},
@@ -6,15 +7,14 @@ use axum::{
 };
 use serde_json::json;
 use sqlx::Row;
-use crate::system_settings::load_system_settings;
 
 use super::{
     AddTaskRequest, AppState, CompleteTaskRequest, DiseaseTreatmentQuery,
     GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, TaskRecord,
     TemperatureHumiditySample, UsernameQuery, api_response, api_success,
-    build_temp_humidity_payload, default_temperature_samples,
-    classify_environment_risk, disease_treatment_text, normalize_recognition_record_image_path,
-    now_millis, risk_from_disease_name, task_payload, user_exists, username_by_token,
+    build_temp_humidity_payload, classify_environment_risk, default_temperature_samples,
+    disease_treatment_text, normalize_recognition_record_image_path, now_millis,
+    risk_from_disease_name, task_payload, user_exists, username_by_token,
 };
 
 pub async fn health_handler() -> impl IntoResponse {
@@ -36,7 +36,9 @@ async fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
 }
 
 async fn has_admin_session(state: &AppState, headers: &HeaderMap) -> bool {
-    crate::user_routes::ensure_admin(state, headers).await.is_ok()
+    crate::user_routes::ensure_admin(state, headers)
+        .await
+        .is_ok()
 }
 
 pub async fn admin_page_handler(
@@ -115,9 +117,10 @@ pub async fn api_user_handler(State(state): State<AppState>, headers: HeaderMap)
             .into_response();
     }
 
-    let row = sqlx::query("SELECT username, created_at FROM app_users ORDER BY created_at ASC LIMIT 1")
-        .fetch_optional(&state.db)
-        .await;
+    let row =
+        sqlx::query("SELECT username, created_at FROM app_users ORDER BY created_at ASC LIMIT 1")
+            .fetch_optional(&state.db)
+            .await;
 
     match row {
         Ok(Some(user)) => api_success(serde_json::json!({
@@ -210,7 +213,12 @@ pub async fn temperature_humidity_api_handler(
     State(state): State<AppState>,
     Query(query): Query<UsernameQuery>,
 ) -> impl IntoResponse {
-    let rows = if let Some(username) = query.username.as_ref().map(|x| x.trim()).filter(|x| !x.is_empty()) {
+    let rows = if let Some(username) = query
+        .username
+        .as_ref()
+        .map(|x| x.trim())
+        .filter(|x| !x.is_empty())
+    {
         sqlx::query(
             "SELECT username, timestamp, temperature, humidity FROM app_temperature_humidity WHERE username = $1 ORDER BY timestamp DESC LIMIT 10",
         )
@@ -230,7 +238,9 @@ pub async fn temperature_humidity_api_handler(
             .into_iter()
             .rev()
             .map(|item| TemperatureHumiditySample {
-                username: item.try_get::<Option<String>, _>("username").unwrap_or(None),
+                username: item
+                    .try_get::<Option<String>, _>("username")
+                    .unwrap_or(None),
                 timestamp: item.try_get::<i64, _>("timestamp").unwrap_or(0).max(0) as u64,
                 temperature: item.try_get::<f64, _>("temperature").unwrap_or(0.0),
                 humidity: item.try_get::<f64, _>("humidity").unwrap_or(0.0),
@@ -494,13 +504,12 @@ pub async fn complete_task_api_handler(
 ) -> impl IntoResponse {
     let completed_at = now_millis() as i64;
 
-    let updated = sqlx::query(
-        "UPDATE app_tasks SET is_completed = TRUE, completed_at = $1 WHERE id = $2",
-    )
-    .bind(completed_at)
-    .bind(&req.task_id)
-    .execute(&state.db)
-    .await;
+    let updated =
+        sqlx::query("UPDATE app_tasks SET is_completed = TRUE, completed_at = $1 WHERE id = $2")
+            .bind(completed_at)
+            .bind(&req.task_id)
+            .execute(&state.db)
+            .await;
 
     match updated {
         Ok(result) if result.rows_affected() > 0 => {
@@ -527,7 +536,8 @@ pub async fn complete_task_api_handler(
                         &task.try_get::<String, _>("source").unwrap_or_default(),
                         task.try_get::<bool, _>("is_completed").unwrap_or(true),
                         task.try_get::<i64, _>("created_at").unwrap_or(0),
-                        task.try_get::<Option<i64>, _>("completed_at").unwrap_or(None),
+                        task.try_get::<Option<i64>, _>("completed_at")
+                            .unwrap_or(None),
                     ),
                 )
                 .into_response();
