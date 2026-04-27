@@ -304,6 +304,10 @@ pub struct DiagnosisRecord {
     pub username: Option<String>,
     /// 区域（可选）
     pub area: Option<String>,
+    /// 环境温度（可选）
+    pub temp: Option<f64>,
+    /// 环境湿度（可选）
+    pub humm: Option<f64>,
     /// 保存的图片路径（可选）
     pub image_path: Option<String>,
 }

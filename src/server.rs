@@ -292,7 +292,9 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             preventive_measures TEXT NOT NULL,
             image_quality_warning TEXT NOT NULL,
             username TEXT NULL,
-            area TEXT NULL
+            area TEXT NULL,
+            temp DOUBLE PRECISION NULL,
+            humm DOUBLE PRECISION NULL
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_app_diag_user_time ON app_diagnosis_records(username, timestamp DESC)"#,
         r#"CREATE TABLE IF NOT EXISTS app_system_settings (
@@ -348,12 +350,14 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             .map_err(|e| anyhow::anyhow!("初始化数据库表失败: {}", e))?;
     }
 
-    // 迁移：为旧库补充 image_path 列
-    let _ = sqlx::query(
+    // 迁移：为旧库补充诊断记录新增列
+    for stmt in [
         "ALTER TABLE app_diagnosis_records ADD COLUMN IF NOT EXISTS image_path TEXT NULL",
-    )
-    .execute(pool)
-    .await;
+        "ALTER TABLE app_diagnosis_records ADD COLUMN IF NOT EXISTS temp DOUBLE PRECISION NULL",
+        "ALTER TABLE app_diagnosis_records ADD COLUMN IF NOT EXISTS humm DOUBLE PRECISION NULL",
+    ] {
+        let _ = sqlx::query(stmt).execute(pool).await;
+    }
 
     crate::system_settings::ensure_default_settings(pool).await?;
     ensure_orchard_demo_data(pool).await?;

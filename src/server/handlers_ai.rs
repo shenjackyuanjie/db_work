@@ -532,13 +532,15 @@ pub async fn citrus_disease_handler(
                 image_quality_warning: prediction.image_quality_warning.clone(),
                 username,
                 area,
+                temp: temperature,
+                humm: humidity,
                 image_path: saved_image_path,
             };
 
             // 只在是柑橘叶片时才插入数据库记录
             if record.is_citrus_leaf {
                 match sqlx::query(
-                    "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
+                    "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)",
                 )
                 .bind(&record.id)
                 .bind(record.timestamp as i64)
@@ -554,6 +556,8 @@ pub async fn citrus_disease_handler(
                 .bind(&record.image_quality_warning)
                 .bind(&record.username)
                 .bind(&record.area)
+                .bind(record.temp)
+                .bind(record.humm)
                 .bind(&record.image_path)
                 .execute(&state.db)
                 .await {
@@ -638,7 +642,7 @@ pub async fn citrus_disease_handler(
 // #[axum::debug_handler]
 pub async fn generate_handler(State(state): State<AppState>) -> impl IntoResponse {
     let rows = sqlx::query(
-        "SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 200",
+        "SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 200",
     )
     .fetch_all(&state.db)
     .await;
@@ -672,6 +676,8 @@ pub async fn generate_handler(State(state): State<AppState>) -> impl IntoRespons
                         .unwrap_or_default(),
                     username: r.try_get::<Option<String>, _>("username").unwrap_or(None),
                     area: r.try_get::<Option<String>, _>("area").unwrap_or(None),
+                    temp: r.try_get::<Option<f64>, _>("temp").unwrap_or(None),
+                    humm: r.try_get::<Option<f64>, _>("humm").unwrap_or(None),
                     image_path: normalize_recognition_record_image_path(image_path.as_deref()),
                 }
             })
@@ -783,6 +789,8 @@ pub async fn citrus_disease_advanced_handler(
     let mut image_base64_text: Option<String> = None;
     let mut username: Option<String> = None;
     let mut area: Option<String> = None;
+    let mut temperature: Option<f64> = None;
+    let mut humidity: Option<f64> = None;
 
     let auth_username = match crate::user_routes::extract_auth_token(&headers) {
         Some(token) => match username_by_token(&state, &token).await {
@@ -859,6 +867,14 @@ pub async fn citrus_disease_advanced_handler(
             .area
             .map(|x| x.trim().to_string())
             .filter(|x| !x.is_empty());
+        temperature = match parse_optional_json_f64(payload.temperature, "temperature") {
+            Ok(value) => value,
+            Err(message) => return bad_request_response(message),
+        };
+        humidity = match parse_optional_json_f64(payload.humidity, "humidity") {
+            Ok(value) => value,
+            Err(message) => return bad_request_response(message),
+        };
     } else if content_type.starts_with("multipart/form-data") {
         let boundary = match multer::parse_boundary(&content_type) {
             Ok(boundary) => boundary,
@@ -885,31 +901,34 @@ pub async fn citrus_disease_advanced_handler(
                 Ok(Some(field)) => {
                     let field_name = field.name().map(|x| x.to_string());
                     tracing::debug!("citrus_disease_advanced multipart 字段: {:?}", field_name);
-                    if field.name() == Some("image") {
-                        let content_type = field
-                            .content_type()
-                            .map(|x| x.to_string())
-                            .unwrap_or_else(|| "image/jpeg".to_string());
-                        match field.bytes().await {
-                            Ok(bytes) => {
-                                let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                                image_data = Some(format!("data:{};base64,{}", content_type, b64));
-                            }
-                            Err(e) => {
-                                tracing::error!("读取图片字段失败: {}", e);
-                                return (
-                                    StatusCode::BAD_REQUEST,
-                                    Json(serde_json::json!({
-                                        "code": 400,
-                                        "message": format!("读取图片数据失败: {}", e),
-                                        "data": null
-                                    })),
-                                )
-                                    .into_response();
+                    match field_name.as_deref() {
+                        Some("image") => {
+                            let content_type = field
+                                .content_type()
+                                .map(|x| x.to_string())
+                                .unwrap_or_else(|| "image/jpeg".to_string());
+                            match field.bytes().await {
+                                Ok(bytes) => {
+                                    let b64 =
+                                        base64::engine::general_purpose::STANDARD.encode(&bytes);
+                                    image_data =
+                                        Some(format!("data:{};base64,{}", content_type, b64));
+                                }
+                                Err(e) => {
+                                    tracing::error!("读取图片字段失败: {}", e);
+                                    return (
+                                        StatusCode::BAD_REQUEST,
+                                        Json(serde_json::json!({
+                                            "code": 400,
+                                            "message": format!("读取图片数据失败: {}", e),
+                                            "data": null
+                                        })),
+                                    )
+                                        .into_response();
+                                }
                             }
                         }
-                    } else if field.name() == Some("IMAGE") {
-                        match field.text().await {
+                        Some("IMAGE") => match field.text().await {
                             Ok(text) => image_base64_text = Some(text),
                             Err(e) => {
                                 tracing::error!("读取 IMAGE 字段失败: {}", e);
@@ -923,21 +942,50 @@ pub async fn citrus_disease_advanced_handler(
                                 )
                                     .into_response();
                             }
-                        }
-                    } else if field.name() == Some("username") {
-                        if let Ok(text) = field.text().await {
-                            let trimmed = text.trim();
-                            if !trimmed.is_empty() {
-                                username = Some(trimmed.to_string());
+                        },
+                        Some("username") => {
+                            if let Ok(text) = field.text().await {
+                                let trimmed = text.trim();
+                                if !trimmed.is_empty() {
+                                    username = Some(trimmed.to_string());
+                                }
                             }
                         }
-                    } else if field.name() == Some("area")
-                        && let Ok(text) = field.text().await
-                    {
-                        let trimmed = text.trim();
-                        if !trimmed.is_empty() {
-                            area = Some(trimmed.to_string());
+                        Some("area") => {
+                            if let Ok(text) = field.text().await {
+                                let trimmed = text.trim();
+                                if !trimmed.is_empty() {
+                                    area = Some(trimmed.to_string());
+                                }
+                            }
                         }
+                        Some("temperature") => match field.text().await {
+                            Ok(text) => match parse_optional_text_f64(&text, "temperature") {
+                                Ok(value) => temperature = value,
+                                Err(message) => return bad_request_response(message),
+                            },
+                            Err(e) => {
+                                tracing::error!("读取 temperature 字段失败: {}", e);
+                                return bad_request_response(format!(
+                                    "读取temperature字段失败: {}",
+                                    e
+                                ));
+                            }
+                        },
+                        Some("humidity") => match field.text().await {
+                            Ok(text) => match parse_optional_text_f64(&text, "humidity") {
+                                Ok(value) => humidity = value,
+                                Err(message) => return bad_request_response(message),
+                            },
+                            Err(e) => {
+                                tracing::error!("读取 humidity 字段失败: {}", e);
+                                return bad_request_response(format!(
+                                    "读取humidity字段失败: {}",
+                                    e
+                                ));
+                            }
+                        },
+                        _ => {}
                     }
                 }
                 Ok(None) => break,
@@ -1045,11 +1093,13 @@ pub async fn citrus_disease_advanced_handler(
             image_quality_warning: "".to_string(),
             username,
             area,
+            temp: temperature,
+            humm: humidity,
             image_path: saved_image_path,
         };
 
         let _ = sqlx::query(
-            "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
+            "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)",
         )
         .bind(&record.id)
         .bind(record.timestamp as i64)
@@ -1065,6 +1115,8 @@ pub async fn citrus_disease_advanced_handler(
         .bind(&record.image_quality_warning)
         .bind(&record.username)
         .bind(&record.area)
+        .bind(record.temp)
+        .bind(record.humm)
         .bind(&record.image_path)
         .execute(&state.db)
         .await;
@@ -1184,11 +1236,13 @@ pub async fn citrus_disease_advanced_handler(
         image_quality_warning: image_quality_warning.clone(),
         username,
         area,
+        temp: temperature,
+        humm: humidity,
         image_path: saved_image_path,
     };
 
     match sqlx::query(
-        "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)",
+        "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)",
     )
     .bind(&record.id)
     .bind(record.timestamp as i64)
@@ -1204,6 +1258,8 @@ pub async fn citrus_disease_advanced_handler(
     .bind(&record.image_quality_warning)
     .bind(&record.username)
     .bind(&record.area)
+    .bind(record.temp)
+    .bind(record.humm)
     .bind(&record.image_path)
     .execute(&state.db)
     .await {
