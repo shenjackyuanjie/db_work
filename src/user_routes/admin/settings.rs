@@ -14,8 +14,8 @@ use crate::{
     },
 };
 
-use super::common::{load_settings_or_error, system_settings_payload};
 use super::super::{UpdateSystemSettingsRequest, ensure_admin};
+use super::common::{load_settings_or_error, system_settings_payload};
 
 pub(crate) async fn get_system_settings_handler(
     State(state): State<AppState>,

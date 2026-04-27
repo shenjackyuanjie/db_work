@@ -63,7 +63,8 @@ pub(crate) async fn get_tasks_api_handler(
                         &row.try_get::<String, _>("source").unwrap_or_default(),
                         row.try_get::<bool, _>("is_completed").unwrap_or(false),
                         row.try_get::<i64, _>("created_at").unwrap_or(0),
-                        row.try_get::<Option<i64>, _>("completed_at").unwrap_or(None),
+                        row.try_get::<Option<i64>, _>("completed_at")
+                            .unwrap_or(None),
                     )
                 })
                 .collect::<Vec<_>>();
@@ -168,13 +169,12 @@ pub(crate) async fn complete_task_api_handler(
 ) -> Response {
     let completed_at = now_millis() as i64;
 
-    let updated = sqlx::query(
-        "UPDATE app_tasks SET is_completed = TRUE, completed_at = $1 WHERE id = $2",
-    )
-    .bind(completed_at)
-    .bind(&request.task_id)
-    .execute(&state.db)
-    .await;
+    let updated =
+        sqlx::query("UPDATE app_tasks SET is_completed = TRUE, completed_at = $1 WHERE id = $2")
+            .bind(completed_at)
+            .bind(&request.task_id)
+            .execute(&state.db)
+            .await;
 
     match updated {
         Ok(result) if result.rows_affected() > 0 => {
@@ -201,7 +201,8 @@ pub(crate) async fn complete_task_api_handler(
                         &task.try_get::<String, _>("source").unwrap_or_default(),
                         task.try_get::<bool, _>("is_completed").unwrap_or(true),
                         task.try_get::<i64, _>("created_at").unwrap_or(0),
-                        task.try_get::<Option<i64>, _>("completed_at").unwrap_or(None),
+                        task.try_get::<Option<i64>, _>("completed_at")
+                            .unwrap_or(None),
                     ),
                 )
                 .into_response();
@@ -360,7 +361,8 @@ pub(crate) async fn generate_task_from_environment_api_handler(
     .execute(&state.db)
     .await;
 
-    let (risk_level, description) = classify_environment_risk(request.temperature, request.humidity);
+    let (risk_level, description) =
+        classify_environment_risk(request.temperature, request.humidity);
     if risk_level == "低风险" {
         return api_response(
             StatusCode::OK,

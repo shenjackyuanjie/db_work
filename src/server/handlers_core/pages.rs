@@ -105,7 +105,10 @@ pub(crate) async fn system_status_api_handler(State(state): State<AppState>) -> 
     }
 }
 
-pub(crate) async fn api_user_handler(State(state): State<AppState>, headers: HeaderMap) -> Response {
+pub(crate) async fn api_user_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Response {
     if has_valid_session(&state, &headers).await {
         return crate::user_routes::me_handler(State(state), headers)
             .await

@@ -8,12 +8,12 @@ use serde_json::json;
 
 use crate::models::DiagnosisRecord;
 
+use super::super::{AppState, now_millis};
 use super::{
     persistence::{create_disease_task_if_needed, save_record_image, store_diagnosis_record},
     request::extract_citrus_request,
     review::{apply_review_threshold_to_fields, confidence_threshold_percent},
 };
-use super::super::{AppState, now_millis};
 
 pub(crate) async fn citrus_disease_advanced_handler(
     State(state): State<AppState>,
@@ -65,7 +65,7 @@ pub(crate) async fn citrus_disease_advanced_handler(
             treatment_suggestion: "请上传清晰的果树叶片图片以便继续诊断".to_string(),
             preventive_measures: "确保拍摄主体为单片叶片，光线充足、无遮挡。".to_string(),
             image_quality_warning: String::new(),
-            username: payload.username,
+            username: Some(payload.username),
             area: payload.area,
             temp: temperature,
             humm: humidity,
@@ -103,7 +103,11 @@ pub(crate) async fn citrus_disease_advanced_handler(
         gate.confidence
     );
 
-    let analysis_response = match state.client.analyze_citrus(Some(payload.image_data.clone())).await {
+    let analysis_response = match state
+        .client
+        .analyze_citrus(Some(payload.image_data.clone()))
+        .await
+    {
         Ok(response) => response,
         Err(err) => {
             tracing::error!("OpenRouter 高级识别失败: {}", err);
@@ -163,7 +167,7 @@ pub(crate) async fn citrus_disease_advanced_handler(
         treatment_suggestion: treatment_suggestion.clone(),
         preventive_measures: preventive_measures.clone(),
         image_quality_warning: image_quality_warning.clone(),
-        username: payload.username,
+        username: Some(payload.username),
         area: payload.area,
         temp: temperature,
         humm: humidity,

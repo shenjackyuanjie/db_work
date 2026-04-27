@@ -14,8 +14,8 @@ use crate::{
     system_settings::{append_audit_log, load_system_settings},
 };
 
-use super::common::load_settings_or_error;
 use super::super::{CreateInvitationRequest, PublicUser, SetAdminRequest, ensure_admin, now_secs};
+use super::common::load_settings_or_error;
 
 pub(crate) async fn set_admin_handler(
     State(state): State<AppState>,
@@ -39,7 +39,11 @@ pub(crate) async fn set_admin_handler(
         .await
     {
         Ok(result) if result.rows_affected() > 0 => {
-            let role_text = if payload.make_admin { "管理员" } else { "普通用户" };
+            let role_text = if payload.make_admin {
+                "管理员"
+            } else {
+                "普通用户"
+            };
             let _ = append_audit_log(
                 &state.db,
                 "action",
@@ -84,7 +88,11 @@ pub(crate) async fn create_invitation_handler(
         .ttl_seconds
         .unwrap_or(settings.default_invite_ttl_seconds.max(3600) as u64);
     let code = Uuid::new_v4().to_string();
-    let expires_at = if ttl == 0 { i64::MAX as u64 } else { now_secs() + ttl };
+    let expires_at = if ttl == 0 {
+        i64::MAX as u64
+    } else {
+        now_secs() + ttl
+    };
 
     info!(
         "管理员请求创建邀请码: admin={}, ttl_seconds={}",
@@ -167,9 +175,11 @@ pub(crate) async fn list_users_handler(
         return (code, Json(body)).into_response();
     }
 
-    match sqlx::query("SELECT username, is_admin, created_at FROM app_users ORDER BY created_at DESC")
-        .fetch_all(&state.db)
-        .await
+    match sqlx::query(
+        "SELECT username, is_admin, created_at FROM app_users ORDER BY created_at DESC",
+    )
+    .fetch_all(&state.db)
+    .await
     {
         Ok(rows) => {
             let users = rows

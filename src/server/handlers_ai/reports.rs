@@ -81,7 +81,9 @@ pub(crate) async fn generate_handler(State(state): State<AppState>) -> Response 
         Ok(rows) => rows
             .into_iter()
             .map(|row| {
-                let image_path = row.try_get::<Option<String>, _>("image_path").unwrap_or(None);
+                let image_path = row
+                    .try_get::<Option<String>, _>("image_path")
+                    .unwrap_or(None);
 
                 DiagnosisRecord {
                     id: row.try_get::<String, _>("id").unwrap_or_default(),
@@ -91,9 +93,7 @@ pub(crate) async fn generate_handler(State(state): State<AppState>) -> Response 
                         .unwrap_or_default(),
                     confidence: row.try_get::<f64, _>("confidence").unwrap_or(0.0),
                     is_citrus_leaf: row.try_get::<bool, _>("is_citrus_leaf").unwrap_or(false),
-                    citrus_type: row
-                        .try_get::<String, _>("citrus_type")
-                        .unwrap_or_default(),
+                    citrus_type: row.try_get::<String, _>("citrus_type").unwrap_or_default(),
                     is_healthy: row.try_get::<bool, _>("is_healthy").unwrap_or(false),
                     disease_name: row.try_get::<String, _>("disease_name").unwrap_or_default(),
                     severity: row.try_get::<String, _>("severity").unwrap_or_default(),

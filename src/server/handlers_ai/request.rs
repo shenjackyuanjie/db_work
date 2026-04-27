@@ -14,7 +14,7 @@ use super::super::{AppState, username_by_token};
 #[derive(Debug)]
 pub(super) struct ParsedCitrusRequest {
     pub image_data: String,
-    pub username: Option<String>,
+    pub username: String,
     pub area: Option<String>,
     pub temperature: Option<f64>,
     pub humidity: Option<f64>,
@@ -38,17 +38,15 @@ async fn auth_username_from_headers(
     match crate::user_routes::extract_auth_token(headers) {
         Some(token) => match username_by_token(state, &token).await {
             Some(name) => Ok(Some(name)),
-            None => Err(
-                (
-                    StatusCode::UNAUTHORIZED,
-                    Json(json!({
-                        "code": 401,
-                        "message": "Invalid token",
-                        "data": null
-                    })),
-                )
-                    .into_response(),
-            ),
+            None => Err((
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "code": 401,
+                    "message": "Invalid token",
+                    "data": null
+                })),
+            )
+                .into_response()),
         },
         None => Ok(None),
     }
@@ -113,17 +111,15 @@ pub(super) async fn extract_citrus_request(
         Ok(bytes) => bytes,
         Err(err) => {
             tracing::error!("读取请求体失败: {}", err);
-            return Err(
-                (
-                    StatusCode::BAD_REQUEST,
-                    Json(json!({
-                        "code": 400,
-                        "message": format!("读取请求体失败: {}", err),
-                        "data": null
-                    })),
-                )
-                    .into_response(),
-            );
+            return Err((
+                StatusCode::BAD_REQUEST,
+                Json(json!({
+                    "code": 400,
+                    "message": format!("读取请求体失败: {}", err),
+                    "data": null
+                })),
+            )
+                .into_response());
         }
     };
 
@@ -140,17 +136,15 @@ pub(super) async fn extract_citrus_request(
         let payload: CitrusDiseaseJsonRequest = match serde_json::from_slice(&body_bytes) {
             Ok(payload) => payload,
             Err(err) => {
-                return Err(
-                    (
-                        StatusCode::BAD_REQUEST,
-                        Json(json!({
-                            "code": 400,
-                            "message": format!("JSON 请求体格式错误: {}", err),
-                            "data": null
-                        })),
-                    )
-                        .into_response(),
-                );
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "code": 400,
+                        "message": format!("JSON 请求体格式错误: {}", err),
+                        "data": null
+                    })),
+                )
+                    .into_response());
             }
         };
 
@@ -161,12 +155,18 @@ pub(super) async fn extract_citrus_request(
                 .image_upper
                 .as_ref()
                 .is_some_and(|value| !value.trim().is_empty()),
-            payload.image.as_ref().is_some_and(|value| !value.trim().is_empty()),
+            payload
+                .image
+                .as_ref()
+                .is_some_and(|value| !value.trim().is_empty()),
             payload
                 .username
                 .as_ref()
                 .is_some_and(|value| !value.trim().is_empty()),
-            payload.area.as_ref().is_some_and(|value| !value.trim().is_empty()),
+            payload
+                .area
+                .as_ref()
+                .is_some_and(|value| !value.trim().is_empty()),
             payload.temperature.is_some(),
             payload.humidity.is_some()
         );
@@ -192,17 +192,15 @@ pub(super) async fn extract_citrus_request(
         let boundary = match multer::parse_boundary(&content_type) {
             Ok(boundary) => boundary,
             Err(err) => {
-                return Err(
-                    (
-                        StatusCode::BAD_REQUEST,
-                        Json(json!({
-                            "code": 400,
-                            "message": format!("multipart boundary 解析失败: {}", err),
-                            "data": null
-                        })),
-                    )
-                        .into_response(),
-                );
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(json!({
+                        "code": 400,
+                        "message": format!("multipart boundary 解析失败: {}", err),
+                        "data": null
+                    })),
+                )
+                    .into_response());
             }
         };
 
@@ -228,10 +226,7 @@ pub(super) async fn extract_citrus_request(
                                 Ok(bytes) => {
                                     let b64 =
                                         base64::engine::general_purpose::STANDARD.encode(&bytes);
-                                    image_data = Some(format!(
-                                        "data:{};base64,{}",
-                                        mime_type, b64
-                                    ));
+                                    image_data = Some(format!("data:{};base64,{}", mime_type, b64));
                                     tracing::info!(
                                         "{} multipart image读取成功: mime={} size={} bytes",
                                         log_prefix,
@@ -241,17 +236,15 @@ pub(super) async fn extract_citrus_request(
                                 }
                                 Err(err) => {
                                     tracing::error!("读取图片字段失败: {}", err);
-                                    return Err(
-                                        (
-                                            StatusCode::BAD_REQUEST,
-                                            Json(json!({
-                                                "code": 400,
-                                                "message": format!("读取图片数据失败: {}", err),
-                                                "data": null
-                                            })),
-                                        )
-                                            .into_response(),
-                                    );
+                                    return Err((
+                                        StatusCode::BAD_REQUEST,
+                                        Json(json!({
+                                            "code": 400,
+                                            "message": format!("读取图片数据失败: {}", err),
+                                            "data": null
+                                        })),
+                                    )
+                                        .into_response());
                                 }
                             }
                         }
@@ -267,17 +260,15 @@ pub(super) async fn extract_citrus_request(
                             }
                             Err(err) => {
                                 tracing::error!("读取 IMAGE 字段失败: {}", err);
-                                return Err(
-                                    (
-                                        StatusCode::BAD_REQUEST,
-                                        Json(json!({
-                                            "code": 400,
-                                            "message": format!("读取IMAGE字段失败: {}", err),
-                                            "data": null
-                                        })),
-                                    )
-                                        .into_response(),
-                                );
+                                return Err((
+                                    StatusCode::BAD_REQUEST,
+                                    Json(json!({
+                                        "code": 400,
+                                        "message": format!("读取IMAGE字段失败: {}", err),
+                                        "data": null
+                                    })),
+                                )
+                                    .into_response());
                             }
                         },
                         Some("username") => {
@@ -328,32 +319,28 @@ pub(super) async fn extract_citrus_request(
                 Ok(None) => break,
                 Err(err) => {
                     tracing::error!("解析 multipart 失败: {}", err);
-                    return Err(
-                        (
-                            StatusCode::BAD_REQUEST,
-                            Json(json!({
-                                "code": 400,
-                                "message": format!("解析请求失败: {}", err),
-                                "data": null
-                            })),
-                        )
-                            .into_response(),
-                    );
+                    return Err((
+                        StatusCode::BAD_REQUEST,
+                        Json(json!({
+                            "code": 400,
+                            "message": format!("解析请求失败: {}", err),
+                            "data": null
+                        })),
+                    )
+                        .into_response());
                 }
             }
         }
     } else {
-        return Err(
-            (
-                StatusCode::UNSUPPORTED_MEDIA_TYPE,
-                Json(json!({
-                    "code": 415,
-                    "message": "仅支持 application/json 或 multipart/form-data",
-                    "data": null
-                })),
-            )
-                .into_response(),
-        );
+        return Err((
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            Json(json!({
+                "code": 415,
+                "message": "仅支持 application/json 或 multipart/form-data",
+                "data": null
+            })),
+        )
+            .into_response());
     }
 
     if image_data.is_none()
@@ -386,6 +373,11 @@ pub(super) async fn extract_citrus_request(
     if username.is_none() {
         username = auth_username;
     }
+
+    let username = match username {
+        Some(u) => u,
+        None => return Err(bad_request_response("请求中未包含 username".to_string())),
+    };
 
     let image_data = match image_data {
         Some(image_data) => image_data,

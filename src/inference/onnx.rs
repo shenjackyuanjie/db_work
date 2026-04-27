@@ -1,5 +1,20 @@
 mod math;
 
+/// 正常柑橘环境温湿度监测范围（由各病害 ClimateProfile support 范围联合推导）
+/// 温度范围：15.0 ~ 41.6 °C
+/// 湿度范围：40.0 ~ 100.0 %
+pub const NORMAL_TEMP_RANGE: (f64, f64) = (15.0, 41.6);
+pub const NORMAL_HUMIDITY_RANGE: (f64, f64) = (40.0, 100.0);
+
+/// 判断温湿度读数是否在正常柑橘环境监测范围内。
+/// 在范围内返回 true（正常），超出范围返回 false（异常）。
+pub fn is_climate_in_range(temperature: f64, humidity: f64) -> bool {
+    temperature >= NORMAL_TEMP_RANGE.0
+        && temperature <= NORMAL_TEMP_RANGE.1
+        && humidity >= NORMAL_HUMIDITY_RANGE.0
+        && humidity <= NORMAL_HUMIDITY_RANGE.1
+}
+
 use super::types::{
     ClimateScore, ClimateValidationResult, DiseasePrediction, FruitTreeGatePrediction,
 };

@@ -107,14 +107,13 @@ pub(crate) async fn login_handler(
     let token = generate_token();
     let now = now_secs() as i64;
 
-    if let Err(err) = sqlx::query(
-        "INSERT INTO app_sessions (token, username, created_at) VALUES ($1, $2, $3)",
-    )
-    .bind(&token)
-    .bind(username)
-    .bind(now)
-    .execute(&state.db)
-    .await
+    if let Err(err) =
+        sqlx::query("INSERT INTO app_sessions (token, username, created_at) VALUES ($1, $2, $3)")
+            .bind(&token)
+            .bind(username)
+            .bind(now)
+            .execute(&state.db)
+            .await
     {
         return (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -163,10 +162,7 @@ pub(crate) async fn login_handler(
         .into_response()
 }
 
-pub(crate) async fn logout_handler(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Response {
+pub(crate) async fn logout_handler(State(state): State<AppState>, headers: HeaderMap) -> Response {
     let token = match extract_auth_token(&headers) {
         Some(token) => token,
         None => {
@@ -193,10 +189,11 @@ pub(crate) async fn logout_handler(
 
     match removed {
         Ok(result) if result.rows_affected() > 0 => {
-            let _ = sqlx::query("UPDATE app_users SET session_token = NULL WHERE session_token = $1")
-                .bind(&token)
-                .execute(&state.db)
-                .await;
+            let _ =
+                sqlx::query("UPDATE app_users SET session_token = NULL WHERE session_token = $1")
+                    .bind(&token)
+                    .execute(&state.db)
+                    .await;
             (
                 StatusCode::OK,
                 response_headers,

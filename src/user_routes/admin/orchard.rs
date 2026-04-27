@@ -134,7 +134,9 @@ pub(crate) async fn orchard_overview_handler(
     for row in rows {
         let tree_id = row.try_get::<i64, _>("id").unwrap_or_default();
         let tree_code = row.try_get::<String, _>("tree_code").unwrap_or_default();
-        let tag_serial_number = row.try_get::<Option<i64>, _>("tag_serial_number").unwrap_or(None);
+        let tag_serial_number = row
+            .try_get::<Option<i64>, _>("tag_serial_number")
+            .unwrap_or(None);
         let pos_x = row.try_get::<f64, _>("pos_x").unwrap_or(0.0);
         let pos_y = row.try_get::<f64, _>("pos_y").unwrap_or(0.0);
         let terrain_height = row.try_get::<f64, _>("terrain_height").unwrap_or(0.0);

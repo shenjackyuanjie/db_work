@@ -12,11 +12,13 @@ pub(super) fn softmax(logits: &[f32]) -> Vec<f32> {
 }
 
 pub(super) fn argmax_with_confidence(probabilities: &[f32]) -> (usize, f64) {
-    let (index, confidence) = probabilities.iter().copied().enumerate().fold(
-        (0usize, 0.0f32),
-        |acc, (index, value)| {
-            if value > acc.1 { (index, value) } else { acc }
-        },
-    );
+    let (index, confidence) =
+        probabilities
+            .iter()
+            .copied()
+            .enumerate()
+            .fold((0usize, 0.0f32), |acc, (index, value)| {
+                if value > acc.1 { (index, value) } else { acc }
+            });
     (index, confidence as f64)
 }

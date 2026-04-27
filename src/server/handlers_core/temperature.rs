@@ -41,7 +41,9 @@ pub(crate) async fn temperature_humidity_api_handler(
             .into_iter()
             .rev()
             .map(|item| TemperatureHumiditySample {
-                username: item.try_get::<Option<String>, _>("username").unwrap_or(None),
+                username: item
+                    .try_get::<Option<String>, _>("username")
+                    .unwrap_or(None),
                 timestamp: item.try_get::<i64, _>("timestamp").unwrap_or(0).max(0) as u64,
                 temperature: item.try_get::<f64, _>("temperature").unwrap_or(0.0),
                 humidity: item.try_get::<f64, _>("humidity").unwrap_or(0.0),
@@ -95,6 +97,26 @@ pub(crate) async fn post_temperature_humidity_handler(
             .into_response();
         }
     };
+
+    if let Err(err) = sqlx::query(
+        "INSERT INTO app_temperature_humidity (username, timestamp, temperature, humidity) \
+         VALUES ($1, $2, $3, $4)",
+    )
+    .bind(&request.username)
+    .bind(sampled_at)
+    .bind(request.temperature)
+    .bind(request.humidity)
+    .execute(&state.db)
+    .await
+    {
+        return api_response(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            500,
+            format!("db error: {}", err),
+            serde_json::Value::Null,
+        )
+        .into_response();
+    }
 
     let rows = sqlx::query(
         "SELECT tag_serial_number, sampled_at, temperature, humidity \

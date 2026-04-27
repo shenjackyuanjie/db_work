@@ -10,8 +10,8 @@ use sqlx::Row;
 
 use crate::{server::AppState, system_settings::load_system_settings};
 
-use super::common::{count_from_row, load_settings_or_error};
 use super::super::ensure_admin;
+use super::common::{count_from_row, load_settings_or_error};
 
 pub(crate) async fn dashboard_stats_handler(
     State(state): State<AppState>,
@@ -206,7 +206,9 @@ pub(crate) async fn dashboard_logs_handler(
     }
 
     for row in diagnosis_rows {
-        let predicted_class = row.try_get::<String, _>("predicted_class").unwrap_or_default();
+        let predicted_class = row
+            .try_get::<String, _>("predicted_class")
+            .unwrap_or_default();
         let confidence = row.try_get::<f64, _>("confidence").unwrap_or(0.0);
         let username = row
             .try_get::<Option<String>, _>("username")

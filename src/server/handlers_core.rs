@@ -1,9 +1,11 @@
+mod health_point;
 mod pages;
 mod records;
 mod static_data;
 mod tasks;
 mod temperature;
 
+pub(super) use health_point::health_point_handler;
 pub(super) use pages::{
     admin_page_handler, analyze_page_handler, api_user_handler, health_handler,
     system_status_api_handler,

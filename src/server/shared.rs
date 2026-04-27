@@ -82,6 +82,7 @@ pub struct GenerateEnvironmentTaskRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct TagTemperatureHumidityRequest {
+    pub username: String,
     pub temperature: f64,
     pub humidity: f64,
     pub tag_serial_number: i64,

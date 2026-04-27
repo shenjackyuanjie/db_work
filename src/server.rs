@@ -22,12 +22,11 @@ mod shared;
 
 pub(crate) use shared::{
     AddTaskRequest, AppState, CompleteTaskRequest, DiseaseTreatmentQuery,
-    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest,
-    RECOGNITION_RECORDS_UPLOAD_DIR, TagTemperatureHumidityRequest, TaskRecord,
-    TemperatureHumiditySample, UsernameQuery, api_response, api_success,
-    build_temp_humidity_payload, classify_environment_risk, default_temperature_samples,
-    disease_treatment_text, normalize_recognition_record_image_path, now_millis,
-    risk_from_disease_name, save_recognition_record_image, task_payload, user_exists,
+    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, RECOGNITION_RECORDS_UPLOAD_DIR,
+    TagTemperatureHumidityRequest, TaskRecord, TemperatureHumiditySample, UsernameQuery,
+    api_response, api_success, build_temp_humidity_payload, classify_environment_risk,
+    default_temperature_samples, disease_treatment_text, normalize_recognition_record_image_path,
+    now_millis, risk_from_disease_name, save_recognition_record_image, task_payload, user_exists,
     username_by_token,
 };
 
@@ -115,6 +114,10 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         .route(
             "/api/tasks/generate/environment",
             post(handlers_core::generate_task_from_environment_api_handler),
+        )
+        .route(
+            "/api/health-point",
+            get(handlers_core::health_point_handler),
         )
         .route("/api/generate", get(handlers_ai::generate_handler))
         .route(

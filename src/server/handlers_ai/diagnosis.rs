@@ -8,12 +8,12 @@ use serde_json::json;
 
 use crate::models::DiagnosisRecord;
 
+use super::super::{AppState, now_millis};
 use super::{
     persistence::{create_disease_task_if_needed, save_record_image, store_diagnosis_record},
     request::extract_citrus_request,
     review::{apply_review_threshold_to_prediction, confidence_threshold_percent},
 };
-use super::super::{AppState, now_millis};
 
 pub(crate) async fn citrus_disease_handler(
     State(state): State<AppState>,
@@ -55,12 +55,27 @@ pub(crate) async fn citrus_disease_handler(
                 treatment_suggestion: prediction.treatment_suggestion.clone(),
                 preventive_measures: prediction.preventive_measures.clone(),
                 image_quality_warning: prediction.image_quality_warning.clone(),
-                username: payload.username,
+                username: Some(payload.username),
                 area: payload.area,
                 temp: temperature,
                 humm: humidity,
                 image_path: save_record_image(&record_id, &payload.image_data),
             };
+
+            if let (Some(temp), Some(hum)) = (temperature, humidity) {
+                if let Err(err) = sqlx::query(
+                    "INSERT INTO app_temperature_humidity (username, timestamp, temperature, humidity) VALUES ($1, $2, $3, $4)",
+                )
+                .bind(&record.username)
+                .bind(timestamp as i64)
+                .bind(temp)
+                .bind(hum)
+                .execute(&state.db)
+                .await
+                {
+                    tracing::error!("温湿度写入 app_temperature_humidity 失败: {}", err);
+                }
+            }
 
             if record.is_citrus_leaf {
                 match store_diagnosis_record(&state, &record).await {

@@ -11,8 +11,8 @@ use crate::server::AppState;
 
 use super::{
     auth::{
-        app_response, current_system_settings, hash_password, now_secs,
-        pending_approval_response, requested_role_label, user_payload,
+        app_response, current_system_settings, hash_password, now_secs, pending_approval_response,
+        requested_role_label, user_payload,
     },
     dto::RegisterRequest,
 };
@@ -146,26 +146,25 @@ pub(crate) async fn register_handler(
         };
     }
 
-    let invite_row = match sqlx::query(
-        "SELECT used, expires_at FROM app_invitations WHERE code = $1 LIMIT 1",
-    )
-    .bind(invitation_code)
-    .fetch_optional(&state.db)
-    .await
-    {
-        Ok(row) => row,
-        Err(err) => {
-            return (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(app_response(
-                    500,
-                    format!("db error: {}", err),
-                    serde_json::Value::Null,
-                )),
-            )
-                .into_response();
-        }
-    };
+    let invite_row =
+        match sqlx::query("SELECT used, expires_at FROM app_invitations WHERE code = $1 LIMIT 1")
+            .bind(invitation_code)
+            .fetch_optional(&state.db)
+            .await
+        {
+            Ok(row) => row,
+            Err(err) => {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(app_response(
+                        500,
+                        format!("db error: {}", err),
+                        serde_json::Value::Null,
+                    )),
+                )
+                    .into_response();
+            }
+        };
 
     let invite_valid = match invite_row {
         Some(ref row) => {
