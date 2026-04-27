@@ -1,8 +1,7 @@
 use axum::{
     Json, Router,
     body::Body,
-    extract::State,
-    http::{HeaderMap, Method, Request, StatusCode, Uri},
+    http::{Request, StatusCode},
     middleware::Next,
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -27,8 +26,6 @@ pub struct AppState {
     pub client: OpenRouterClient,
     pub inference: crate::inference::InferenceRuntime,
     pub db: PgPool,
-    pub proxy_enabled: bool,
-    pub proxy_target_url: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -55,7 +52,7 @@ pub struct TemperatureHumiditySample {
 
 #[derive(Debug, Deserialize)]
 pub struct UsernameQuery {
-    pub username: Option<String>,
+    pub username: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -89,6 +86,14 @@ pub struct GenerateEnvironmentTaskRequest {
     pub username: String,
     pub temperature: f64,
     pub humidity: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct TagTemperatureHumidityRequest {
+    pub temperature: f64,
+    pub humidity: f64,
+    pub tag_serial_number: i64,
+    pub record_time: String,
 }
 
 fn now_millis() -> u64 {
@@ -238,7 +243,9 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             password_hash TEXT NOT NULL,
             is_admin BOOLEAN NOT NULL DEFAULT FALSE,
             created_at BIGINT NOT NULL,
-            session_token TEXT NULL
+            session_token TEXT NULL,
+            latitude DOUBLE PRECISION NULL,
+            longitude DOUBLE PRECISION NULL
         )"#,
         r#"CREATE TABLE IF NOT EXISTS app_sessions (
             token TEXT PRIMARY KEY,
@@ -319,6 +326,7 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
         r#"CREATE TABLE IF NOT EXISTS app_orchard_trees (
             id BIGSERIAL PRIMARY KEY,
             tree_code TEXT NOT NULL UNIQUE,
+            tag_serial_number BIGINT NULL UNIQUE,
             pos_x DOUBLE PRECISION NOT NULL CHECK (pos_x >= 0 AND pos_x <= 500),
             pos_y DOUBLE PRECISION NOT NULL CHECK (pos_y >= 0 AND pos_y <= 500),
             terrain_height DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -330,17 +338,13 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
         r#"CREATE INDEX IF NOT EXISTS idx_app_orchard_trees_active ON app_orchard_trees(is_active)"#,
         r#"CREATE TABLE IF NOT EXISTS app_tree_sensor_records (
             id BIGSERIAL PRIMARY KEY,
-            tree_id BIGINT NOT NULL REFERENCES app_orchard_trees(id) ON DELETE CASCADE,
+            tag_serial_number BIGINT NOT NULL,
             sampled_at BIGINT NOT NULL,
             temperature DOUBLE PRECISION NOT NULL,
             humidity DOUBLE PRECISION NOT NULL,
-            nitrogen DOUBLE PRECISION NOT NULL,
-            phosphorus DOUBLE PRECISION NOT NULL,
-            potassium DOUBLE PRECISION NOT NULL,
-            health_index DOUBLE PRECISION NOT NULL CHECK (health_index >= 0 AND health_index <= 1),
             source TEXT NOT NULL DEFAULT 'sensor'
         )"#,
-        r#"CREATE INDEX IF NOT EXISTS idx_app_tree_sensor_records_tree_sampled ON app_tree_sensor_records(tree_id, sampled_at DESC)"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_app_tree_sensor_records_tag_sampled ON app_tree_sensor_records(tag_serial_number, sampled_at DESC)"#,
     ];
 
     for stmt in ddl {
@@ -348,15 +352,6 @@ async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             .execute(pool)
             .await
             .map_err(|e| anyhow::anyhow!("初始化数据库表失败: {}", e))?;
-    }
-
-    // 迁移：为旧库补充诊断记录新增列
-    for stmt in [
-        "ALTER TABLE app_diagnosis_records ADD COLUMN IF NOT EXISTS image_path TEXT NULL",
-        "ALTER TABLE app_diagnosis_records ADD COLUMN IF NOT EXISTS temp DOUBLE PRECISION NULL",
-        "ALTER TABLE app_diagnosis_records ADD COLUMN IF NOT EXISTS humm DOUBLE PRECISION NULL",
-    ] {
-        let _ = sqlx::query(stmt).execute(pool).await;
     }
 
     crate::system_settings::ensure_default_settings(pool).await?;
@@ -400,10 +395,12 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
 
         for (index, (tree_code, pos_x, pos_y, terrain_height)) in demo_trees.iter().enumerate() {
             let created_at = now.saturating_sub(((demo_trees.len() - index) as i64) * 60_000);
+            let tag_serial_number = 10_000_001_i64 + index as i64;
             sqlx::query(
-                "INSERT INTO app_orchard_trees (tree_code, pos_x, pos_y, terrain_height, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, TRUE, $5, $6)",
+                "INSERT INTO app_orchard_trees (tree_code, tag_serial_number, pos_x, pos_y, terrain_height, is_active, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, TRUE, $6, $7)",
             )
             .bind(*tree_code)
+            .bind(tag_serial_number)
             .bind(*pos_x)
             .bind(*pos_y)
             .bind(*terrain_height)
@@ -422,7 +419,7 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
 
     if sensor_count == 0 {
         let now = now_millis() as i64;
-        let tree_rows = sqlx::query("SELECT id FROM app_orchard_trees ORDER BY id ASC")
+        let tree_rows = sqlx::query("SELECT id, tag_serial_number FROM app_orchard_trees ORDER BY id ASC")
             .fetch_all(pool)
             .await
             .map_err(|e| anyhow::anyhow!("读取果树主数据失败: {}", e))?;
@@ -431,7 +428,11 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
         ];
 
         for (index, row) in tree_rows.iter().enumerate() {
-            let tree_id = row.try_get::<i64, _>("id").unwrap_or_default();
+            let tag_serial_number = row
+                .try_get::<Option<i64>, _>("tag_serial_number")
+                .ok()
+                .flatten()
+                .unwrap_or_else(|| row.try_get::<i64, _>("id").unwrap_or_default());
             let health_anchor = *base_health.get(index).unwrap_or(&0.82);
 
             for sample_index in 0..3 {
@@ -439,23 +440,13 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
                 let wave = sample_index as f64 - 1.0;
                 let temperature = 23.6 + (index % 5) as f64 * 0.7 + wave * 0.35;
                 let humidity = 58.0 + (index % 4) as f64 * 4.5 - wave * 1.6;
-                let nitrogen = 118.0 - index as f64 * 2.8 + wave * 1.3;
-                let phosphorus = 54.0 - index as f64 * 1.2 + wave * 0.7;
-                let potassium = 142.0 - index as f64 * 3.5 + wave * 1.5;
-                let health_index =
-                    (health_anchor - (1.0 - sample_index as f64) * 0.015).clamp(0.0, 1.0);
-
                 sqlx::query(
-                    "INSERT INTO app_tree_sensor_records (tree_id, sampled_at, temperature, humidity, nitrogen, phosphorus, potassium, health_index, source) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'seed')",
+                    "INSERT INTO app_tree_sensor_records (tag_serial_number, sampled_at, temperature, humidity, source) VALUES ($1, $2, $3, $4, 'seed')",
                 )
-                .bind(tree_id)
+                .bind(tag_serial_number)
                 .bind(sampled_at)
                 .bind(temperature)
                 .bind(humidity)
-                .bind(nitrogen)
-                .bind(phosphorus)
-                .bind(potassium)
-                .bind(health_index)
                 .execute(pool)
                 .await
                 .map_err(|e| anyhow::anyhow!("写入示例传感器数据失败: {}", e))?;
@@ -590,78 +581,6 @@ async fn log_request_path(req: Request<Body>, next: Next) -> Response {
     next.run(req).await
 }
 
-async fn proxy_middleware(
-    State(state): State<AppState>,
-    req: Request<Body>,
-    next: Next,
-) -> Response {
-    if state.proxy_enabled {
-        if let Some(target_url) = &state.proxy_target_url {
-            let method = req.method().clone();
-            let uri = req.uri().clone();
-            let headers = req.headers().clone();
-
-            match forward_request(method, uri, &headers, target_url).await {
-                Ok(response) => {
-                    return response;
-                }
-                Err(e) => {
-                    eprintln!("[PROXY ERROR] Failed to forward request: {}", e);
-                }
-            }
-        }
-    }
-
-    next.run(req).await
-}
-
-async fn forward_request(
-    method: Method,
-    uri: Uri,
-    headers: &HeaderMap,
-    target_url: &str,
-) -> anyhow::Result<Response> {
-    let client = reqwest::Client::new();
-    let path_and_query = uri.path_and_query().map(|pq| pq.as_str()).unwrap_or("/");
-
-    let full_url = format!("{}{}", target_url.trim_end_matches('/'), path_and_query);
-
-    println!("[PROXY] Forwarding {} to {}", method, full_url);
-
-    let mut request_builder = match method {
-        Method::GET => client.get(&full_url),
-        Method::POST => client.post(&full_url),
-        Method::PUT => client.put(&full_url),
-        Method::DELETE => client.delete(&full_url),
-        Method::PATCH => client.patch(&full_url),
-        _ => {
-            return Err(anyhow::anyhow!("Unsupported method: {}", method));
-        }
-    };
-
-    for (name, value) in headers {
-        if let Ok(value_str) = value.to_str() {
-            request_builder = request_builder.header(name.as_str(), value_str);
-        }
-    }
-
-    let response = request_builder.send().await?;
-    let status = response.status();
-    let headers_map = response.headers().clone();
-    let body_bytes = response.bytes().await?;
-
-    let mut response_builder = Response::builder().status(status.as_u16());
-
-    for (name, value) in headers_map {
-        if let Some(name) = name {
-            response_builder = response_builder.header(name, value);
-        }
-    }
-
-    let response = response_builder.body(Body::from(body_bytes))?;
-    Ok(response)
-}
-
 pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
     let api_key = config.ai.openrouter_api_key.clone();
 
@@ -671,8 +590,6 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         client,
         inference,
         db,
-        proxy_enabled: config.server.proxy.enabled,
-        proxy_target_url: config.server.proxy.target_url.clone(),
     };
 
     Router::new()
@@ -701,7 +618,8 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         .route("/api/diagnose", get(handlers_core::diagnose_api_handler))
         .route(
             "/api/temperature-humidity",
-            get(handlers_core::temperature_humidity_api_handler),
+            get(handlers_core::temperature_humidity_api_handler)
+                .post(handlers_core::post_temperature_humidity_handler),
         )
         .route("/admin.html", get(handlers_core::admin_page_handler))
         .route("/analyze.html", get(handlers_core::analyze_page_handler))
@@ -755,7 +673,6 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
                 .allow_headers(Any),
         )
         .with_state(state.clone())
-    // .layer(axum::middleware::from_fn_with_state(state, proxy_middleware))
 }
 
 pub fn init_tracing(log_level: &str) {

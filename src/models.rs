@@ -185,6 +185,8 @@ pub struct User {
     pub is_admin: bool,
     pub created_at: u64,
     pub session_token: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

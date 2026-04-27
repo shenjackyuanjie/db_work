@@ -5,13 +5,14 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{Html, IntoResponse, Redirect, Response},
 };
+use chrono::{NaiveDateTime, TimeZone, Utc};
 use serde_json::json;
 use sqlx::Row;
 
 use super::{
     AddTaskRequest, AppState, CompleteTaskRequest, DiseaseTreatmentQuery,
-    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, TaskRecord,
-    TemperatureHumiditySample, UsernameQuery, api_response, api_success,
+    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, TagTemperatureHumidityRequest,
+    TaskRecord, TemperatureHumiditySample, UsernameQuery, api_response, api_success,
     build_temp_humidity_payload, classify_environment_risk, default_temperature_samples,
     disease_treatment_text, normalize_recognition_record_image_path, now_millis,
     risk_from_disease_name, task_payload, user_exists, username_by_token,
@@ -118,7 +119,7 @@ pub async fn api_user_handler(State(state): State<AppState>, headers: HeaderMap)
     }
 
     let row =
-        sqlx::query("SELECT username, created_at FROM app_users ORDER BY created_at ASC LIMIT 1")
+        sqlx::query("SELECT username, created_at, latitude, longitude FROM app_users ORDER BY created_at ASC LIMIT 1")
             .fetch_optional(&state.db)
             .await;
 
@@ -128,8 +129,8 @@ pub async fn api_user_handler(State(state): State<AppState>, headers: HeaderMap)
             "username": user.try_get::<String, _>("username").unwrap_or_default(),
             "email": null,
             "orchard_address": null,
-            "latitude": null,
-            "longitude": null,
+            "latitude": user.try_get::<Option<f64>, _>("latitude").unwrap_or(None),
+            "longitude": user.try_get::<Option<f64>, _>("longitude").unwrap_or(None),
             "created_at": user.try_get::<i64, _>("created_at").unwrap_or(0)
         }))
         .into_response(),
@@ -213,9 +214,7 @@ pub async fn temperature_humidity_api_handler(
     State(state): State<AppState>,
     Query(query): Query<UsernameQuery>,
 ) -> impl IntoResponse {
-    let rows = if let Some(username) = query
-        .username
-        .as_ref()
+    let rows = if let Some(username) = Some(query.username.as_str())
         .map(|x| x.trim())
         .filter(|x| !x.is_empty())
     {
@@ -268,20 +267,12 @@ pub async fn recognition_records_api_handler(
     State(state): State<AppState>,
     Query(query): Query<UsernameQuery>,
 ) -> impl IntoResponse {
-    let username = query
-        .username
-        .as_ref()
-        .map(|x| x.trim())
-        .filter(|x| !x.is_empty());
-
-    if username.is_none() {
-        return api_success(serde_json::json!({ "records": [] }));
-    }
+    let username = query.username;
 
     let rows = sqlx::query(
-        "SELECT id, predicted_class, area, confidence, timestamp, image_path FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp DESC LIMIT 20",
+        "SELECT id, predicted_class, area, confidence, timestamp, image_path FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp ASC LIMIT 20",
     )
-    .bind(username.unwrap_or_default())
+    .bind(&username)
     .fetch_all(&state.db)
     .await;
 
@@ -294,13 +285,20 @@ pub async fn recognition_records_api_handler(
                     let image_path = record
                         .try_get::<Option<String>, _>("image_path")
                         .unwrap_or(None);
+                    let recognition_date = {
+                        let ts = record.try_get::<i64, _>("timestamp").unwrap_or(0);
+                        Utc.timestamp_millis_opt(ts)
+                            .single()
+                            .map(|dt| dt.format("%Y-%m-%d").to_string())
+                            .unwrap_or_default()
+                    };
                     serde_json::json!({
                         "id": record.try_get::<String, _>("id").unwrap_or_default(),
                         "imagePath": normalize_recognition_record_image_path(image_path.as_deref()).unwrap_or_default(),
                         "diseaseName": predicted_class,
                         "area": record.try_get::<Option<String>, _>("area").unwrap_or(None).unwrap_or_else(|| "未指定区域".to_string()),
                         "riskLevel": risk_from_disease_name(&record.try_get::<String, _>("predicted_class").unwrap_or_default()),
-                        "recognitionDate": "2026-03-04",
+                        "recognitionDate": recognition_date,
                         "confidence": record.try_get::<f64, _>("confidence").unwrap_or(0.0),
                         "created_at": record.try_get::<i64, _>("timestamp").unwrap_or(0)
                     })
@@ -350,9 +348,7 @@ pub async fn get_tasks_api_handler(
     State(state): State<AppState>,
     Query(query): Query<UsernameQuery>,
 ) -> impl IntoResponse {
-    let username = match query
-        .username
-        .as_ref()
+    let username = match Some(query.username.as_str())
         .map(|x| x.trim())
         .filter(|x| !x.is_empty())
     {
@@ -659,6 +655,85 @@ pub async fn generate_task_from_disease_api_handler(
             task.completed_at.map(|x| x as i64),
         ),
     )
+}
+
+pub async fn post_temperature_humidity_handler(
+    State(state): State<AppState>,
+    Json(req): Json<TagTemperatureHumidityRequest>,
+) -> impl IntoResponse {
+    // 将 record_time 字符串解析为毫秒时间戳
+    let sampled_at = NaiveDateTime::parse_from_str(&req.record_time, "%Y-%m-%dT%H:%M:%S%.3f")
+        .map(|dt| dt.and_utc().timestamp_millis())
+        .unwrap_or_else(|_| now_millis() as i64);
+
+    // 1. Insert the new record and get its ID
+    let inserted_id = match sqlx::query_scalar::<_, i64>(
+        "INSERT INTO app_tree_sensor_records (tag_serial_number, sampled_at, temperature, humidity, source) \
+         VALUES ($1, $2, $3, $4, 'sensor') RETURNING id",
+    )
+    .bind(req.tag_serial_number)
+    .bind(sampled_at)
+    .bind(req.temperature)
+    .bind(req.humidity)
+    .fetch_one(&state.db)
+    .await
+    {
+        Ok(id) => id,
+        Err(e) => {
+            return api_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                500,
+                format!("db error: {}", e),
+                serde_json::Value::Null,
+            )
+            .into_response();
+        }
+    };
+
+    // 2. 查询该 tag 最近 9 条记录，排除刚插入的这条
+    let rows = sqlx::query(
+        "SELECT tag_serial_number, sampled_at, temperature, humidity \
+         FROM app_tree_sensor_records \
+         WHERE tag_serial_number = $1 AND id != $2 \
+         ORDER BY sampled_at DESC LIMIT 9",
+    )
+    .bind(req.tag_serial_number)
+    .bind(inserted_id)
+    .fetch_all(&state.db)
+    .await;
+
+    let recent_records = match rows {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| {
+                let millis = row.try_get::<i64, _>("sampled_at").unwrap_or(0);
+                let record_time = Utc
+                    .timestamp_millis_opt(millis)
+                    .single()
+                    .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S%.3f").to_string())
+                    .unwrap_or_default();
+                json!({
+                    "temperature": row.try_get::<f64, _>("temperature").unwrap_or(0.0),
+                    "humidity": row.try_get::<f64, _>("humidity").unwrap_or(0.0),
+                    "tag_serial_number": row.try_get::<i64, _>("tag_serial_number").unwrap_or(0),
+                    "record_time": record_time,
+                })
+            })
+            .collect::<Vec<_>>(),
+        Err(e) => {
+            return api_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                500,
+                format!("db error: {}", e),
+                serde_json::Value::Null,
+            )
+            .into_response();
+        }
+    };
+
+    api_success(json!({
+        "recentRecords": recent_records,
+    }))
 }
 
 pub async fn generate_task_from_environment_api_handler(

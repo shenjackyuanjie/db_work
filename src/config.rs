@@ -14,25 +14,6 @@ pub struct ServerConfig {
     pub addr: String,
     #[serde(default = "default_log_level")]
     pub log_level: String,
-    #[serde(default)]
-    pub proxy: ProxyConfig,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct ProxyConfig {
-    #[serde(default)]
-    pub enabled: bool,
-    #[serde(default)]
-    pub target_url: Option<String>,
-}
-
-impl Default for ProxyConfig {
-    fn default() -> Self {
-        Self {
-            enabled: false,
-            target_url: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Deserialize)]

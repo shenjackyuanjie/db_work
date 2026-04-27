@@ -302,7 +302,7 @@ pub async fn login_handler(
     }
 
     let row = match sqlx::query(
-        "SELECT password_hash, is_admin, created_at FROM app_users WHERE username = $1 LIMIT 1",
+        "SELECT password_hash, is_admin, created_at, latitude, longitude FROM app_users WHERE username = $1 LIMIT 1",
     )
     .bind(username)
     .fetch_optional(&state.db)
@@ -337,6 +337,8 @@ pub async fn login_handler(
     let password_hash: String = row.try_get("password_hash").unwrap_or_default();
     let is_admin: bool = row.try_get("is_admin").unwrap_or(false);
     let created_at: i64 = row.try_get("created_at").unwrap_or(0);
+    let latitude: Option<f64> = row.try_get("latitude").unwrap_or(None);
+    let longitude: Option<f64> = row.try_get("longitude").unwrap_or(None);
 
     if !verify_password(&password_hash, password) {
         return (
@@ -412,8 +414,8 @@ pub async fn login_handler(
                 "username": username,
                 "email": null,
                 "orchard_address": null,
-                "latitude": null,
-                "longitude": null,
+                "latitude": latitude,
+                "longitude": longitude,
                 "created_at": created_at.max(0) as u64,
                 "token": token,
                 "is_admin": is_admin
@@ -758,7 +760,7 @@ pub async fn me_handler(State(state): State<AppState>, headers: HeaderMap) -> im
     };
 
     let row = sqlx::query(
-        "SELECT username, is_admin, created_at FROM app_users WHERE username = $1 LIMIT 1",
+        "SELECT username, is_admin, created_at, latitude, longitude FROM app_users WHERE username = $1 LIMIT 1",
     )
     .bind(&username)
     .fetch_optional(&state.db)
@@ -770,7 +772,9 @@ pub async fn me_handler(State(state): State<AppState>, headers: HeaderMap) -> im
             Json(json!({
                 "username": r.try_get::<String, _>("username").unwrap_or(username),
                 "is_admin": r.try_get::<bool, _>("is_admin").unwrap_or(false),
-                "created_at": r.try_get::<i64, _>("created_at").unwrap_or(0)
+                "created_at": r.try_get::<i64, _>("created_at").unwrap_or(0),
+                "latitude": r.try_get::<Option<f64>, _>("latitude").unwrap_or(None),
+                "longitude": r.try_get::<Option<f64>, _>("longitude").unwrap_or(None)
             })),
         )
             .into_response(),

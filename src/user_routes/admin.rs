@@ -683,6 +683,7 @@ pub async fn orchard_overview_handler(
         SELECT
             t.id,
             t.tree_code,
+            t.tag_serial_number,
             t.pos_x,
             t.pos_y,
             t.terrain_height,
@@ -690,10 +691,7 @@ pub async fn orchard_overview_handler(
             latest_sensor.sampled_at,
             latest_sensor.temperature,
             latest_sensor.humidity,
-            latest_sensor.nitrogen,
-            latest_sensor.phosphorus,
-            latest_sensor.potassium,
-            latest_sensor.health_index,
+
             latest_diagnosis.predicted_class,
             latest_diagnosis.disease_name,
             latest_diagnosis.diagnosis_timestamp,
@@ -703,13 +701,9 @@ pub async fn orchard_overview_handler(
             SELECT
                 sampled_at,
                 temperature,
-                humidity,
-                nitrogen,
-                phosphorus,
-                potassium,
-                health_index
+                humidity
             FROM app_tree_sensor_records
-            WHERE tree_id = t.id
+            WHERE tag_serial_number = t.tag_serial_number
             ORDER BY sampled_at DESC
             LIMIT 1
         ) latest_sensor ON TRUE
@@ -744,21 +738,19 @@ pub async fn orchard_overview_handler(
     let mut trees = Vec::new();
     let mut legend = Vec::new();
     let mut online_trees = 0_i64;
-    let mut health_sum = 0.0_f64;
-    let mut health_count = 0_i64;
+
     let mut last_sampled_at = 0_i64;
 
     for row in rows {
         let tree_id = row.try_get::<i64, _>("id").unwrap_or_default();
         let tree_code = row.try_get::<String, _>("tree_code").unwrap_or_default();
+        let tag_serial_number = row.try_get::<Option<i64>, _>("tag_serial_number").unwrap_or(None);
         let pos_x = row.try_get::<f64, _>("pos_x").unwrap_or(0.0);
         let pos_y = row.try_get::<f64, _>("pos_y").unwrap_or(0.0);
         let terrain_height = row.try_get::<f64, _>("terrain_height").unwrap_or(0.0);
 
         let sampled_at = row.try_get::<Option<i64>, _>("sampled_at").unwrap_or(None);
-        let health_index = row
-            .try_get::<Option<f64>, _>("health_index")
-            .unwrap_or(None);
+
         let predicted_class = row
             .try_get::<Option<String>, _>("predicted_class")
             .unwrap_or(None)
@@ -769,7 +761,7 @@ pub async fn orchard_overview_handler(
             .filter(|value| !value.trim().is_empty());
         let diagnosis_label = disease_name.as_deref().or(predicted_class.as_deref());
         let (status_level, status_label, status_color) =
-            orchard_status_from_snapshot(health_index, diagnosis_label);
+            orchard_status_from_snapshot(None, diagnosis_label);
 
         push_orchard_legend(&mut legend, status_label, status_level, status_color);
 
@@ -777,20 +769,14 @@ pub async fn orchard_overview_handler(
             online_trees += 1;
             last_sampled_at = last_sampled_at.max(sampled_at);
         }
-        if let Some(health_index) = health_index {
-            health_sum += health_index;
-            health_count += 1;
-        }
+
 
         let latest_sensor = sampled_at.map(|sampled_at| {
             json!({
                 "sampled_at": sampled_at,
                 "temperature": row.try_get::<f64, _>("temperature").unwrap_or(0.0),
                 "humidity": row.try_get::<f64, _>("humidity").unwrap_or(0.0),
-                "nitrogen": row.try_get::<f64, _>("nitrogen").unwrap_or(0.0),
-                "phosphorus": row.try_get::<f64, _>("phosphorus").unwrap_or(0.0),
-                "potassium": row.try_get::<f64, _>("potassium").unwrap_or(0.0),
-                "health_index": health_index.unwrap_or(0.0),
+
             })
         });
 
@@ -809,6 +795,7 @@ pub async fn orchard_overview_handler(
         trees.push(json!({
             "id": tree_id,
             "tree_code": tree_code,
+            "tag_serial_number": tag_serial_number,
             "position": {
                 "x": pos_x,
                 "y": pos_y,
@@ -831,11 +818,7 @@ pub async fn orchard_overview_handler(
             .then(left.0.cmp(&right.0))
     });
 
-    let average_health_index = if health_count > 0 {
-        (health_sum / health_count as f64 * 100.0).round() / 100.0
-    } else {
-        0.0
-    };
+
 
     (
         StatusCode::OK,
@@ -849,7 +832,7 @@ pub async fn orchard_overview_handler(
             "summary": {
                 "total_trees": trees.len(),
                 "online_trees": online_trees,
-                "average_health_index": average_health_index,
+
                 "last_sampled_at": if last_sampled_at > 0 { Some(last_sampled_at) } else { None::<i64> },
             },
             "legend": legend.into_iter().map(|(label, level, color, count)| json!({
