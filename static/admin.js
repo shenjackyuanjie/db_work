@@ -409,11 +409,6 @@ function formatMetric(value, digits = 1) {
   return Number.isFinite(numeric) ? numeric.toFixed(digits) : "--";
 }
 
-function formatHealthIndex(value) {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? Math.round(numeric * 100) : null;
-}
-
 function orchardCanvasPoint(rawX, rawY, width, height) {
   const bounds = orchardState.bounds || DEFAULT_ORCHARD_BOUNDS;
   const paddingX = 34;
@@ -439,9 +434,8 @@ function buildOrchardTrees(width, height) {
     const rawY = Number(position.y ?? 0);
     const mapped = orchardCanvasPoint(rawX, rawY, width, height);
     const treeCode = item?.tree_code || `TREE-${item?.id ?? index + 1}`;
-    const healthIndex = isFiniteNumber(sensor.health_index) ? Number(sensor.health_index) : null;
     const palette = orchardTreePalette(item?.status?.level || "offline", item?.status?.color || "");
-    const canopyRadius = 5.1 + (healthIndex == null ? 1.8 : (1 - healthIndex) * 2.6) + ((Number(item?.id || index) % 3) * 0.35);
+    const canopyRadius = 6.9 + ((Number(item?.id || index) % 3) * 0.35);
 
     return {
       id: treeCode,
@@ -459,10 +453,6 @@ function buildOrchardTrees(width, height) {
       hitRadius: canopyRadius + 6,
       temperature: isFiniteNumber(sensor.temperature) ? Number(sensor.temperature) : null,
       humidity: isFiniteNumber(sensor.humidity) ? Number(sensor.humidity) : null,
-      nitrogen: isFiniteNumber(sensor.nitrogen) ? Number(sensor.nitrogen) : null,
-      phosphorus: isFiniteNumber(sensor.phosphorus) ? Number(sensor.phosphorus) : null,
-      potassium: isFiniteNumber(sensor.potassium) ? Number(sensor.potassium) : null,
-      healthIndex,
       sampledAt: sensor.sampled_at || null,
       latestDiagnosis: item?.latest_diagnosis || null,
       palette,
@@ -570,7 +560,6 @@ function showOrchardTooltip(tree, event) {
   const rect = canvas.getBoundingClientRect();
   const offsetX = event.clientX - rect.left;
   const offsetY = event.clientY - rect.top;
-  const healthScore = formatHealthIndex(tree.healthIndex);
   const diagnosisText = tree.latestDiagnosis?.disease_name || tree.latestDiagnosis?.predicted_class || "无";
 
   tooltip.innerHTML = `
@@ -592,14 +581,6 @@ function showOrchardTooltip(tree, event) {
       <div class="orchard-tooltip__meta-item">
         <span>地形高程</span>
         <strong>${formatMetric(tree.terrainHeight, 1)} m</strong>
-      </div>
-      <div class="orchard-tooltip__meta-item">
-        <span>N / P / K</span>
-        <strong>${formatMetric(tree.nitrogen, 0)} / ${formatMetric(tree.phosphorus, 0)} / ${formatMetric(tree.potassium, 0)}</strong>
-      </div>
-      <div class="orchard-tooltip__meta-item">
-        <span>健康指数</span>
-        <strong>${healthScore == null ? "--" : healthScore}</strong>
       </div>
     </div>
     <div style="margin-top: 10px; font-size: 11px; color: var(--muted); line-height: 1.45;">
@@ -703,9 +684,6 @@ function renderOrchardLegend() {
 
   const totalTrees = Number(summary.total_trees || orchardState.rawTrees.length || 0);
   const onlineTrees = Number(summary.online_trees || 0);
-  const avgHealth = isFiniteNumber(summary.average_health_index)
-    ? `${Math.round(Number(summary.average_health_index) * 100)}`
-    : "--";
 
   legend.innerHTML = items.map((item) => `
     <div style="display: flex; align-items: center; gap: 6px;">
@@ -715,7 +693,6 @@ function renderOrchardLegend() {
   `).join("") + `
     <div style="display: flex; align-items: center; gap: 10px; padding-left: 8px; border-left: 1px solid rgba(148, 163, 184, 0.18);">
       <span>在线 ${onlineTrees}/${totalTrees}</span>
-      <span>均值 ${avgHealth}</span>
     </div>
   `;
 }
