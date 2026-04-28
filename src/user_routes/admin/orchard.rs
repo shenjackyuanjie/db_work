@@ -4,94 +4,20 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
-use serde::Deserialize;
 use serde_json::{Value, json};
 use sqlx::Row;
-use std::{
-    collections::HashMap,
-    sync::{LazyLock, Mutex},
-};
 
-use crate::server::{AppState, now_millis};
+use crate::server::AppState;
 
 use super::super::{
     OrchardOverviewRequest, ensure_admin, ensure_authenticated,
 };
-
-const WEATHER_CACHE_TTL_MS: i64 = 60 * 60 * 1000;
-
-static WEATHER_CACHE: LazyLock<Mutex<HashMap<String, CachedWeather>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-static WEATHER_HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
-
-#[derive(Debug, Clone)]
-struct CachedWeather {
-    fetched_at_ms: i64,
-    payload: Value,
-}
 
 #[derive(Debug)]
 enum WeatherLookupError {
     UserNotFound,
     Database(sqlx::Error),
     Fetch(String),
-}
-
-#[derive(Debug, Default, Deserialize)]
-struct OpenMeteoUnits {
-    temperature_2m: Option<String>,
-    relative_humidity_2m: Option<String>,
-    wind_speed_10m: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OpenMeteoCurrent {
-    time: Option<String>,
-    temperature_2m: Option<f64>,
-    relative_humidity_2m: Option<f64>,
-    wind_speed_10m: Option<f64>,
-    weather_code: Option<i32>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OpenMeteoResponse {
-    latitude: f64,
-    longitude: f64,
-    timezone: Option<String>,
-    current_units: Option<OpenMeteoUnits>,
-    current: Option<OpenMeteoCurrent>,
-}
-
-fn weather_cache_key(latitude: f64, longitude: f64) -> String {
-    format!("{latitude:.4}:{longitude:.4}")
-}
-
-fn weather_code_label(code: Option<i32>) -> &'static str {
-    match code.unwrap_or(-1) {
-        0 => "晴",
-        1 | 2 => "少云",
-        3 => "阴",
-        45 | 48 => "雾",
-        51 | 53 | 55 => "毛毛雨",
-        56 | 57 => "冻毛毛雨",
-        61 | 63 | 65 => "雨",
-        66 | 67 => "冻雨",
-        71 | 73 | 75 | 77 => "雪",
-        80 | 81 | 82 => "阵雨",
-        85 | 86 => "阵雪",
-        95 => "雷暴",
-        96 | 99 => "强雷暴",
-        _ => "未知",
-    }
-}
-
-fn with_cache_metadata(mut payload: Value, cache_hit: bool, cached_at_ms: i64) -> Value {
-    if let Some(object) = payload.as_object_mut() {
-        object.insert("cache_hit".to_string(), json!(cache_hit));
-        object.insert("cached_at".to_string(), json!(cached_at_ms));
-    }
-
-    payload
 }
 
 async fn fetch_weather_by_coordinates(latitude: f64, longitude: f64) -> Result<Value, String> {

@@ -76,13 +76,6 @@ impl ResponseFormat {
         }
     }
 
-    /// 创建带有 JSON Schema 的结构化输出
-    pub fn with_schema(schema: serde_json::Value) -> Self {
-        Self {
-            format_type: "json_object".to_string(),
-            json_schema: Some(schema),
-        }
-    }
 }
 
 /// OpenRouter 错误响应
@@ -90,7 +83,6 @@ impl ResponseFormat {
 pub struct OpenRouterError {
     pub message: String,
     pub code: Option<i32>,
-    pub metadata: Option<serde_json::Value>,
 }
 
 /// OpenRouter 错误响应包装
@@ -160,24 +152,6 @@ pub struct ChatApiRequest {
     pub stream: Option<bool>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct User {
-    pub username: String,
-    pub password_hash: String,
-    pub is_admin: bool,
-    pub created_at: u64,
-    pub session_token: Option<String>,
-    pub latitude: Option<f64>,
-    pub longitude: Option<f64>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Invitation {
-    pub code: String,
-    pub used: bool,
-    pub expires_at: u64,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum RequestedRole {
@@ -190,15 +164,6 @@ impl RequestedRole {
     pub fn is_admin(&self) -> bool {
         matches!(self, Self::Admin)
     }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PendingUser {
-    pub username: String,
-    pub password_hash: String,
-    pub created_at: u64,
-    #[serde(default)]
-    pub requested_role: RequestedRole,
 }
 
 // 柑橘分析结构化输出（新 schema）
