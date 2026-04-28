@@ -66,6 +66,7 @@ pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             image_quality_warning TEXT NOT NULL,
             username TEXT NULL,
             area TEXT NULL,
+            image_path TEXT,
             temp DOUBLE PRECISION NULL,
             humm DOUBLE PRECISION NULL
         )"#,
