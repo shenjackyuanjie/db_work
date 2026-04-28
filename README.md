@@ -1,195 +1,263 @@
-# AI 服务
+# 柑橘果园智能诊断与管理后端
 
-这是一个基于 Rust 开发的智谱 AI AI-4V 模型 API 客户端，提供命令行工具（CLI）和 HTTP 服务器两种使用方式，支持文本和图片的多模态对话。
+这是一个基于 Rust 构建的单体后端服务，用于支撑柑橘果园场景下的用户登录、病害识别、环境监测、任务管理、管理员后台和施肥方案生成。
 
-## 功能特性
+服务启动后会同时提供：
 
-- 🚀 支持 CLI 命令行直接调用 AI-4V 模型
-- 🌐 内置 HTTP 服务器，提供 RESTful API 接口
-- 🖼️ 支持图片输入（JPEG、PNG、GIF、WebP）
-- ⚡ 异步请求处理，基于 Tokio 运行时
-- 🔧 灵活的参数配置（temperature、top_p、max_tokens）
-- 📊 详细的性能统计和 Token 使用情况展示
-- 🛡️ 支持 CORS 跨域请求
+- Web 静态页面（`/index.html`、`/analyze.html`、`/admin.html`）
+- 面向前端的 HTTP API
+- PostgreSQL 数据存储与启动时自动建表
+- 本地 ONNX 推理或 OpenRouter 驱动的混合推理能力
+
+当前仓库的入口在 `src/main.rs`，默认读取 `config.toml` 并直接启动 HTTP 服务，不再是早期 README 中描述的 CLI 聊天工具。
+
+## 主要能力
+
+- 用户注册、登录、登出、会话校验
+- 管理员后台、待审核用户、邀请码、系统设置、审计日志
+- 柑橘病害识别，支持本地 ONNX 推理和远端 AI 混合推理
+- 识别记录落库、图片归档、历史记录查询
+- 温湿度采样、果园健康点统计、任务生成与完成管理
+- 果园总览、树位与传感器示例数据自动初始化
+- 基于 OpenRouter 的柑橘分析和施肥建议生成
+- 前后端同端口部署，静态资源由服务直接托管
 
 ## 技术栈
 
-- **Rust** - 主要编程语言
-- **Tokio** - 异步运行时
-- **Axum** - HTTP 服务器框架
-- **Reqwest** - HTTP 客户端
-- **Serde** - JSON 序列化/反序列化
-- **Clap** - 命令行参数解析
+- Rust 2024
+- Tokio
+- Axum
+- SQLx + PostgreSQL
+- Tract ONNX
+- Reqwest
+- Serde
+- Tower HTTP
 
-## 环境要求
+## 运行要求
 
-- Rust 1.75 或更高版本
-- 智谱 AI API Key
+- Rust 1.85 或更新的稳定版
+- 可访问的 PostgreSQL 实例
+- 本地 ONNX 模型文件（使用 `onnx` 模式时必需）
+- OpenRouter API Key（使用柑橘分析、施肥建议等 AI 能力时必需）
 
-## 安装
+## 配置说明
+
+服务从根目录的 `config.toml` 读取配置。一个最小可用示例如下：
+
+```toml
+[server]
+addr = "0.0.0.0:11000"
+log_level = "info"
+
+[ai]
+openrouter_api_key = "sk-or-v1-your-key"
+
+[database]
+postgres_url = "postgres://user:password@127.0.0.1:5432/db_name"
+
+[inference]
+mode = "onnx"
+model_1_path = "onnx/model_1.onnx"
+model_2_path = "onnx/model_2.onnx"
+```
+
+配置项含义：
+
+- `server.addr`：服务监听地址
+- `server.log_level`：日志级别
+- `ai.openrouter_api_key`：OpenRouter 调用密钥
+- `database.postgres_url`：PostgreSQL 连接串
+- `inference.mode`：推理模式，支持 `onnx` 和 `remote`
+- `inference.model_1_path`：第一阶段果树识别模型路径
+- `inference.model_2_path`：第二阶段病害识别模型路径
+
+推理模式说明：
+
+- `onnx`：本地完成果树识别和病害分类，适合离线或低延迟场景
+- `remote`：先用本地模型判断是否为果树，再调用 OpenRouter 做病害分析与建议生成
+
+注意事项：
+
+- 服务启动时会自动创建所需数据表
+- 当果树与传感器表为空时，会自动写入一组演示树位和采样数据
+- 请不要把真实数据库地址或 API Key 提交到版本库
+
+## 快速启动
+
+1. 准备 PostgreSQL 数据库并确保连接串可用。
+2. 将 ONNX 模型放到 `onnx/model_1.onnx` 和 `onnx/model_2.onnx`，或在配置里改成你的实际路径。
+3. 修改根目录 `config.toml`。
+4. 启动服务。
 
 ```bash
-# 克隆项目
-git clone <repository-url>
-cd db
-
-# 编译项目
-cargo build --release
+cargo run --release
 ```
 
-## 环境配置
+启动成功后，默认可通过以下地址访问：
 
-设置智谱 AI API Key：
+- `http://127.0.0.1:11000/`：会重定向到首页
+- `http://127.0.0.1:11000/index.html`：公开首页 / 登录入口
+- `http://127.0.0.1:11000/analyze.html`：识别分析页，需要有效登录态
+- `http://127.0.0.1:11000/admin.html`：管理员后台，需要管理员权限
+
+## 关键接口概览
+
+下面列的是当前代码中已注册的主要接口分组，详细示例可参考 `backend_api_specs.md`，具体行为以代码路由为准。
+
+### 基础与会话
+
+- `GET /health`：健康检查
+- `POST /api/register`：注册
+- `POST /api/login`：登录
+- `POST /api/logout`：登出
+- `POST /api/validate`：校验 token
+- `GET /api/user`：获取当前用户或默认用户信息
+- `GET /api/system-status`：获取系统设置状态
+
+### 首页与看板
+
+- `GET /api/home`：首页摘要数据
+- `GET /api/growth-tracking`：生长追踪数据
+- `GET /api/diagnose`：诊断模块静态数据
+- `GET /api/temperature-humidity`：温湿度采样
+- `POST /api/temperature-humidity`：提交温湿度采样
+- `GET /api/health-point`：果园健康点统计
+
+### 病害识别与记录
+
+- `POST /api/citrus-disease`：病害识别
+- `POST /api/citrus-disease-v2`：增强版病害识别
+- `POST /citrus/analyze`：调用 OpenRouter 做柑橘图像分析
+- `GET /api/recognition-records`：识别记录列表
+- `GET /api/disease-treatment`：病害处置建议
+- `GET /media/recognition_records/*`：识别图片静态访问
+
+### 任务与建议生成
+
+- `GET /api/tasks`：任务列表
+- `POST /api/tasks/add`：新增任务
+- `POST /api/tasks/complete`：完成任务
+- `POST /api/tasks/generate/disease`：根据病害生成任务
+- `POST /api/tasks/generate/environment`：根据环境生成任务
+- `GET /api/generate`：基于历史诊断记录生成施肥建议文本
+- `POST /api/generate/fertilization-plan`：生成结构化施肥方案
+
+### 管理员接口
+
+管理员接口挂在 `/user/admin/*` 下，包含：
+
+- 用户管理与管理员设置
+- 邀请码创建与查询
+- 系统设置读取与更新
+- 果园总览与天气数据聚合
+- 仪表盘统计与日志
+- 待审核用户审批与驳回
+
+## 示例请求
+
+健康检查：
 
 ```bash
-# Linux/macOS
-export AI_API_KEY=your_api_key_here
-
-# Windows PowerShell
-$env:AI_API_KEY="your_api_key_here"
-
-# Windows CMD
-set AI_API_KEY=your_api_key_here
+curl http://127.0.0.1:11000/health
 ```
 
-API Key 可以从 [智谱 AI 开放平台](https://open.bigmodel.cn/) 获取。
-
-## 使用方法
-
-### 方式一：命令行工具（CLI）
-
-#### 启动聊天
+上传叶片图片做病害识别：
 
 ```bash
-# 纯文本对话
-cargo run -- chat --message "你好，请介绍一下你自己"
-
-# 带图片的对话
-cargo run -- chat --message "请描述这张图片的内容" --image ./path/to/image.jpg
+curl -X POST http://127.0.0.1:11000/api/citrus-disease \
+  -F "image=@./leaf.jpg"
 ```
 
-#### 查看帮助
+生成施肥方案：
 
 ```bash
-cargo run -- --help
+curl -X POST http://127.0.0.1:11000/api/generate/fertilization-plan \
+  -H "Content-Type: application/json" \
+  -d '{
+    "soilType": "红壤",
+    "phValue": 5.5,
+    "nitrogenLevel": "medium",
+    "phosphorusLevel": "low",
+    "potassiumLevel": "low",
+    "growthStage": "涨果期",
+    "treeAge": 5,
+    "areaSize": 1000
+  }'
 ```
 
-#### CLI 输出示例
+## 数据表
 
-```
-Response ID: chat-1234567890
-Model: AI-4.6v-flash
+服务启动时会自动初始化以下核心表：
 
-Assistant回复:
-[user]: 你好！我是智谱AI开发的AI-4.6V...
+- `app_users`
+- `app_sessions`
+- `app_invitations`
+- `app_pending_users`
+- `app_tasks`
+- `app_temperature_humidity`
+- `app_diagnosis_records`
+- `app_system_settings`
+- `app_admin_audit_logs`
+- `app_orchard_trees`
+- `app_tree_sensor_records`
 
-性能指标:
-  请求耗时: 1.23 秒
-  Token/s: 45.67
-
-Token使用情况:
-  Prompt tokens: 45
-  Completion tokens: 12
-  Total tokens: 57
-```
-
-### 方式二：HTTP 服务器
-
-#### 启动服务器
-
-```bash
-# 使用默认地址 127.0.0.1:3000
-cargo run -- server
-
-# 自定义监听地址
-cargo run -- server --addr 0.0.0.0:8080
-```
-
-#### API 接口
-
-##### 1. 健康检查
-
-```bash
-GET /health
-```
-
-响应：
-```json
-{
-  "status": "ok",
-  "service": "ai-service-server"
-}
-```
-
-##### 2. 页面与鉴权相关接口
-
-服务器模式主要用于登录/注册与页面访问控制。
-聊天能力请使用 CLI 模式。
-
-## 支持的图片格式
-
-- JPEG/JPG
-- PNG
-- GIF
-- WebP
+这意味着本项目默认采用“启动即建表”的方式，而不是独立迁移框架。
 
 ## 项目结构
 
-```
-db/
+```text
+.
 ├── src/
-│   ├── main.rs      # 主程序入口，CLI 参数解析
-│   ├── client.rs    # AI 服务 客户端实现
-│   ├── server.rs    # HTTP 服务器实现
-│   ├── models.rs    # 数据结构定义
-│   └── utils.rs     # 工具函数（图片处理等）
-├── examples/        # 示例代码（目前为空）
-├── Cargo.toml       # 项目配置和依赖
-└── README.md        # 本文档
+│   ├── main.rs                 # 服务入口
+│   ├── config.rs               # 配置加载
+│   ├── server.rs               # 路由注册与服务启动
+│   ├── server/                 # 页面、看板、识别记录、任务等处理器
+│   ├── user_routes/            # 登录、注册、管理员接口
+│   ├── inference/              # ONNX / 远端推理运行时
+│   ├── client/                 # OpenRouter 客户端与施肥建议调用
+│   ├── system_settings.rs      # 系统设置默认值与读取逻辑
+│   └── models.rs               # 请求/响应模型
+├── static/                     # 前端静态页面与资源
+├── onnx/                       # 本地推理模型
+├── scripts/                    # 数据迁移与辅助脚本
+├── backend_api_specs.md        # 接口草案与示例
+├── config.toml                 # 运行配置
+└── README.md
 ```
 
-## 开发
+## 开发命令
 
 ```bash
-# 运行测试
-cargo test
-
-# 格式化代码
-cargo fmt
-
-# 检查代码
 cargo check
+cargo test
+cargo fmt
 ```
-
-## 注意事项
-
-- ⚠️ 请妥善保管 API Key，不要提交到版本控制系统
-- ⚠️ 注意 API 调用的频率限制
-- ⚠️ 图片文件越大，base64 编码后体积越大，请控制图片大小
-- ⚠️ HTTP 服务器默认只监听本地地址，生产环境请配置防火墙和反向代理
 
 ## 常见问题
 
-### Q: 如何获取智谱 AI API Key？
-A: 访问 [智谱 AI 开放平台](https://open.bigmodel.cn/) 注册并获取 API Key。
+### 1. 服务启动时报数据库连接错误
 
-### Q: 支持哪些模型？
-A: 当前使用 `AI-4.6v-flash` 模型，支持文本和图片多模态输入。
+优先检查 `config.toml` 中的 `database.postgres_url`、数据库账号权限以及目标库是否存在。
 
-### Q: 图片大小有限制吗？
-A: 智谱 AI 对上传的图片大小有限制，建议使用小于 10MB 的图片。
+### 2. 识别接口返回模型加载失败
 
-### Q: 如何在 Docker 中运行？
-A: 可以创建 Dockerfile 使用 Rust 镜像构建，或在编译后使用最小化的运行时镜像。
+通常是 `onnx/model_1.onnx` 或 `onnx/model_2.onnx` 路径不对，或文件本身缺失。
+
+### 3. AI 生成接口调用失败
+
+检查 `ai.openrouter_api_key` 是否有效，以及外网是否可以访问 OpenRouter。
+
+### 4. 为什么访问 `/admin.html` 会被重定向
+
+管理员页面要求管理员会话；普通用户或未登录访问时会被重定向到首页。
+
+## 相关文件
+
+- `backend_api_specs.md`：已有接口示例文档
+- `scripts/migrate_sqlite_to_pg.py`：历史数据迁移脚本
+- `scripts/migrate_add_user_coordinates.sql`：用户坐标字段相关 SQL
 
 ## 许可证
 
-本项目代码仅供学习参考使用。
-
-## 相关链接
-
-- [智谱 AI 开放平台](https://open.bigmodel.cn/)
-- [AI-4 模型文档](https://open.bigmodel.cn/dev/api)
-- [Rust 官方文档](https://www.rust-lang.org/)
-- [Axum 框架](https://github.com/tokio-rs/axum)
+仓库中未声明单独许可证时，请按团队或项目约定使用。
 
