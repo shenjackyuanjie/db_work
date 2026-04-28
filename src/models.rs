@@ -34,24 +34,6 @@ impl ProviderPreferences {
     }
 }
 
-/// OpenRouter 路由配置
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum RouteConfig {
-    /// 默认路由
-    Fallback,
-    /// 最大化吞吐量
-    Nitro,
-    /// 最低价格
-    Floor,
-}
-
-impl Default for RouteConfig {
-    fn default() -> Self {
-        RouteConfig::Fallback
-    }
-}
-
 #[derive(Debug, Serialize)]
 pub struct ChatRequest {
     pub model: String,

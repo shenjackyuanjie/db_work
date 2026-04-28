@@ -10,8 +10,9 @@ mod session;
 
 pub(crate) use auth::{ensure_admin, extract_auth_token, now_secs, parse_requested_role};
 pub(crate) use dto::{
-    ApprovePendingUserRequest, CreateInvitationRequest, PendingPublicUser, PublicUser,
-    RejectPendingUserRequest, SetAdminRequest, UpdateSystemSettingsRequest,
+    ApprovePendingUserRequest, CreateInvitationRequest, OrchardOverviewRequest,
+    PendingPublicUser, PublicUser, RejectPendingUserRequest, SetAdminRequest,
+    UpdateSystemSettingsRequest,
 };
 pub(crate) use registration::register_handler;
 pub(crate) use session::{login_handler, logout_handler, me_handler, validate_token_handler};

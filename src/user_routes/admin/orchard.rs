@@ -4,12 +4,189 @@ use axum::{
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
-use serde_json::json;
+use serde::Deserialize;
+use serde_json::{Value, json};
 use sqlx::Row;
+use std::{
+    collections::HashMap,
+    sync::{LazyLock, Mutex},
+};
 
-use crate::server::AppState;
+use crate::server::{AppState, now_millis};
 
-use super::super::ensure_admin;
+use super::super::{OrchardOverviewRequest, ensure_admin};
+
+const WEATHER_CACHE_TTL_MS: i64 = 60 * 60 * 1000;
+
+static WEATHER_CACHE: LazyLock<Mutex<HashMap<String, CachedWeather>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+static WEATHER_HTTP_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
+
+#[derive(Debug, Clone)]
+struct CachedWeather {
+    fetched_at_ms: i64,
+    payload: Value,
+}
+
+#[derive(Debug)]
+enum WeatherLookupError {
+    UserNotFound,
+    Database(sqlx::Error),
+    Fetch(String),
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct OpenMeteoUnits {
+    temperature_2m: Option<String>,
+    relative_humidity_2m: Option<String>,
+    wind_speed_10m: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenMeteoCurrent {
+    time: Option<String>,
+    temperature_2m: Option<f64>,
+    relative_humidity_2m: Option<f64>,
+    wind_speed_10m: Option<f64>,
+    weather_code: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OpenMeteoResponse {
+    latitude: f64,
+    longitude: f64,
+    timezone: Option<String>,
+    current_units: Option<OpenMeteoUnits>,
+    current: Option<OpenMeteoCurrent>,
+}
+
+fn weather_cache_key(latitude: f64, longitude: f64) -> String {
+    format!("{latitude:.4}:{longitude:.4}")
+}
+
+fn weather_code_label(code: Option<i32>) -> &'static str {
+    match code.unwrap_or(-1) {
+        0 => "晴",
+        1 | 2 => "少云",
+        3 => "阴",
+        45 | 48 => "雾",
+        51 | 53 | 55 => "毛毛雨",
+        56 | 57 => "冻毛毛雨",
+        61 | 63 | 65 => "雨",
+        66 | 67 => "冻雨",
+        71 | 73 | 75 | 77 => "雪",
+        80 | 81 | 82 => "阵雨",
+        85 | 86 => "阵雪",
+        95 => "雷暴",
+        96 | 99 => "强雷暴",
+        _ => "未知",
+    }
+}
+
+fn with_cache_metadata(mut payload: Value, cache_hit: bool, cached_at_ms: i64) -> Value {
+    if let Some(object) = payload.as_object_mut() {
+        object.insert("cache_hit".to_string(), json!(cache_hit));
+        object.insert("cached_at".to_string(), json!(cached_at_ms));
+    }
+
+    payload
+}
+
+async fn fetch_weather_by_coordinates(latitude: f64, longitude: f64) -> Result<Value, String> {
+    let cache_key = weather_cache_key(latitude, longitude);
+    let now = now_millis() as i64;
+
+    if let Ok(cache) = WEATHER_CACHE.lock() {
+        if let Some(cached) = cache.get(&cache_key) {
+            if now.saturating_sub(cached.fetched_at_ms) < WEATHER_CACHE_TTL_MS {
+                return Ok(with_cache_metadata(
+                    cached.payload.clone(),
+                    true,
+                    cached.fetched_at_ms,
+                ));
+            }
+        }
+    }
+
+    let url = format!(
+        "https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto&forecast_days=1"
+    );
+
+    let response = WEATHER_HTTP_CLIENT
+        .get(url)
+        .send()
+        .await
+        .map_err(|err| format!("天气接口请求失败: {}", err))?;
+
+    if !response.status().is_success() {
+        return Err(format!("天气接口返回状态异常: {}", response.status()));
+    }
+
+    let payload = response
+        .json::<OpenMeteoResponse>()
+        .await
+        .map_err(|err| format!("天气接口响应解析失败: {}", err))?;
+    let current = payload
+        .current
+        .ok_or_else(|| "天气接口未返回实时天气".to_string())?;
+    let units = payload.current_units.unwrap_or_default();
+
+    let weather = json!({
+        "source": "open-meteo",
+        "latitude": payload.latitude,
+        "longitude": payload.longitude,
+        "timezone": payload.timezone,
+        "current": {
+            "time": current.time,
+            "temperature": current.temperature_2m,
+            "temperature_unit": units.temperature_2m,
+            "humidity": current.relative_humidity_2m,
+            "humidity_unit": units.relative_humidity_2m,
+            "wind_speed": current.wind_speed_10m,
+            "wind_speed_unit": units.wind_speed_10m,
+            "weather_code": current.weather_code,
+            "weather_text": weather_code_label(current.weather_code),
+        }
+    });
+
+    if let Ok(mut cache) = WEATHER_CACHE.lock() {
+        cache.insert(
+            cache_key,
+            CachedWeather {
+                fetched_at_ms: now,
+                payload: weather.clone(),
+            },
+        );
+    }
+
+    Ok(with_cache_metadata(weather, false, now))
+}
+
+async fn fetch_weather_for_user(state: &AppState, username: &str) -> Result<Option<Value>, WeatherLookupError> {
+    let row = sqlx::query(
+        "SELECT latitude, longitude FROM app_users WHERE username = $1 LIMIT 1",
+    )
+    .bind(username)
+    .fetch_optional(&state.db)
+    .await
+    .map_err(WeatherLookupError::Database)?;
+
+    let Some(row) = row else {
+        return Err(WeatherLookupError::UserNotFound);
+    };
+
+    let latitude = row.try_get::<Option<f64>, _>("latitude").unwrap_or(None);
+    let longitude = row.try_get::<Option<f64>, _>("longitude").unwrap_or(None);
+
+    let (Some(latitude), Some(longitude)) = (latitude, longitude) else {
+        return Ok(None);
+    };
+
+    fetch_weather_by_coordinates(latitude, longitude)
+        .await
+        .map(Some)
+        .map_err(WeatherLookupError::Fetch)
+}
 
 fn orchard_status_from_snapshot(
     health_index: Option<f64>,
@@ -64,10 +241,41 @@ fn push_orchard_legend(
 pub(crate) async fn orchard_overview_handler(
     State(state): State<AppState>,
     headers: HeaderMap,
+    Json(payload): Json<OrchardOverviewRequest>,
 ) -> Response {
     if let Err((code, body)) = ensure_admin(&state, &headers).await {
         return (code, Json(body)).into_response();
     }
+
+    let username = payload.username.trim().to_string();
+    if username.is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "username is required" })),
+        )
+            .into_response();
+    }
+
+    let (weather, weather_error) = match fetch_weather_for_user(&state, &username).await {
+        Ok(weather) => (weather, None),
+        Err(WeatherLookupError::UserNotFound) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "User not found" })),
+            )
+                .into_response();
+        }
+        Err(WeatherLookupError::Database(err)) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to load user coordinates: {}", err)
+                })),
+            )
+                .into_response();
+        }
+        Err(WeatherLookupError::Fetch(err)) => (None, Some(err)),
+    };
 
     let rows = match sqlx::query(
         r#"
@@ -210,6 +418,7 @@ pub(crate) async fn orchard_overview_handler(
     (
         StatusCode::OK,
         Json(json!({
+            "requested_username": username,
             "coordinate_range": {
                 "min_x": 0,
                 "max_x": 500,
@@ -227,6 +436,8 @@ pub(crate) async fn orchard_overview_handler(
                 "color": color,
                 "count": count,
             })).collect::<Vec<_>>(),
+            "weather": weather,
+            "weather_error": weather_error,
             "trees": trees,
         })),
     )

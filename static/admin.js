@@ -140,9 +140,12 @@ async function postJson(url, body) {
 
 async function validateAdmin() {
   const token = getToken();
-  if (!token) return false;
+  if (!token) return null;
   const resp = await postJson("/user/validate");
-  return resp.ok && resp.data.valid && resp.data.is_admin;
+  if (!resp.ok || !resp.data.valid || !resp.data.is_admin) {
+    return null;
+  }
+  return resp.data;
 }
 
 async function createInvite() {
@@ -326,6 +329,7 @@ const orchardState = {
   backgroundImageData: null,
   backgroundCacheKey: "",
 };
+let currentAdminUsername = "";
 let allLogs = [];
 
 function orchardTreePalette(level, accentColor) {
@@ -870,7 +874,14 @@ function renderOrchardMap() {
 }
 
 async function fetchOrchardOverview() {
-  const resp = await postJson("/user/admin/orchard/overview");
+  if (!currentAdminUsername) {
+    showToast("未获取到当前管理员用户名", "error");
+    return false;
+  }
+
+  const resp = await postJson("/user/admin/orchard/overview", {
+    username: currentAdminUsername,
+  });
   if (!resp.ok) {
     showToast(readErrorMessage(resp.data, "获取果园树位数据失败"), "error");
     orchardState.rawTrees = [];
@@ -1111,11 +1122,13 @@ function bindEvents() {
 }
 
 async function initPage() {
-  if (!(await validateAdmin())) {
+  const session = await validateAdmin();
+  if (!session) {
     alert("无权限访问或登录已过期，请重新登录。");
     window.location.href = "/index.html";
     return;
   }
+  currentAdminUsername = typeof session.username === "string" ? session.username : "";
   bindEvents();
   renderOrchardMap();
   await Promise.all([

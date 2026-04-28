@@ -49,6 +49,11 @@ pub(crate) struct UpdateSystemSettingsRequest {
     pub log_retention_days: i32,
 }
 
+#[derive(Debug, Deserialize)]
+pub(crate) struct OrchardOverviewRequest {
+    pub username: String,
+}
+
 #[derive(Debug, Serialize)]
 pub(crate) struct PublicUser {
     pub username: String,
