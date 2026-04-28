@@ -15,6 +15,7 @@
     <nav>
       <a href="/index.html" id="nav-home">前台首页</a>
       <a href="/analyze.html">识别页面</a>
+      <a href="/orchard-3d.html">3D 园区大屏</a>
       <a class="logout-btn" onclick="logout()">退出登录</a>
     </nav>
   </header>
@@ -23,7 +24,10 @@
     <!-- 顶部全宽卡片：果园总览热力图 -->
     <div class="card" style="grid-column: 1 / -1;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>园区监测大屏</h2>
+        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+          <h2>园区监测大屏</h2>
+          <a href="/orchard-3d.html" style="display:inline-flex; align-items:center; justify-content:center; padding:8px 14px; border-radius:999px; border:1px solid rgba(59,130,246,0.35); background:rgba(59,130,246,0.14); color:var(--text); text-decoration:none; font-size:12px; font-weight:600; letter-spacing:0.02em;">进入 3D 沙盘</a>
+        </div>
         <div id="orchardLegend" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end; font-size: 13px; color: var(--muted);"></div>
       </div>
       <div class="card-body" style="padding: 0;">

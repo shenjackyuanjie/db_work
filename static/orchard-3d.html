@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>园区监测 3D 沙盘</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/orchard-3d.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="screen-shell">
+    <div class="screen-glow screen-glow--cyan"></div>
+    <div class="screen-glow screen-glow--amber"></div>
+
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">ORCHARD SANDBOX</div>
+        <h1>园区监测 3D 沙盘</h1>
+      </div>
+      <div class="topbar-actions">
+        <button class="nav-button nav-button--ghost" id="btnToggleOrbit" type="button">暂停巡航</button>
+        <button class="nav-button" id="btnRefreshScene" type="button">刷新数据</button>
+        <a class="nav-link" href="/admin.html">返回管理台</a>
+      </div>
+    </header>
+
+    <main class="screen-grid">
+      <aside class="panel panel--summary">
+        <section class="panel-card panel-card--stacked">
+          <div class="panel-card__header">
+            <div>
+              <div class="eyebrow">LIVE STATUS</div>
+              <h2>园区总览</h2>
+            </div>
+            <span class="status-chip" id="overviewUpdatedAt">等待连接</span>
+          </div>
+          <div class="metric-grid">
+            <article class="metric-box">
+              <span>果树总数</span>
+              <strong id="metricTotalTrees">--</strong>
+              <small>覆盖全部树位坐标</small>
+            </article>
+            <article class="metric-box">
+              <span>在线设备</span>
+              <strong id="metricOnlineTrees">--</strong>
+              <small>最近一次采样上报</small>
+            </article>
+            <article class="metric-box metric-box--alert">
+              <span>预警树位</span>
+              <strong id="metricAlertTrees">--</strong>
+              <small>需要现场复核</small>
+            </article>
+            <article class="metric-box metric-box--accent">
+              <span>平均湿度</span>
+              <strong id="metricAvgHumidity">--</strong>
+              <small>来自在线采样</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-card__header">
+            <div>
+              <div class="eyebrow">LEGEND</div>
+              <h2>状态图例</h2>
+            </div>
+          </div>
+          <div class="legend-list" id="legendList">
+            <div class="empty-text">等待园区状态数据...</div>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-card__header">
+            <div>
+              <div class="eyebrow">WEATHER</div>
+              <h2>属地天气</h2>
+            </div>
+          </div>
+          <div class="weather-panel" id="weatherPanel">
+            <div class="weather-temp">--</div>
+            <div>
+              <div class="weather-title" id="weatherLocation">等待定位</div>
+              <div class="weather-meta" id="weatherMeta">连接接口后显示天气摘要</div>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="panel panel--scene">
+        <div class="scene-card">
+          <div class="scene-card__hud">
+            <div>
+              <div class="eyebrow">3D VIEW</div>
+              <h2>实时树位监测场</h2>
+            </div>
+            <div class="scene-pills">
+              <span class="pill">可拖拽旋转</span>
+              <span class="pill">点击树位查看详情</span>
+            </div>
+          </div>
+          <div class="scene-stage" id="sceneStage">
+            <canvas id="orchardSceneCanvas"></canvas>
+            <div class="scene-overlay scene-overlay--top">
+              <div class="overlay-kpis">
+                <div class="overlay-kpi">
+                  <span>温度均值</span>
+                  <strong id="overlayAvgTemp">--</strong>
+                </div>
+                <div class="overlay-kpi">
+                  <span>健康树占比</span>
+                  <strong id="overlayHealthyRate">--</strong>
+                </div>
+                <div class="overlay-kpi">
+                  <span>最新采样</span>
+                  <strong id="overlayLastSample">--</strong>
+                </div>
+              </div>
+            </div>
+            <div class="scene-overlay scene-overlay--bottom">
+              <div class="ticker" id="sceneTicker">等待园区数据载入...</div>
+            </div>
+            <div class="scene-empty" id="sceneEmpty" hidden>
+              <h3>暂无园区数据</h3>
+              <p>后端尚未返回树位坐标或传感器记录，沙盘已就绪，等待数据接入。</p>
+            </div>
+            <div class="scene-loading" id="sceneLoading">正在构建三维沙盘...</div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel panel--detail">
+        <section class="panel-card">
+          <div class="panel-card__header">
+            <div>
+              <div class="eyebrow">SELECTED TREE</div>
+              <h2>树位详情</h2>
+            </div>
+          </div>
+          <div class="detail-panel" id="treeDetailPanel">
+            <div class="empty-text">点击三维沙盘中的树位查看详细信息。</div>
+          </div>
+        </section>
+
+        <section class="panel-card">
+          <div class="panel-card__header">
+            <div>
+              <div class="eyebrow">ATTENTION</div>
+              <h2>重点关注</h2>
+            </div>
+          </div>
+          <div class="alert-list" id="alertList">
+            <div class="empty-text">暂无重点树位。</div>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script type="module" src="/orchard-3d.js"></script>
+</body>
+
+</html>

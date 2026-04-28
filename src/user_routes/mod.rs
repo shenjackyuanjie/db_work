@@ -8,7 +8,7 @@ mod dto;
 mod registration;
 mod session;
 
-pub(crate) use auth::{ensure_admin, extract_auth_token, now_secs, parse_requested_role};
+pub(crate) use auth::{ensure_admin, ensure_authenticated, extract_auth_token, now_secs, parse_requested_role};
 pub(crate) use dto::{
     ApprovePendingUserRequest, CreateInvitationRequest, OrchardOverviewRequest,
     PendingPublicUser, PublicUser, RejectPendingUserRequest, SetAdminRequest,
@@ -45,6 +45,10 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route(
             "/admin/orchard/overview",
             post(admin::orchard_overview_handler),
+        )
+        .route(
+            "/orchard/overview",
+            post(admin::orchard_overview_public_handler),
         )
         .route(
             "/admin/dashboard/stats",

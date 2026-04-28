@@ -190,7 +190,7 @@ pub async fn run_server(config: crate::config::AppConfig) -> anyhow::Result<()> 
         .parse()
         .map_err(|e| anyhow::anyhow!("解析 server.addr 失败: {}", e))?;
     let db = PgPoolOptions::new()
-        .max_connections(10)
+        .max_connections(3)
         .connect(&config.database.postgres_url)
         .await
         .map_err(|e| anyhow::anyhow!("连接 PostgreSQL 失败: {}", e))?;

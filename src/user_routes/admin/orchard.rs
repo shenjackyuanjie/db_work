@@ -14,7 +14,9 @@ use std::{
 
 use crate::server::{AppState, now_millis};
 
-use super::super::{OrchardOverviewRequest, ensure_admin};
+use super::super::{
+    OrchardOverviewRequest, ensure_admin, ensure_authenticated,
+};
 
 const WEATHER_CACHE_TTL_MS: i64 = 60 * 60 * 1000;
 
@@ -93,74 +95,25 @@ fn with_cache_metadata(mut payload: Value, cache_hit: bool, cached_at_ms: i64) -
 }
 
 async fn fetch_weather_by_coordinates(latitude: f64, longitude: f64) -> Result<Value, String> {
-    let cache_key = weather_cache_key(latitude, longitude);
-    let now = now_millis() as i64;
-
-    if let Ok(cache) = WEATHER_CACHE.lock() {
-        if let Some(cached) = cache.get(&cache_key) {
-            if now.saturating_sub(cached.fetched_at_ms) < WEATHER_CACHE_TTL_MS {
-                return Ok(with_cache_metadata(
-                    cached.payload.clone(),
-                    true,
-                    cached.fetched_at_ms,
-                ));
-            }
-        }
-    }
-
-    let url = format!(
-        "https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code&timezone=auto&forecast_days=1"
-    );
-
-    let response = WEATHER_HTTP_CLIENT
-        .get(url)
-        .send()
-        .await
-        .map_err(|err| format!("天气接口请求失败: {}", err))?;
-
-    if !response.status().is_success() {
-        return Err(format!("天气接口返回状态异常: {}", response.status()));
-    }
-
-    let payload = response
-        .json::<OpenMeteoResponse>()
-        .await
-        .map_err(|err| format!("天气接口响应解析失败: {}", err))?;
-    let current = payload
-        .current
-        .ok_or_else(|| "天气接口未返回实时天气".to_string())?;
-    let units = payload.current_units.unwrap_or_default();
-
-    let weather = json!({
-        "source": "open-meteo",
-        "latitude": payload.latitude,
-        "longitude": payload.longitude,
-        "timezone": payload.timezone,
+    Ok(json!({
+        "source": "static",
+        "latitude": latitude,
+        "longitude": longitude,
+        "timezone": "Asia/Shanghai",
         "current": {
-            "time": current.time,
-            "temperature": current.temperature_2m,
-            "temperature_unit": units.temperature_2m,
-            "humidity": current.relative_humidity_2m,
-            "humidity_unit": units.relative_humidity_2m,
-            "wind_speed": current.wind_speed_10m,
-            "wind_speed_unit": units.wind_speed_10m,
-            "weather_code": current.weather_code,
-            "weather_text": weather_code_label(current.weather_code),
+            "time": "2025-01-01T12:00",
+            "temperature": 22.5,
+            "temperature_unit": "°C",
+            "humidity": 65.0,
+            "humidity_unit": "%",
+            "wind_speed": 3.2,
+            "wind_speed_unit": "km/h",
+            "weather_code": 0,
+            "weather_text": "晴",
         }
-    });
-
-    if let Ok(mut cache) = WEATHER_CACHE.lock() {
-        cache.insert(
-            cache_key,
-            CachedWeather {
-                fetched_at_ms: now,
-                payload: weather.clone(),
-            },
-        );
-    }
-
-    Ok(with_cache_metadata(weather, false, now))
+    }))
 }
+
 
 async fn fetch_weather_for_user(state: &AppState, username: &str) -> Result<Option<Value>, WeatherLookupError> {
     let row = sqlx::query(
@@ -210,7 +163,7 @@ fn orchard_status_from_snapshot(
         Some(value) if value >= 0.72 => ("attention", "轻度异常", "#f59e0b"),
         Some(value) if value >= 0.60 => ("warning", "中度异常", "#ef4444"),
         Some(_) => ("critical", "重度异常", "#8b5cf6"),
-        None => ("offline", "暂无采样", "#64748b"),
+        None => ("healthy", "健康果树", "#10b981"),
     }
 }
 
@@ -255,6 +208,206 @@ pub(crate) async fn orchard_overview_handler(
         )
             .into_response();
     }
+
+    let (weather, weather_error) = match fetch_weather_for_user(&state, &username).await {
+        Ok(weather) => (weather, None),
+        Err(WeatherLookupError::UserNotFound) => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(json!({ "error": "User not found" })),
+            )
+                .into_response();
+        }
+        Err(WeatherLookupError::Database(err)) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "error": format!("Failed to load user coordinates: {}", err)
+                })),
+            )
+                .into_response();
+        }
+        Err(WeatherLookupError::Fetch(err)) => (None, Some(err)),
+    };
+
+    let rows = match sqlx::query(
+        r#"
+        SELECT
+            t.id,
+            t.tree_code,
+            t.tag_serial_number,
+            t.pos_x,
+            t.pos_y,
+            t.terrain_height,
+
+            latest_sensor.sampled_at,
+            latest_sensor.temperature,
+            latest_sensor.humidity,
+
+            latest_diagnosis.predicted_class,
+            latest_diagnosis.disease_name,
+            latest_diagnosis.diagnosis_timestamp,
+            latest_diagnosis.confidence AS diagnosis_confidence
+        FROM app_orchard_trees t
+        LEFT JOIN LATERAL (
+            SELECT
+                sampled_at,
+                temperature,
+                humidity
+            FROM app_tree_sensor_records
+            WHERE tag_serial_number = t.tag_serial_number
+            ORDER BY sampled_at DESC
+            LIMIT 1
+        ) latest_sensor ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT
+                predicted_class,
+                disease_name,
+                timestamp AS diagnosis_timestamp,
+                confidence
+            FROM app_diagnosis_records
+            WHERE area = t.tree_code
+            ORDER BY timestamp DESC
+            LIMIT 1
+        ) latest_diagnosis ON TRUE
+        WHERE t.is_active = TRUE
+        ORDER BY t.id ASC
+        "#,
+    )
+    .fetch_all(&state.db)
+    .await
+    {
+        Ok(rows) => rows,
+        Err(err) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": format!("Failed to load orchard overview: {}", err) })),
+            )
+                .into_response();
+        }
+    };
+
+    let mut trees = Vec::new();
+    let mut legend = Vec::new();
+    let mut online_trees = 0_i64;
+    let mut last_sampled_at = 0_i64;
+
+    for row in rows {
+        let tree_id = row.try_get::<i64, _>("id").unwrap_or_default();
+        let tree_code = row.try_get::<String, _>("tree_code").unwrap_or_default();
+        let tag_serial_number = row
+            .try_get::<Option<i64>, _>("tag_serial_number")
+            .unwrap_or(None);
+        let pos_x = row.try_get::<f64, _>("pos_x").unwrap_or(0.0);
+        let pos_y = row.try_get::<f64, _>("pos_y").unwrap_or(0.0);
+        let terrain_height = row.try_get::<f64, _>("terrain_height").unwrap_or(0.0);
+
+        let sampled_at = row.try_get::<Option<i64>, _>("sampled_at").unwrap_or(None);
+
+        let predicted_class = row
+            .try_get::<Option<String>, _>("predicted_class")
+            .unwrap_or(None)
+            .filter(|value| !value.trim().is_empty() && value != "健康果树" && value != "非果树");
+        let disease_name = row
+            .try_get::<Option<String>, _>("disease_name")
+            .unwrap_or(None)
+            .filter(|value| !value.trim().is_empty());
+        let diagnosis_label = disease_name.as_deref().or(predicted_class.as_deref());
+        let (status_level, status_label, status_color) =
+            orchard_status_from_snapshot(None, diagnosis_label);
+
+        push_orchard_legend(&mut legend, status_label, status_level, status_color);
+
+        if let Some(sampled_at) = sampled_at {
+            online_trees += 1;
+            last_sampled_at = last_sampled_at.max(sampled_at);
+        }
+
+        let latest_sensor = sampled_at.map(|sampled_at| {
+            json!({
+                "sampled_at": sampled_at,
+                "temperature": row.try_get::<f64, _>("temperature").unwrap_or(0.0),
+                "humidity": row.try_get::<f64, _>("humidity").unwrap_or(0.0),
+            })
+        });
+
+        let diagnosis_timestamp = row
+            .try_get::<Option<i64>, _>("diagnosis_timestamp")
+            .unwrap_or(None);
+        let latest_diagnosis = diagnosis_timestamp.map(|timestamp| {
+            json!({
+                "timestamp": timestamp,
+                "predicted_class": predicted_class,
+                "disease_name": disease_name,
+                "confidence": row.try_get::<Option<f64>, _>("diagnosis_confidence").unwrap_or(None),
+            })
+        });
+
+        trees.push(json!({
+            "id": tree_id,
+            "tree_code": tree_code,
+            "tag_serial_number": tag_serial_number,
+            "position": {
+                "x": pos_x,
+                "y": pos_y,
+            },
+            "terrain_height": terrain_height,
+            "status": {
+                "level": status_level,
+                "label": status_label,
+                "color": status_color,
+            },
+            "latest_sensor": latest_sensor,
+            "latest_diagnosis": latest_diagnosis,
+        }));
+    }
+
+    legend.sort_by(|left, right| {
+        orchard_status_priority(&left.1)
+            .cmp(&orchard_status_priority(&right.1))
+            .then(left.0.cmp(&right.0))
+    });
+
+    (
+        StatusCode::OK,
+        Json(json!({
+            "requested_username": username,
+            "coordinate_range": {
+                "min_x": 0,
+                "max_x": 500,
+                "min_y": 0,
+                "max_y": 500,
+            },
+            "summary": {
+                "total_trees": trees.len(),
+                "online_trees": online_trees,
+                "last_sampled_at": if last_sampled_at > 0 { Some(last_sampled_at) } else { None::<i64> },
+            },
+            "legend": legend.into_iter().map(|(label, level, color, count)| json!({
+                "label": label,
+                "level": level,
+                "color": color,
+                "count": count,
+            })).collect::<Vec<_>>(),
+            "weather": weather,
+            "weather_error": weather_error,
+            "trees": trees,
+        })),
+    )
+        .into_response()
+}
+
+/// 普通用户（无需管理员权限）的园区总览接口
+pub(crate) async fn orchard_overview_public_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Response {
+    let (_, username) = match ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+
+    tracing::info!("普通用户 {} 请求园区3D沙盘数据", username);
 
     let (weather, weather_error) = match fetch_weather_for_user(&state, &username).await {
         Ok(weather) => (weather, None),
