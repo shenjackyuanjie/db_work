@@ -46,6 +46,8 @@ pub(crate) async fn health_point_handler(State(state): State<AppState>) -> Respo
     let total = rows.len();
 
     if total == 0 {
+        tracing::warn!("No sensor records found in the last 24 hours (since {})", one_day_ago);
+
         return api_success(json!({
             "total": 0,
             "normal_count": 0,
