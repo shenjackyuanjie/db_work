@@ -4,7 +4,7 @@
 
 服务启动后会同时提供：
 
-- Web 静态页面（`/index.html`、`/analyze.html`、`/admin.html`）
+- Web 静态页面（`/index.html`、`/analyze.html`、`/admin.html`、`/orchard-3d.html`）
 - 面向前端的 HTTP API
 - PostgreSQL 数据存储与启动时自动建表
 - 本地 ONNX 推理或 OpenRouter 驱动的混合推理能力
@@ -18,7 +18,8 @@
 - 柑橘病害识别，支持本地 ONNX 推理和远端 AI 混合推理
 - 识别记录落库、图片归档、历史记录查询
 - 温湿度采样、果园健康点统计、任务生成与完成管理
-- 果园总览、树位与传感器示例数据自动初始化
+- 果园总览、后台二维地图、Three.js 3D 沙盘
+- 树位与传感器示例数据自动初始化
 - 基于 OpenRouter 的柑橘分析和施肥建议生成
 - 前后端同端口部署，静态资源由服务直接托管
 
@@ -32,6 +33,7 @@
 - Reqwest
 - Serde
 - Tower HTTP
+- Three.js（前端 3D 沙盘，经 CDN 加载）
 
 ## 运行要求
 
@@ -39,6 +41,7 @@
 - 可访问的 PostgreSQL 实例
 - 本地 ONNX 模型文件（使用 `onnx` 模式时必需）
 - OpenRouter API Key（使用柑橘分析、施肥建议等 AI 能力时必需）
+- 可访问 jsDelivr CDN 的浏览器网络环境（使用 3D 沙盘页面时必需）
 
 ## 配置说明
 
@@ -99,10 +102,11 @@ cargo run --release
 - `http://127.0.0.1:11000/index.html`：公开首页 / 登录入口
 - `http://127.0.0.1:11000/analyze.html`：识别分析页，需要有效登录态
 - `http://127.0.0.1:11000/admin.html`：管理员后台，需要管理员权限
+- `http://127.0.0.1:11000/orchard-3d.html`：3D 园区沙盘，页面可直接打开，数据接口需要有效登录态
 
 ## 关键接口概览
 
-下面列的是当前代码中已注册的主要接口分组，详细示例可参考 `backend_api_specs.md`，具体行为以代码路由为准。
+下面列的是当前代码中已注册的主要接口分组，具体行为以 `src/server.rs` 和 `src/user_routes/mod.rs` 中的路由为准。
 
 ### 基础与会话
 
@@ -113,6 +117,8 @@ cargo run --release
 - `POST /api/validate`：校验 token
 - `GET /api/user`：获取当前用户或默认用户信息
 - `GET /api/system-status`：获取系统设置状态
+- `POST /user/login`、`POST /user/register`、`POST /user/logout`、`POST /user/validate`：同名用户路由命名空间
+- `POST /user/me`：获取当前登录用户
 
 ### 首页与看板
 
@@ -120,8 +126,9 @@ cargo run --release
 - `GET /api/growth-tracking`：生长追踪数据
 - `GET /api/diagnose`：诊断模块静态数据
 - `GET /api/temperature-humidity`：温湿度采样
-- `POST /api/temperature-humidity`：提交温湿度采样
+- `POST /api/temperature-humidity`：提交带标签序列号的温湿度采样，同时写入树传感器记录
 - `GET /api/health-point`：果园健康点统计
+- `POST /user/orchard/overview`：当前登录用户的果园树位、传感器、诊断和天气摘要数据
 
 ### 病害识别与记录
 
@@ -149,7 +156,7 @@ cargo run --release
 - 用户管理与管理员设置
 - 邀请码创建与查询
 - 系统设置读取与更新
-- 果园总览与天气数据聚合
+- 指定用户的果园总览与天气数据聚合
 - 仪表盘统计与日志
 - 待审核用户审批与驳回
 
@@ -165,6 +172,8 @@ curl http://127.0.0.1:11000/health
 
 ```bash
 curl -X POST http://127.0.0.1:11000/api/citrus-disease \
+  -F "username=demo" \
+  -F "area=NAVEL-001" \
   -F "image=@./leaf.jpg"
 ```
 
@@ -218,9 +227,9 @@ curl -X POST http://127.0.0.1:11000/api/generate/fertilization-plan \
 │   ├── system_settings.rs      # 系统设置默认值与读取逻辑
 │   └── models.rs               # 请求/响应模型
 ├── static/                     # 前端静态页面与资源
+│   └── uploads/                # 识别图片归档目录
 ├── onnx/                       # 本地推理模型
 ├── scripts/                    # 数据迁移与辅助脚本
-├── backend_api_specs.md        # 接口草案与示例
 ├── config.toml                 # 运行配置
 └── README.md
 ```
@@ -253,7 +262,6 @@ cargo fmt
 
 ## 相关文件
 
-- `backend_api_specs.md`：已有接口示例文档
 - `scripts/migrate_sqlite_to_pg.py`：历史数据迁移脚本
 - `scripts/migrate_add_user_coordinates.sql`：用户坐标字段相关 SQL
 

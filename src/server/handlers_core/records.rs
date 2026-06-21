@@ -19,7 +19,7 @@ pub(crate) async fn recognition_records_api_handler(
     let username = query.username;
 
     let rows = sqlx::query(
-        "SELECT id, predicted_class, area, confidence, timestamp, image_path FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp ASC LIMIT 20",
+        "SELECT id, predicted_class, area, confidence, timestamp, image_path FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp DESC LIMIT 20",
     )
     .bind(&username)
     .fetch_all(&state.db)
@@ -29,6 +29,7 @@ pub(crate) async fn recognition_records_api_handler(
         Ok(rows) => {
             let mut list = rows
                 .into_iter()
+                .rev()
                 .map(|record| {
                     let predicted_class = record
                         .try_get::<String, _>("predicted_class")
