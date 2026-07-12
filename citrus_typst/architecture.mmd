@@ -1,0 +1,29 @@
+flowchart TB
+    U["普通用户 / 管理员"]
+
+    FE["表现层<br/>首页 · 病害识别 · 管理后台 · 三维果园"]
+
+    S["服务层（Rust + Axum）<br/>认证权限 · 智能诊断 · 环境与任务 · 系统管理"]
+
+    DB["数据层（PostgreSQL）<br/>用户权限 · 诊断任务 · 环境果树 · 设置与日志"]
+
+    M["本地推理<br/>Tract ONNX 模型"]
+    R["远端辅助<br/>OpenRouter 服务"]
+
+    U -->|浏览器访问| FE
+    FE -->|HTTP API| S
+    S -->|SQLx| DB
+    S -->|本地模式| M
+    S -.->|可选远端模式| R
+
+    classDef user fill:#fff7e6,stroke:#b26a00,stroke-width:1.5px,color:#222;
+    classDef presentation fill:#e8f2ff,stroke:#2468a2,stroke-width:1.5px,color:#222;
+    classDef service fill:#f3eafa,stroke:#765097,stroke-width:1.5px,color:#222;
+    classDef data fill:#e9f6ec,stroke:#377a45,stroke-width:1.5px,color:#222;
+    classDef external fill:#f5f5f5,stroke:#666,stroke-width:1.2px,color:#222;
+
+    class U user;
+    class FE presentation;
+    class S service;
+    class DB data;
+    class M,R external;
