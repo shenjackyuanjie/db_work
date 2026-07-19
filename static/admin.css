@@ -1,22 +1,22 @@
 :root {
-  --bg: #0f172a;
-  --panel: #1e293b;
-  --card: #1e293b;
-  --text: #f8fafc;
-  --muted: #94a3b8;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --danger: #ef4444;
-  --danger-hover: #dc2626;
-  --success: #10b981;
-  --border: #334155;
-  --input-bg: #0f172a;
+  --bg: var(--app-bg);
+  --panel: var(--app-surface);
+  --card: var(--app-surface);
+  --text: var(--app-text);
+  --muted: var(--app-muted);
+  --primary: var(--app-primary);
+  --primary-hover: var(--app-primary-hover);
+  --danger: var(--app-danger);
+  --danger-hover: var(--app-danger-hover);
+  --success: var(--app-success);
+  --border: var(--app-border);
+  --input-bg: var(--app-input);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--app-font);
 }
 
 header {
@@ -36,7 +36,7 @@ header h1 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
 }
 
 nav {
@@ -93,12 +93,11 @@ main {
 }
 
 .card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius);
   overflow: hidden;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--app-shadow);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -361,7 +360,7 @@ tbody tr:last-child td {
 .stat-card {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  border-radius: var(--app-radius);
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -386,14 +385,14 @@ tbody tr:last-child td {
 .stat-card .stat-value {
   font-size: 28px;
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
 }
 
 .stat-card .stat-label {
   font-size: 12px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0;
 }
 
 .stat-card .stat-trend {
@@ -600,7 +599,7 @@ tbody tr:last-child td {
   font-weight: 600;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0;
   margin: 32px 0 16px 0;
   padding-left: 2px;
   grid-column: 1 / -1;
@@ -612,7 +611,7 @@ tbody tr:last-child td {
   gap: 12px;
   padding: 16px;
   background: rgba(0, 0, 0, 0.15);
-  border-radius: 10px;
+  border-radius: var(--app-radius);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -646,7 +645,7 @@ tbody tr:last-child td {
   min-width: 220px;
   max-width: 320px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: var(--app-radius);
   background: rgba(15, 23, 42, 0.94);
   border: 1px solid var(--orchard-tooltip-border);
   box-shadow: 0 24px 60px -24px rgba(2, 6, 23, 0.98);
@@ -699,7 +698,7 @@ tbody tr:last-child td {
   font-size: 11px;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 
 .orchard-tooltip__title {
@@ -718,7 +717,7 @@ tbody tr:last-child td {
 
 .orchard-tooltip__meta-item {
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: var(--app-radius);
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -735,4 +734,31 @@ tbody tr:last-child td {
   font-size: 14px;
   font-weight: 700;
   color: var(--text);
+}
+
+@media (max-width: 720px) {
+  main {
+    margin: 20px auto;
+    padding: 0 14px 48px;
+  }
+
+  .orchard-map-shell canvas {
+    height: 320px !important;
+  }
+
+  .card-header {
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  #envGauges {
+    grid-template-columns: 1fr !important;
+  }
+
+  #toast-container {
+    top: 14px;
+    right: 14px;
+    left: 14px;
+  }
 }

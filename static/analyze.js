@@ -11,6 +11,8 @@
     loginBadge: document.getElementById("loginBadge"),
     loginHint: document.getElementById("loginHint"),
     logoutBtn: document.getElementById("logout-btn"),
+    loginNavLink: document.getElementById("loginNavLink"),
+    adminNavLink: document.getElementById("adminNavLink"),
     progressWrapper: document.getElementById("progressWrapper"),
     progressBar: document.getElementById("progressBar"),
     progressText: document.getElementById("progressText"),
@@ -43,6 +45,7 @@
     if (token) {
       els.loginBadge.textContent = "已登录";
       els.loginBadge.className = "badge success";
+      els.loginNavLink.hidden = true;
       els.loginHint.classList.add("hidden");
       els.logoutBtn.classList.remove("hidden");
       els.analyzeBtn.disabled = !els.imageInput.files.length;
@@ -51,9 +54,38 @@
 
     els.loginBadge.textContent = "未登录";
     els.loginBadge.className = "badge";
+    els.loginNavLink.hidden = false;
+    els.adminNavLink.hidden = true;
     els.loginHint.classList.remove("hidden");
     els.logoutBtn.classList.add("hidden");
     els.analyzeBtn.disabled = true;
+  }
+
+  async function refreshSessionNavigation() {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch("/user/validate", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-Session-Token": token },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.valid) {
+        els.loginBadge.textContent = "会话失效";
+        els.loginBadge.className = "badge warning";
+        els.loginNavLink.hidden = false;
+        els.logoutBtn.classList.add("hidden");
+        els.adminNavLink.hidden = true;
+        els.analyzeBtn.disabled = true;
+        return;
+      }
+
+      els.adminNavLink.hidden = !data.is_admin;
+    } catch {
+      els.adminNavLink.hidden = true;
+    }
   }
 
   function setError(msg) {
@@ -251,11 +283,12 @@
     els.logoutBtn.addEventListener("click", logout);
   }
 
-  function initPage() {
+  async function initPage() {
     bindUploadEvents();
     bindActions();
     updateLoginUI();
+    await refreshSessionNavigation();
   }
 
-  initPage();
+  void initPage();
 })();

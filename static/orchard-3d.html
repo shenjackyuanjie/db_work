@@ -4,10 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>园区监测 3D 沙盘</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <title>3D 沙盘 | 柑橘果园智能管理</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/orchard-3d.css" />
   <script type="importmap">
@@ -20,28 +17,32 @@
 </head>
 
 <body>
-  <div class="screen-shell">
-    <div class="screen-glow screen-glow--cyan"></div>
-    <div class="screen-glow screen-glow--amber"></div>
+  <header class="app-header orchard-header">
+      <a class="app-brand" href="/orchard-3d.html">
+        <span class="app-brand__mark" aria-hidden="true">柑</span>
+        <span class="app-brand__copy">
+          <span class="app-brand__name">柑橘果园智能管理</span>
+          <span class="app-brand__page">园区 3D 沙盘</span>
+        </span>
+      </a>
+      <nav class="app-nav" aria-label="主导航">
+        <a class="app-nav__link" href="/analyze.html">病害识别</a>
+        <a class="app-nav__link" href="/orchard-3d.html" aria-current="page">3D 沙盘</a>
+        <a class="app-nav__link" id="orchardAdminNav" href="/admin.html" hidden>管理后台</a>
+        <span class="app-nav__divider" aria-hidden="true"></span>
+        <a class="app-nav__link" id="orchardLoginNav" href="/index.html" hidden>登录 / 注册</a>
+        <button class="app-nav__button app-nav__button--danger" id="btnLogout" type="button">退出登录</button>
+      </nav>
+  </header>
 
-    <header class="topbar">
-      <div>
-        <div class="eyebrow">ORCHARD SANDBOX</div>
-        <h1>园区监测 3D 沙盘</h1>
-      </div>
-      <div class="topbar-actions">
-        <button class="nav-button nav-button--ghost" id="btnToggleOrbit" type="button">暂停巡航</button>
-        <button class="nav-button" id="btnRefreshScene" type="button">刷新数据</button>
-        <a class="nav-link" href="/admin.html">返回管理台</a>
-      </div>
-    </header>
+  <div class="screen-shell">
 
     <main class="screen-grid">
       <aside class="panel panel--summary">
         <section class="panel-card panel-card--stacked">
           <div class="panel-card__header">
             <div>
-              <div class="eyebrow">LIVE STATUS</div>
+              <div class="eyebrow">实时状态</div>
               <h2>园区总览</h2>
             </div>
             <span class="status-chip" id="overviewUpdatedAt">等待连接</span>
@@ -73,7 +74,7 @@
         <section class="panel-card">
           <div class="panel-card__header">
             <div>
-              <div class="eyebrow">LEGEND</div>
+              <div class="eyebrow">状态说明</div>
               <h2>状态图例</h2>
             </div>
           </div>
@@ -85,7 +86,7 @@
         <section class="panel-card">
           <div class="panel-card__header">
             <div>
-              <div class="eyebrow">WEATHER</div>
+              <div class="eyebrow">环境信息</div>
               <h2>属地天气</h2>
             </div>
           </div>
@@ -103,12 +104,12 @@
         <div class="scene-card">
           <div class="scene-card__hud">
             <div>
-              <div class="eyebrow">3D VIEW</div>
+              <div class="eyebrow">三维视图</div>
               <h2>实时树位监测场</h2>
             </div>
-            <div class="scene-pills">
-              <span class="pill">可拖拽旋转</span>
-              <span class="pill">点击树位查看详情</span>
+            <div class="scene-toolbar">
+              <button class="app-nav__button" id="btnToggleOrbit" type="button">暂停巡航</button>
+              <button class="app-nav__button app-nav__button--primary" id="btnRefreshScene" type="button">刷新数据</button>
             </div>
           </div>
           <div class="scene-stage" id="sceneStage">
@@ -145,7 +146,7 @@
         <section class="panel-card">
           <div class="panel-card__header">
             <div>
-              <div class="eyebrow">SELECTED TREE</div>
+              <div class="eyebrow">当前树位</div>
               <h2>树位详情</h2>
             </div>
           </div>
@@ -157,7 +158,7 @@
         <section class="panel-card">
           <div class="panel-card__header">
             <div>
-              <div class="eyebrow">ATTENTION</div>
+              <div class="eyebrow">重点关注</div>
               <h2>重点关注</h2>
             </div>
           </div>

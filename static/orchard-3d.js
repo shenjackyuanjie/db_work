@@ -79,6 +79,11 @@ function getCookie(name) {
   return part ? decodeURIComponent(part.slice(prefix.length)) : "";
 }
 
+function logout() {
+  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
+  window.location.href = "/index.html";
+}
+
 function requestHeaders(withJsonBody) {
   const headers = {};
   if (withJsonBody) headers["Content-Type"] = "application/json";
@@ -864,7 +869,7 @@ function renderUnauthorized(message) {
   $("sceneEmpty").innerHTML = `
     <h3>无法进入 3D 大屏</h3>
     <p>${escapeHtml(message)}</p>
-    <p><a class="nav-link" href="/index.html" style="display:inline-flex; margin-top:10px;">前往登录</a></p>
+    <p><a class="app-nav__link" href="/index.html" style="display:inline-flex; margin-top:10px;">前往登录</a></p>
   `;
 }
 
@@ -888,6 +893,7 @@ async function refreshDashboard() {
 
 function bindActions() {
   $("btnRefreshScene").addEventListener("click", refreshDashboard);
+  $("btnLogout").addEventListener("click", logout);
   $("btnToggleOrbit").addEventListener("click", () => {
     state.autoRotate = !state.autoRotate;
     $("btnToggleOrbit").textContent = state.autoRotate ? "暂停巡航" : "恢复巡航";
@@ -902,10 +908,13 @@ async function init() {
 
     const session = await validateSession();
     if (!session?.username) {
+      $("btnLogout").hidden = true;
+      $("orchardLoginNav").hidden = false;
       renderUnauthorized("请先登录后再访问园区3D沙盘。");
       return;
     }
 
+    $("orchardAdminNav").hidden = !session.is_admin;
     state.adminUsername = session.username;
     await refreshDashboard();
   } catch (error) {

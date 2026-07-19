@@ -4,22 +4,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>柑橘识别系统</title>
+  <title>病害识别 | 柑橘果园智能管理</title>
+  <link rel="stylesheet" href="/styles.css" />
   <style>
     :root {
-      color-scheme: dark;
-      --bg: #111827;
-      --card: #1f2937;
-      --text: #f9fafb;
-      --text-secondary: #9ca3af;
-      --muted: #6b7280;
-      --primary: #3b82f6;
-      --primary-hover: #60a5fa;
-      --danger: #ef4444;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --border: #374151;
-      --ring: rgba(59, 130, 246, 0.5);
+      --bg: var(--app-bg);
+      --card: var(--app-surface);
+      --text: var(--app-text);
+      --text-secondary: var(--app-muted);
+      --muted: #718096;
+      --primary: var(--app-primary);
+      --primary-hover: var(--app-primary-hover);
+      --danger: var(--app-danger);
+      --success: var(--app-success);
+      --warning: var(--app-warning);
+      --border: var(--app-border);
+      --ring: rgba(34, 197, 94, 0.45);
     }
 
     * {
@@ -30,7 +30,7 @@
       margin: 0;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-family: var(--app-font);
       line-height: 1.5;
     }
 
@@ -90,7 +90,7 @@
     .card {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: var(--app-radius);
       padding: 24px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
@@ -108,7 +108,7 @@
     /* === 拖拽上传区域 (修复版) === */
     .upload-zone {
       border: 2px dashed var(--border);
-      border-radius: 12px;
+      border-radius: var(--app-radius);
       background: var(--bg);
       cursor: pointer;
       transition: all 0.2s;
@@ -235,20 +235,17 @@
       transform: none;
     }
 
-    /* 将页头的退出按钮突出为红色 pill 样式 */
+    /* 页头账户操作 */
     #logout-btn {
-      background: var(--danger);
-      color: white;
-      border: none;
-      padding: 8px 10px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
+      background: transparent;
+      color: #fca5a5;
+      border: 1px solid transparent;
+      padding: 0 12px;
     }
 
     #logout-btn:hover {
-      background: var(--danger);
-      filter: brightness(0.95);
+      background: rgba(239, 68, 68, 0.1);
+      color: #fecaca;
     }
 
     /* 提示框 */
@@ -296,7 +293,7 @@
     }
 
     .badge.primary {
-      background: rgba(59, 130, 246, 0.1);
+      background: rgba(34, 197, 94, 0.1);
       color: var(--primary);
     }
 
@@ -311,7 +308,7 @@
     .result-item {
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--app-radius);
       padding: 16px;
       display: flex;
       flex-direction: column;
@@ -340,7 +337,7 @@
       margin-top: 24px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--app-radius);
       /* 核心修复：防止内容撑破父容器宽度 */
       min-width: 0;
       max-width: 100%;
@@ -356,7 +353,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      border-radius: 12px;
+      border-radius: var(--app-radius);
       transition: background 0.2s;
       /* 隐藏默认箭头，使用左侧自定义 Icon 更好看 */
       list-style: none;
@@ -385,9 +382,9 @@
     }
 
     .raw-response {
-      background: #1e293b;
+      background: var(--app-surface-raised);
       color: #f8fafc;
-      border-radius: 0 0 12px 12px;
+      border-radius: 0 0 var(--app-radius) var(--app-radius);
       padding: 16px;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
@@ -410,7 +407,7 @@
 
     .raw-response::-webkit-scrollbar-track {
       background: rgba(0, 0, 0, 0.2);
-      border-radius: 0 0 12px 12px;
+      border-radius: 0 0 var(--app-radius) var(--app-radius);
     }
 
     .raw-response::-webkit-scrollbar-thumb {
@@ -494,15 +491,22 @@
 </head>
 
 <body>
-  <header>
-    <h1>柑橘识别系统</h1>
-    <nav>
+  <header class="app-header">
+    <a class="app-brand" href="/analyze.html">
+      <span class="app-brand__mark" aria-hidden="true">柑</span>
+      <span class="app-brand__copy">
+        <span class="app-brand__name">柑橘果园智能管理</span>
+        <span class="app-brand__page">病害识别</span>
+      </span>
+    </a>
+    <nav class="app-nav" aria-label="主导航">
+      <a class="app-nav__link" href="/analyze.html" aria-current="page">病害识别</a>
+      <a class="app-nav__link" href="/orchard-3d.html">3D 沙盘</a>
+      <a class="app-nav__link" id="adminNavLink" href="/admin.html" hidden>管理后台</a>
+      <span class="app-nav__divider" aria-hidden="true"></span>
       <span class="badge" id="loginBadge">未登录</span>
-      <button id="logout-btn" class="btn-outline hidden">退出登录</button>
-      <div style="width: 1px; height: 16px; background: var(--border); margin: 0 8px;"></div>
-      <a href="/index.html">登录/注册</a>
-      <a href="/admin.html">管理员</a>
-      <a href="/orchard-3d.html">3D 沙盘</a>
+      <a class="app-nav__link" id="loginNavLink" href="/index.html">登录 / 注册</a>
+      <button id="logout-btn" class="app-nav__button app-nav__button--danger hidden" type="button">退出登录</button>
     </nav>
   </header>
 

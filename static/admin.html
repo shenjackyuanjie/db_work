@@ -4,29 +4,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>管理员控制台</title>
+  <title>管理后台 | 柑橘果园智能管理</title>
   <link rel="stylesheet" href="/styles.css" />
   <link rel="stylesheet" href="/admin.css" />
 </head>
 
 <body>
-  <header>
-    <h1>管理控制台 (Admin)</h1>
-    <nav>
-      <a href="/index.html" id="nav-home">前台首页</a>
-      <a href="/analyze.html">识别页面</a>
-      <a href="/orchard-3d.html">3D 园区大屏</a>
-      <a class="logout-btn" onclick="logout()">退出登录</a>
+  <header class="app-header">
+    <a class="app-brand" href="/admin.html">
+      <span class="app-brand__mark" aria-hidden="true">柑</span>
+      <span class="app-brand__copy">
+        <span class="app-brand__name">柑橘果园智能管理</span>
+        <span class="app-brand__page">管理后台</span>
+      </span>
+    </a>
+    <nav class="app-nav" aria-label="主导航">
+      <a class="app-nav__link" href="/analyze.html">病害识别</a>
+      <a class="app-nav__link" href="/orchard-3d.html">3D 沙盘</a>
+      <a class="app-nav__link" href="/admin.html" aria-current="page">管理后台</a>
+      <span class="app-nav__divider" aria-hidden="true"></span>
+      <button class="app-nav__button app-nav__button--danger" type="button" onclick="logout()">退出登录</button>
     </nav>
   </header>
 
-  <main class="layout-grid" style="grid-template-columns: 350px 1fr;">
+  <main class="layout-grid">
     <!-- 顶部全宽卡片：果园总览热力图 -->
     <div class="card" style="grid-column: 1 / -1;">
       <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
           <h2>园区监测大屏</h2>
-          <a href="/orchard-3d.html" style="display:inline-flex; align-items:center; justify-content:center; padding:8px 14px; border-radius:999px; border:1px solid rgba(59,130,246,0.35); background:rgba(59,130,246,0.14); color:var(--text); text-decoration:none; font-size:12px; font-weight:600; letter-spacing:0.02em;">进入 3D 沙盘</a>
+          <a class="app-nav__link admin-scene-link" href="/orchard-3d.html">进入 3D 沙盘</a>
         </div>
         <div id="orchardLegend" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end; font-size: 13px; color: var(--muted);"></div>
       </div>
