@@ -17,6 +17,7 @@ use crate::client::OpenRouterClient;
 
 mod bootstrap;
 mod handlers_ai;
+mod handlers_commerce;
 mod handlers_core;
 mod shared;
 
@@ -57,7 +58,11 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         .route("/health", get(handlers_core::health_handler))
         .route(
             "/",
-            get(|| async { axum::response::Redirect::temporary("/index.html") }),
+            get(handlers_core::index_page_handler),
+        )
+        .route(
+            "/index.html",
+            get(|| async { axum::response::Redirect::permanent("/") }),
         )
         .route("/api/register", post(crate::user_routes::register_handler))
         .route("/api/login", post(crate::user_routes::login_handler))
@@ -82,8 +87,29 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             get(handlers_core::temperature_humidity_api_handler)
                 .post(handlers_core::post_temperature_humidity_handler),
         )
-        .route("/admin.html", get(handlers_core::admin_page_handler))
-        .route("/analyze.html", get(handlers_core::analyze_page_handler))
+        .route("/admin", get(handlers_core::admin_page_handler))
+        .route(
+            "/admin.html",
+            get(|| async { axum::response::Redirect::permanent("/admin") }),
+        )
+        .route("/analyze", get(handlers_core::analyze_page_handler))
+        .route(
+            "/analyze.html",
+            get(|| async { axum::response::Redirect::permanent("/analyze") }),
+        )
+        .route("/commerce", get(handlers_core::commerce_page_handler))
+        .route(
+            "/commerce.html",
+            get(|| async { axum::response::Redirect::permanent("/commerce") }),
+        )
+        .route(
+            "/orchard-3d",
+            get(handlers_core::orchard_3d_page_handler),
+        )
+        .route(
+            "/orchard-3d.html",
+            get(|| async { axum::response::Redirect::permanent("/orchard-3d") }),
+        )
         .route("/citrus/analyze", post(handlers_ai::citrus_analyze_handler))
         .route(
             "/api/citrus-disease",
@@ -123,6 +149,14 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         .route(
             "/api/generate/fertilization-plan",
             post(handlers_ai::generate_fertilization_plan_handler),
+        )
+        .route(
+            "/api/commerce/storefront",
+            get(handlers_commerce::storefront_handler),
+        )
+        .route(
+            "/api/commerce/batches/{batch_id}/trace",
+            get(handlers_commerce::batch_trace_handler),
         )
         .nest("/user", crate::user_routes::router(state.clone()))
         .nest_service(

@@ -111,6 +111,88 @@ pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             source TEXT NOT NULL DEFAULT 'sensor'
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_app_tree_sensor_records_tag_sampled ON app_tree_sensor_records(tag_serial_number, sampled_at DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS commerce_orchards (
+            id BIGSERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT NOT NULL DEFAULT '',
+            location TEXT NOT NULL DEFAULT '',
+            farmer_name TEXT NOT NULL DEFAULT '',
+            cover_image TEXT NULL,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS commerce_products (
+            id BIGSERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            sku TEXT NOT NULL UNIQUE,
+            unit_label TEXT NOT NULL,
+            price_cents BIGINT NOT NULL CHECK (price_cents > 0),
+            deposit_cents BIGINT NOT NULL DEFAULT 0 CHECK (deposit_cents >= 0),
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS commerce_batches (
+            id TEXT PRIMARY KEY,
+            batch_code TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL,
+            orchard_id BIGINT NOT NULL REFERENCES commerce_orchards(id),
+            status TEXT NOT NULL DEFAULT 'draft',
+            open_at BIGINT NULL,
+            close_at BIGINT NULL,
+            harvest_start_at BIGINT NULL,
+            harvest_end_at BIGINT NULL,
+            ship_at BIGINT NULL,
+            planned_quantity INTEGER NOT NULL CHECK (planned_quantity > 0),
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_commerce_batches_status ON commerce_batches(status, is_active, close_at)"#,
+        r#"CREATE TABLE IF NOT EXISTS commerce_batch_products (
+            batch_id TEXT NOT NULL REFERENCES commerce_batches(id) ON DELETE CASCADE,
+            product_id BIGINT NOT NULL REFERENCES commerce_products(id),
+            quota INTEGER NOT NULL CHECK (quota > 0),
+            sold_quantity INTEGER NOT NULL DEFAULT 0 CHECK (sold_quantity >= 0),
+            PRIMARY KEY (batch_id, product_id)
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS commerce_orders (
+            id TEXT PRIMARY KEY,
+            order_no TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL REFERENCES app_users(username),
+            batch_id TEXT NOT NULL REFERENCES commerce_batches(id),
+            recipient_name TEXT NOT NULL,
+            recipient_phone TEXT NOT NULL,
+            shipping_address TEXT NOT NULL,
+            payment_status TEXT NOT NULL DEFAULT 'unpaid',
+            status TEXT NOT NULL DEFAULT 'pending_payment',
+            total_cents BIGINT NOT NULL CHECK (total_cents >= 0),
+            deposit_cents BIGINT NOT NULL CHECK (deposit_cents >= 0),
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_commerce_orders_user_created ON commerce_orders(username, created_at DESC)"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_commerce_orders_status ON commerce_orders(status, created_at DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS commerce_order_items (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT NOT NULL REFERENCES commerce_orders(id) ON DELETE CASCADE,
+            product_id BIGINT NOT NULL REFERENCES commerce_products(id),
+            product_name TEXT NOT NULL,
+            unit_label TEXT NOT NULL,
+            quantity INTEGER NOT NULL CHECK (quantity > 0),
+            unit_price_cents BIGINT NOT NULL CHECK (unit_price_cents > 0),
+            unit_deposit_cents BIGINT NOT NULL CHECK (unit_deposit_cents >= 0)
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS commerce_order_status_logs (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT NOT NULL REFERENCES commerce_orders(id) ON DELETE CASCADE,
+            status TEXT NOT NULL,
+            note TEXT NOT NULL DEFAULT '',
+            actor_username TEXT NULL,
+            created_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_commerce_order_status_logs_order ON commerce_order_status_logs(order_id, created_at DESC)"#,
     ];
 
     for stmt in ddl {

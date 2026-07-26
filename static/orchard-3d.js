@@ -81,7 +81,7 @@ function getCookie(name) {
 
 function logout() {
   document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
-  window.location.href = "/index.html";
+  window.location.href = "/";
 }
 
 function requestHeaders(withJsonBody) {
@@ -869,7 +869,7 @@ function renderUnauthorized(message) {
   $("sceneEmpty").innerHTML = `
     <h3>无法进入 3D 大屏</h3>
     <p>${escapeHtml(message)}</p>
-    <p><a class="app-nav__link" href="/index.html" style="display:inline-flex; margin-top:10px;">前往登录</a></p>
+    <p><a class="app-nav__link" href="/" style="display:inline-flex; margin-top:10px;">前往登录</a></p>
   `;
 }
 

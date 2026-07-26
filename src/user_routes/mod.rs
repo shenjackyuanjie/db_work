@@ -4,15 +4,17 @@ use crate::server::AppState;
 
 mod admin;
 mod auth;
+mod commerce;
 mod dto;
 mod registration;
 mod session;
 
-pub(crate) use auth::{ensure_admin, ensure_authenticated, extract_auth_token, now_secs, parse_requested_role};
+pub(crate) use auth::{
+    ensure_admin, ensure_authenticated, extract_auth_token, now_secs, parse_requested_role,
+};
 pub(crate) use dto::{
-    ApprovePendingUserRequest, CreateInvitationRequest, OrchardOverviewRequest,
-    PendingPublicUser, PublicUser, RejectPendingUserRequest, SetAdminRequest,
-    UpdateSystemSettingsRequest,
+    ApprovePendingUserRequest, CreateInvitationRequest, OrchardOverviewRequest, PendingPublicUser,
+    PublicUser, RejectPendingUserRequest, SetAdminRequest, UpdateSystemSettingsRequest,
 };
 pub(crate) use registration::register_handler;
 pub(crate) use session::{login_handler, logout_handler, me_handler, validate_token_handler};
@@ -49,6 +51,38 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route(
             "/orchard/overview",
             post(admin::orchard_overview_public_handler),
+        )
+        .route(
+            "/commerce/orders",
+            post(commerce::create_order_handler).get(commerce::list_user_orders_handler),
+        )
+        .route(
+            "/commerce/orders/{order_id}",
+            axum::routing::get(commerce::get_user_order_handler),
+        )
+        .route(
+            "/admin/commerce/orchards",
+            post(commerce::create_orchard_handler).get(commerce::list_orchards_handler),
+        )
+        .route(
+            "/admin/commerce/products",
+            post(commerce::create_product_handler).get(commerce::list_products_handler),
+        )
+        .route(
+            "/admin/commerce/batches",
+            post(commerce::create_batch_handler).get(commerce::list_batches_handler),
+        )
+        .route(
+            "/admin/commerce/orders",
+            post(commerce::list_admin_orders_handler),
+        )
+        .route(
+            "/admin/commerce/orders/status",
+            post(commerce::update_order_status_handler),
+        )
+        .route(
+            "/admin/commerce/overview",
+            post(commerce::commerce_overview_handler),
         )
         .route(
             "/admin/dashboard/stats",

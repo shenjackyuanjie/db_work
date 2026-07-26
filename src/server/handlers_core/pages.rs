@@ -21,6 +21,28 @@ pub(crate) async fn health_handler() -> Response {
         .into_response()
 }
 
+pub(crate) async fn index_page_handler() -> Response {
+    read_static_page("index.html", "首页").await
+}
+
+pub(crate) async fn commerce_page_handler() -> Response {
+    read_static_page("commerce.html", "开园团").await
+}
+
+pub(crate) async fn orchard_3d_page_handler() -> Response {
+    read_static_page("orchard-3d.html", "3D 沙盘").await
+}
+
+async fn read_static_page(filename: &str, page_name: &str) -> Response {
+    match tokio::fs::read_to_string(format!("static/{filename}")).await {
+        Ok(content) => Html(content).into_response(),
+        Err(err) => {
+            tracing::error!(page = page_name, %err, "读取静态页面失败");
+            (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
+        }
+    }
+}
+
 async fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
     let token = match crate::user_routes::extract_auth_token(headers) {
         Some(token) => token,
@@ -41,17 +63,11 @@ pub(crate) async fn admin_page_handler(
     headers: HeaderMap,
 ) -> Response {
     if !has_admin_session(&state, &headers).await {
-        tracing::warn!("非管理员访问 /admin.html，重定向到 /index.html");
-        return Redirect::temporary("/index.html").into_response();
+        tracing::warn!("非管理员访问 /admin，重定向到 /");
+        return Redirect::temporary("/").into_response();
     }
 
-    match tokio::fs::read_to_string("static/admin.html").await {
-        Ok(content) => Html(content).into_response(),
-        Err(err) => {
-            tracing::error!("读取 admin 页面失败: {}", err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
-        }
-    }
+    read_static_page("admin.html", "管理后台").await
 }
 
 pub(crate) async fn analyze_page_handler(
@@ -59,30 +75,24 @@ pub(crate) async fn analyze_page_handler(
     headers: HeaderMap,
 ) -> Response {
     if !has_valid_session(&state, &headers).await {
-        tracing::warn!("未登录或会话无效访问 /analyze.html，重定向到 /index.html");
-        return Redirect::temporary("/index.html").into_response();
+        tracing::warn!("未登录或会话无效访问 /analyze，重定向到 /");
+        return Redirect::temporary("/").into_response();
     }
 
     let settings = match load_system_settings(&state.db).await {
         Ok(settings) => settings,
         Err(err) => {
             tracing::error!("读取系统设置失败: {}", err);
-            return Redirect::temporary("/index.html").into_response();
+            return Redirect::temporary("/").into_response();
         }
     };
 
     if settings.maintenance_mode && !has_admin_session(&state, &headers).await {
-        tracing::warn!("维护模式开启，普通用户访问 /analyze.html 被拒绝");
-        return Redirect::temporary("/index.html").into_response();
+        tracing::warn!("维护模式开启，普通用户访问 /analyze 被拒绝");
+        return Redirect::temporary("/").into_response();
     }
 
-    match tokio::fs::read_to_string("static/analyze.html").await {
-        Ok(content) => Html(content).into_response(),
-        Err(err) => {
-            tracing::error!("读取 analyze 页面失败: {}", err);
-            (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
-        }
-    }
+    read_static_page("analyze.html", "病害识别").await
 }
 
 pub(crate) async fn system_status_api_handler(State(state): State<AppState>) -> Response {

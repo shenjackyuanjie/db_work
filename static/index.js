@@ -227,7 +227,7 @@
 
   async function handleLogin() {
     if (els.loginBtn.dataset.mode === "enter-user") {
-      window.location.href = "/analyze.html";
+      window.location.href = "/analyze";
       return;
     }
     if (els.loginBtn.disabled) {
@@ -361,10 +361,10 @@
     els.tabLogin.addEventListener("click", () => showTab("login"));
     els.tabRegister.addEventListener("click", () => showTab("register"));
     els.userModeBtn.addEventListener("click", () => {
-      window.location.href = "/analyze.html";
+      window.location.href = "/analyze";
     });
     els.adminModeBtn.addEventListener("click", () => {
-      window.location.href = "/admin.html";
+      window.location.href = "/admin";
     });
     els.loginBtn.addEventListener("click", handleLogin);
     els.registerBtn.addEventListener("click", handleRegister);

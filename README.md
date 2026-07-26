@@ -4,7 +4,7 @@
 
 服务启动后会同时提供：
 
-- Web 静态页面（`/index.html`、`/analyze.html`、`/admin.html`、`/orchard-3d.html`）
+- Web 页面（`/`、`/analyze`、`/admin`、`/orchard-3d`、`/commerce`）
 - 面向前端的 HTTP API
 - PostgreSQL 数据存储与启动时自动建表
 - 本地 ONNX 推理或 OpenRouter 驱动的混合推理能力
@@ -99,10 +99,11 @@ cargo run --release
 启动成功后，默认可通过以下地址访问：
 
 - `http://127.0.0.1:11000/`：会重定向到首页
-- `http://127.0.0.1:11000/index.html`：公开首页 / 登录入口
-- `http://127.0.0.1:11000/analyze.html`：识别分析页，需要有效登录态
-- `http://127.0.0.1:11000/admin.html`：管理员后台，需要管理员权限
-- `http://127.0.0.1:11000/orchard-3d.html`：3D 园区沙盘，页面可直接打开，数据接口需要有效登录态
+- `http://127.0.0.1:11000/`：公开首页 / 登录入口
+- `http://127.0.0.1:11000/commerce`：橙管家脐橙开园团入口
+- `http://127.0.0.1:11000/analyze`：识别分析页，需要有效登录态
+- `http://127.0.0.1:11000/admin`：管理员后台，需要管理员权限
+- `http://127.0.0.1:11000/orchard-3d`：3D 园区沙盘，页面可直接打开，数据接口需要有效登录态
 
 ## 关键接口概览
 
@@ -148,6 +149,30 @@ cargo run --release
 - `POST /api/tasks/generate/environment`：根据环境生成任务
 - `GET /api/generate`：基于历史诊断记录生成施肥建议文本
 - `POST /api/generate/fertilization-plan`：生成结构化施肥方案
+
+### 脐橙商业 MVP
+
+公开销售接口：
+
+- `GET /api/commerce/storefront`：查询当前可购买的开团批次、商品规格和果园信息
+- `GET /api/commerce/batches/{batch_id}/trace`：查询公开批次追溯信息，可用于包装二维码
+
+登录用户接口：
+
+- `POST /user/commerce/orders`：创建订单，提交收货信息和批次商品
+- `GET /user/commerce/orders`：查询当前用户订单
+- `GET /user/commerce/orders/{order_id}`：查询当前用户的订单详情
+
+管理员商业接口：
+
+- `POST/GET /user/admin/commerce/orchards`：创建和查询合作果园
+- `POST/GET /user/admin/commerce/products`：创建和查询商品规格
+- `POST/GET /user/admin/commerce/batches`：创建和查询销售批次
+- `POST /user/admin/commerce/orders`：查询全部订单
+- `POST /user/admin/commerce/orders/status`：推进订单履约状态和收款状态
+- `POST /user/admin/commerce/overview`：查询订单数、交易金额和履约统计
+
+当前 MVP 使用 `price_cents` 和 `deposit_cents` 记录金额，订单创建后默认为 `unpaid / pending_payment`，暂不接入第三方支付。管理员可以先人工核销收款，再通过订单状态接口推进支付、采摘、分选、发货和完成流程。
 
 ### 管理员接口
 
@@ -209,6 +234,13 @@ curl -X POST http://127.0.0.1:11000/api/generate/fertilization-plan \
 - `app_admin_audit_logs`
 - `app_orchard_trees`
 - `app_tree_sensor_records`
+- `commerce_orchards`
+- `commerce_products`
+- `commerce_batches`
+- `commerce_batch_products`
+- `commerce_orders`
+- `commerce_order_items`
+- `commerce_order_status_logs`
 
 这意味着本项目默认采用“启动即建表”的方式，而不是独立迁移框架。
 
