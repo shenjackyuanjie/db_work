@@ -79,15 +79,17 @@
 )
 // 标题居中
 #figure(
-  table(
-    columns: (1fr, 1.4fr, 1fr),
-    inset: 5pt,
-    stroke: 0.5pt,
-    align: left,
-    [*表现层*], [*服务层*], [*数据层*],
-    [公开首页 #linebreak() 病害识别页 #linebreak() 管理后台 #linebreak() 三维果园沙盘],
-    [用户与会话 #linebreak() 智能诊断 #linebreak() 环境采样与任务管理 #linebreak() 施肥建议 #linebreak() 系统设置与审计],
-    [用户与权限数据 #linebreak() 诊断与任务数据 #linebreak() 环境与果树数据 #linebreak() 系统设置与审计日志],
+  safe-table(
+    table(
+      columns: (1fr, 1.4fr, 1fr),
+      inset: 5pt,
+      stroke: 0.5pt,
+      align: left,
+      [*表现层*], [*服务层*], [*数据层*],
+      [公开首页 #linebreak() 病害识别页 #linebreak() 管理后台 #linebreak() 三维果园沙盘],
+      [用户与会话 #linebreak() 智能诊断 #linebreak() 环境采样与任务管理 #linebreak() 施肥建议 #linebreak() 系统设置与审计],
+      [用户与权限数据 #linebreak() 诊断与任务数据 #linebreak() 环境与果树数据 #linebreak() 系统设置与审计日志],
+    ),
   ),
   kind: table,
   caption: [系统分层功能表],
@@ -127,16 +129,18 @@
 系统使用 PostgreSQL 存储业务数据，通过 SQLx 连接池进行异步访问。数据库包含 11 张核心表，可分为四类，具体如表 2 所示。
 
 #figure(
-  table(
-    columns: (0.9fr, 2.2fr, 2fr),
-    inset: 4pt,
-    stroke: 0.5pt,
-    align: left,
-    [*数据类别*], [*主要数据表*], [*作用*],
-    [用户权限], [`app_users`、`app_sessions`、`app_invitations`、`app_pending_users`], [保存用户、会话、邀请码和待审核注册信息],
-    [业务记录], [`app_diagnosis_records`、`app_tasks`], [保存诊断结果和农事任务],
-    [环境监测], [`app_temperature_humidity`、`app_tree_sensor_records`、`app_orchard_trees`], [保存环境采样、树级传感器记录和果树空间信息],
-    [系统管理], [`app_system_settings`、`app_admin_audit_logs`], [保存动态配置和管理员操作日志],
+  safe-table(
+    table(
+      columns: (0.9fr, 2.2fr, 2fr),
+      inset: 4pt,
+      stroke: 0.5pt,
+      align: left,
+      [*数据类别*], [*主要数据表*], [*作用*],
+      [用户权限], [`app_users`、`app_sessions`、`app_invitations`、`app_pending_users`], [保存用户、会话、邀请码和待审核注册信息],
+      [业务记录], [`app_diagnosis_records`、`app_tasks`], [保存诊断结果和农事任务],
+      [环境监测], [`app_temperature_humidity`、`app_tree_sensor_records`、`app_orchard_trees`], [保存环境采样、树级传感器记录和果树空间信息],
+      [系统管理], [`app_system_settings`、`app_admin_audit_logs`], [保存动态配置和管理员操作日志],
+    ),
   ),
   kind: table,
   caption: [系统核心数据表],
@@ -170,8 +174,7 @@
 由于当前记录未包含处理器型号、内存、操作系统负载和网络拓扑等完整硬件信息，以下数据只能用于分析本次部署环境中的相对性能，不能直接与其他研究或不同设备的测试结果进行横向比较。Web 服务性能测试结果如表 3 所示。
 
 #figure(
-  [
-    #set text(size: 7pt)
+  safe-table([
     #set par(first-line-indent: 0em)
     #table(
       columns: (1.15fr, 0.55fr, 0.95fr, 0.85fr, 0.85fr, 0.7fr, 0.7fr, 0.7fr, 0.65fr),
@@ -192,7 +195,7 @@
       [database_api], [10], [30 576], [3 820.91], [2.616], [2.584], [3.034], [3.318], [0%],
       [database_api], [50], [30 466], [3 802.73], [13.138], [13.002], [14.570], [16.365], [0%],
     )
-  ],
+  ]),
   kind: table,
   caption: [Web 服务性能测试结果],
 )
@@ -204,8 +207,8 @@
 人工功能验证覆盖认证、病害诊断、环境采样、任务管理、管理员功能和数据持久化等流程，主要功能测试内容如表 4 所示。
 
 #figure(
-  [
-    #set par(first-line-indent: 0em, leading: 10pt, spacing: 0pt)
+  safe-table([
+    #set par(first-line-indent: 0em)
     #table(
       columns: (0.85fr, 2.9fr, 2.25fr),
       inset: 3pt,
@@ -220,7 +223,7 @@
       [管理后台], [用户管理、邀请码、审核、系统设置、审计日志], [管理员可操作；普通用户无权访问；操作写入审计记录],
       [数据初始化], [首次启动建表、默认设置和演示果树初始化], [11 张核心表创建成功，空表时写入演示树位和传感器数据],
     )
-  ],
+  ]),
   kind: table,
   caption: [主要功能测试内容],
 )
@@ -235,7 +238,8 @@
 
 后续工作将重点完善病害模型的独立测试和田间验证，补充 HTTP 集成测试，接入真实传感器并完善环境数据管理，增加任务处理中状态、负责人分派和状态历史。同时，可进一步优化三维场景的大规模渲染和实时数据同步，使系统逐步由状态可视化平台向数据驱动的果园管理与决策平台扩展。
 
-// 确认参考文献
+// 原中文参考文献留档；按会议模板要求不参与排版。
+/*
 #references[
   #journal-ref-doi(("肖德琴", "刘倩", "潘茜怡", "等"), "农业视觉中的低标注学习：半监督、弱监督与自监督方法综述", "华南农业大学学报", "2026", volume: "47", issue: "3", pages: "369-381", doi: "10.7671/j.issn.1001-411X.202601035")
   #parbreak()
@@ -256,4 +260,28 @@
   #journal-ref-doi("KIM S，HEO S", "An agricultural digital twin for mandarins demonstrates the potential for individualized agriculture", "Nature Communications", "2024", volume: "15", pages: "1561", doi: "10.1038/s41467-024-45725-x")
   #parbreak()
   #journal-ref-doi("TAGARAKIS A C，BENOS L，KYRIAKARAKOS G，et al.", "Digital twins in agriculture and forestry: a review", "Sensors", "2024", volume: "24", issue: "10", pages: "3117", doi: "10.3390/s24103117")
+]
+*/
+
+// 模板要求中文论文采用英文参考文献，以下英文条目参与排版。
+#references[
+  #journal-ref-doi(("XIAO D Q", "LIU Q", "PAN Q Y", "et al."), "Low-annotation learning in agricultural vision: A review of semi-supervised, weakly supervised, and self-supervised methods", "Journal of South China Agricultural University", "2026", volume: "47", issue: "3", pages: "369-381", doi: "10.7671/j.issn.1001-411X.202601035")
+  #parbreak()
+  #journal-ref-doi(("ZHU R", "ZHANG J Y", "HUANG J C", "et al."), "Research progress of crop leaf disease detection based on convolutional neural networks", "Transactions of the Chinese Society of Agricultural Engineering", "2025", volume: "41", issue: "17", pages: "15-28", doi: "10.11975/j.issn.1002-6819.202502117")
+  #parbreak()
+  #journal-ref-doi(("ZHENG Z B", "ZHANG Y B", "SUN L C", "et al."), "Small-target detection method for citrus leaf diseases based on improved YOLOv5", "Transactions of the Chinese Society of Agricultural Engineering", "2025", volume: "41", issue: "21", pages: "203-211", doi: "10.11975/j.issn.1002-6819.202505148")
+  #parbreak()
+  #journal-ref-doi(("WANG H J", "LIN J Q", "ZOU X J", "et al."), "Construction of an orchard virtual interaction system based on digital twins", "Journal of System Simulation", "2024", volume: "36", issue: "6", pages: "1493-1508", doi: "10.16182/j.issn1004731x.joss.23-0317")
+  #parbreak()
+  #journal-ref-doi(("GOYAL P", "GILL J", "GOYAL R", "et al."), "Deep learning-based citrus plant disease classification using a computationally efficient CNN model", "Scientific Reports", "2026", volume: "16", pages: "19316", doi: "10.1038/s41598-026-50684-y")
+  #parbreak()
+  #journal-ref-doi(("ZHU H", "WANG D", "WEI Y", "et al."), "YOLOV8-CMS: a high-accuracy deep learning model for automated citrus leaf disease classification and grading", "Plant Methods", "2025", volume: "21", pages: "88", doi: "10.1186/s13007-025-01396-3")
+  #parbreak()
+  #journal-ref-doi(("BUTT N", "IQBAL M M", "RAMZAN S", "et al."), "Citrus diseases detection using innovative deep learning approach and hybrid meta-heuristic", "PLOS ONE", "2025", volume: "20", issue: "1", pages: "e0316081", doi: "10.1371/journal.pone.0316081")
+  #parbreak()
+  #journal-ref-doi(("GOYAL A", "LAKHWANI K"), "Integrating advanced deep learning techniques for enhanced detection and classification of citrus leaf and fruit diseases", "Scientific Reports", "2025", volume: "15", pages: "12659", doi: "10.1038/s41598-025-97159-0")
+  #parbreak()
+  #journal-ref-doi(("KIM S", "HEO S"), "An agricultural digital twin for mandarins demonstrates the potential for individualized agriculture", "Nature Communications", "2024", volume: "15", pages: "1561", doi: "10.1038/s41467-024-45725-x")
+  #parbreak()
+  #journal-ref-doi(("TAGARAKIS A C", "BENOS L", "KYRIAKARAKOS G", "et al."), "Digital twins in agriculture and forestry: a review", "Sensors", "2024", volume: "24", issue: "10", pages: "3117", doi: "10.3390/s24103117")
 ]

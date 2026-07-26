@@ -1,7 +1,6 @@
 // 中文学术论文模板
 // 符合标准学术论文格式要求
-// 本地粗体实现，避免依赖外部包
-#let fakebold(body) = text(body, weight: "bold")
+#import "@preview/cuti:0.3.0": fakebold
 
 // ============ 字号定义 ============
 #let 一号 = 26pt
@@ -12,17 +11,27 @@
 #let 小四 = 12pt
 #let 五号 = 10.5pt
 #let 小五 = 9pt
+#let 图表字号 = 10pt
+
+// Typst 的 leading 表示行间留白而非完整基线距离；0.5em 对应本模板的
+// 12 磅单倍行距，并会随题头区的不同字号等比例调整。
+#let 单倍行距 = 0.5em
 
 // ============ 字体定义 ============
 #let 宋体 = ("Times New Roman", "SimSun")
 #let 黑体 = ("Times New Roman", "SimHei")
 #let 楷体 = ("Times New Roman", "KaiTi")
 
+// 将表格约束在栏宽以内，并在两侧各保留 1% 的安全余量。
+#let safe-table(body, width: 98%) = align(center, block(width: width)[#body])
+
 // 正文中的手工顺序编码引文标记
 #let refmark(value) = super([\[#value\]])
 
 // 论文中的纵向流程图。节点内容由 main.typ 提供，样式统一由模板管理。
 #let vertical-flow(nodes, width: 82%) = {
+  set text(font: 宋体, size: 图表字号)
+  set par(first-line-indent: 0em, leading: 3pt, spacing: 0pt)
   let parts = ()
   for (index, node) in nodes.enumerate() {
     parts.push(
@@ -56,7 +65,7 @@
 ) = {
   set page(
     paper: "a4",
-    margin: (left: 30mm, right: 30mm, top: 25mm, bottom: 25mm),
+    margin: (left: 20mm, right: 20mm, top: 25mm, bottom: 20mm),
     numbering: none,
   )
 
@@ -156,50 +165,52 @@
   // 页面设置
   set page(
     paper: "a4",
-    margin: (left: 30mm, right: 30mm, top: 25mm, bottom: 25mm),
-    numbering: "1",
-    number-align: center,
+    // 模板要求：上 2.5 cm，下/左/右各 2 cm。
+    margin: (left: 20mm, right: 20mm, top: 25mm, bottom: 20mm),
+    numbering: none,
   )
 
   // 文本基本设置
   set text(
     font: 宋体,
-    size: 五号,
+    size: 小四,
     lang: "zh",
     region: "cn",
   )
   set par(
     first-line-indent: (amount: 2em, all: true),
-    leading: 11.6pt,
-    spacing: 11.6pt,
+    leading: 单倍行距,
+    // Word 的“段前/段后 0”仍保持一行的正常基线节奏；Typst 的
+    // spacing 会取代跨段处的 leading，因此这里必须与 leading 相同。
+    spacing: 单倍行距,
     justify: true,
   )
 
   // 标题样式设置
   show heading.where(level: 1): it => {
-    set text(font: 黑体, size: 三号)
-    set par(first-line-indent: 0em, leading: 11.6pt, spacing: 0pt)
-    block(width: 100%, above: 19.1pt, below: 18.3pt)[#fakebold(it)]
+    set text(font: 宋体, size: 小四)
+    set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt)
+    block(width: 100%, above: 18pt, below: 6pt, sticky: true)[#fakebold(it)]
   }
 
   show heading.where(level: 2): it => {
-    set text(font: 宋体, size: 13pt)
-    set par(first-line-indent: 0em, leading: 11.6pt, spacing: 0pt)
-    block(width: 100%, above: 12pt, below: 18.3pt)[#fakebold(it)]
+    set text(font: 宋体, size: 小四)
+    set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt)
+    block(width: 100%, above: 6pt, below: 6pt, sticky: true)[#fakebold(it)]
   }
 
   show heading.where(level: 3): it => {
-    set text(font: 宋体, size: 五号, weight: "regular")
-    set par(first-line-indent: 0em, leading: 11.6pt, spacing: 0pt)
-    block(width: 100%, above: 12pt, below: 18.3pt)[#it]
+    set text(font: 宋体, size: 小四, weight: "regular")
+    set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt)
+    block(width: 100%, above: 6pt, below: 6pt, sticky: true)[#it]
   }
 
-  // 一级标题编号：一、二、三、
+  // 一级标题使用“1．”，二级及以下使用“1.1”“1.1.1”。
   set heading(numbering: (..nums) => {
     let level = nums.pos().len()
     let number = nums.pos().last()
     if level == 1 {
-      numbering("一、", number)
+      numbering("1．", number)
     } else if level == 2 {
       numbering("1.1", ..nums.pos())
     } else if level == 3 {
@@ -211,121 +222,108 @@
   // 表格单元格不继承正文首行缩进和段前距。
   show table.cell: set par(
     first-line-indent: 0em,
-    leading: 12pt,
+    leading: 3pt,
     spacing: 0pt,
   )
 
+  // 表文、图文和图表标题均为 10 磅；表题在上，图题在下。
+  show figure: set text(font: 宋体, size: 图表字号)
+  // 图表整体与相邻正文各留 6 磅，避免浮动内容紧贴或压住正文。
+  show figure: set block(above: 6pt, below: 6pt)
+  // caption 的段后间距必须由 figure.gap 控制；caption 内部 block 的
+  // above/below 不参与图题与图表主体之间的布局。
+  set figure(gap: 6pt)
   show figure.where(kind: table): set figure.caption(position: top)
   show figure.where(kind: image): set figure.caption(position: bottom)
 
   show figure.caption: it => {
-    set text(size: 小五)
-    set align(center)
-    it
+    set text(font: 宋体, size: 图表字号)
+    set par(first-line-indent: 0em, leading: 3pt, spacing: 0pt)
+    block(width: 100%)[
+      #align(center)[#it]
+    ]
   }
 
-  // ============ 标题部分 ============
+  // ============ 英文题头区 ============
+  // 顺序严格按模板：英文题目、作者、单位、关键词、摘要。
   align(center)[
-    #set text(font: 黑体, size: 22pt)
-    #set par(first-line-indent: 0em)
-    #fakebold(title)
-  ]
-
-  v(1.5em)
-
-  // ============ 作者部分 ============
-  align(center)[
-    #set text(font: 宋体, size: 11pt)
-    #set par(first-line-indent: 0em)
-    #author
-  ]
-
-  v(0.5em)
-
-  // ============ 学校部分 ============
-  align(center)[
-    #set text(font: 宋体, size: 11pt)
-    #set par(first-line-indent: 0em)
-    （#school #college）
-  ]
-
-  v(1em)
-
-  // ============ 摘要部分 ============
-  [
-    #set par(first-line-indent: 0em)
-    #fakebold(text(font: 黑体, size: 三号)[中文摘要：])
-  ]
-
-  v(0.4em)
-
-  [
-    // 摘要在 Word 审阅中为 12 磅自动行距，不套用正文 11.6 磅固定行距。
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 0pt)
-    #abstract-content
-  ]
-
-  v(0.5em)
-
-  // ============ 关键词部分 ============
-  [
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 14.6pt)
-    #fakebold(text(font: 宋体, size: 五号)[关键词：])
-    #keywords.join("；")
-  ]
-
-  v(1em)
-
-  // ============ 英文标题、作者和单位 ============
-
-  align(center)[
-    #set text(font: "Times New Roman", size: 22pt)
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 0pt)
+    #set text(font: "Arial", size: 14pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: false)
     #fakebold(english-title)
   ]
 
-  v(1.5em)
+  v(6pt)
 
   align(center)[
-    #set text(font: "Times New Roman", size: 11pt)
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 0pt)
+    #set text(font: "Arial", size: 14pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: false)
     #english-author
   ]
 
-  v(1em)
+  v(6pt)
 
   align(center)[
-    #set text(font: "Times New Roman", size: 11pt)
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 0pt)
-    (#english-school, #english-college)
+    #set text(font: "Arial", size: 11pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: false)
+    #english-school, #english-college
   ]
 
-  v(1em)
-
-  // ============ 英文摘要与关键词 ============
-  [
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 0pt)
-    #fakebold(text(font: "Times New Roman", size: 三号)[Abstract:])
-  ]
-
-  v(18.8pt)
+  v(18pt)
 
   [
-    #set text(font: "Times New Roman", size: 五号)
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 0pt, justify: true)
-    #english-abstract-content
+    #set text(font: "Arial", size: 11pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: false)
+    #fakebold[Keywords: ]#english-keywords.join(", ")
   ]
 
-  v(0.5em)
+  v(18pt)
 
   [
-    #set text(font: "Times New Roman", size: 五号)
-    #set par(first-line-indent: 0em, leading: 12pt, spacing: 14.6pt)
-    #fakebold[Keywords: ]
-    #english-keywords.join("; ")
+    #set text(font: "Times New Roman", size: 12pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: true)
+    #fakebold[Abstract. ]#english-abstract-content
   ]
 
-  v(1em)
+  // ============ 中文题头区 ============
+  v(18pt)
+
+  align(center)[
+    #set text(font: 黑体, size: 16pt, weight: "regular")
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: false)
+    #title
+  ]
+
+  v(6pt)
+
+  align(center)[
+    #set text(font: 宋体, size: 14pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: false)
+    #author
+  ]
+
+  v(6pt)
+
+  align(center)[
+    #set text(font: 宋体, size: 11pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: false)
+    #school #college
+  ]
+
+  v(18pt)
+
+  [
+    #set text(font: 宋体, size: 11pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt)
+    #fakebold[关键词：]#keywords.join("；")
+  ]
+
+  v(18pt)
+
+  [
+    #set text(font: 宋体, size: 12pt)
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt, justify: true)
+    #fakebold[中文摘要. ]#abstract-content
+  ]
 
   // ============ 正文部分 ============
   body
@@ -336,20 +334,21 @@
 
 // ============ 参考文献函数 ============
 #let references(bib-content) = {
-  v(1em)
-  [
-    #set par(first-line-indent: 0em, leading: 11.6pt, spacing: 11.6pt)
-    #fakebold(text(font: 宋体, size: 五号)[参考文献])
+  v(18pt)
+  block(sticky: true, below: 6pt)[
+    #set par(first-line-indent: 0em, leading: 单倍行距, spacing: 0pt)
+    #fakebold(text(font: "Times New Roman", size: 12pt)[References])
   ]
-  v(0.5em)
   set par(
     first-line-indent: 0em,
     hanging-indent: 2em,
-    leading: 11.6pt,
-    spacing: 11.6pt,
+    leading: 单倍行距,
+    // Word 的参考文献样式为 14 磅行距、段后 6 磅。Typst 的 spacing
+    // 取代跨段 leading，因此需在正常 leading 之外再加 6 磅。
+    spacing: 单倍行距 + 6pt,
     justify: false,
   )
-  set text(font: 宋体, size: 五号, cjk-latin-spacing: none)
+  set text(font: "Times New Roman", size: 12pt, cjk-latin-spacing: none)
   bib-counter.update(0)  // 重置计数器
   bib-content
 }
@@ -358,9 +357,9 @@
 #let author-text(authors) = {
   if type(authors) == array {
     if authors.len() > 3 {
-      authors.slice(0, 3).join("，") + "，等"
+      authors.slice(0, 3).join(", ") + ", et al"
     } else {
-      authors.join("，")
+      authors.join(", ")
     }
   } else {
     authors
@@ -383,16 +382,16 @@
     let num = bib-counter.get().first()
     let author-string = author-text(authors)
     let vol-issue = if volume != none and issue != none {
-      "，" + str(volume) + "(" + str(issue) + ")"
+      ", " + str(volume) + "(" + str(issue) + ")"
     } else if volume != none {
-      "，" + str(volume)
+      ", " + str(volume)
     } else {
       ""
     }
-    let page-string = if pages != none { "：" + str(pages) } else { "" }
-    let doi-string = if doi != none { ". DOI: " + str(doi) } else { "" }
+    let page-string = if pages != none { ": " + str(pages) } else { "" }
+    let doi-string = if doi != none { " doi: " + str(doi) } else { "" }
 
-    [#("[" + str(num) + "]" + author-string + "." + title + "[J]." + journal + "，" + str(year) + vol-issue + page-string + doi-string + ".")]
+    [#("[" + str(num) + "] " + author-string + ". " + title + ". " + journal + ", " + str(year) + vol-issue + page-string + "." + doi-string + ".")]
   }
 }
 
