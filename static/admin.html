@@ -19,6 +19,7 @@
       </span>
     </a>
     <nav class="app-nav" aria-label="主导航">
+      <a class="app-nav__link" href="/store">普通购买</a>
       <a class="app-nav__link" href="/analyze">病害识别</a>
       <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
       <a class="app-nav__link" href="/admin" aria-current="page">管理后台</a>
@@ -32,6 +33,7 @@
       <div class="admin-section-nav__eyebrow">运营工作台</div>
       <a href="/admin?section=orchard" data-admin-section="orchard">果园监测<span>园区状态与 3D 入口</span></a>
       <a href="/admin?section=access" data-admin-section="access">用户与访问<span>审核、用户与邀请码</span></a>
+      <a href="/admin?section=store" data-admin-section="store">商城管理<span>普通购买商品、库存与订单</span></a>
       <a href="/admin?section=overview" data-admin-section="overview">数据总览<span>识别与环境指标</span></a>
       <a href="/admin?section=audit" data-admin-section="audit">审计日志<span>操作与预警记录</span></a>
       <a href="/admin?section=settings" data-admin-section="settings">系统设置<span>注册、阈值与日志策略</span></a>
@@ -129,6 +131,47 @@
     </div>
     </section>
 
+
+    <!-- ====== 商城管理（普通购买） ====== -->
+    <section class="admin-page" data-admin-page="store" aria-labelledby="storeSection">
+    <div class="section-title admin-section-marker" id="storeSection">商城管理</div>
+
+    <div class="store-admin-overview full-width-section" id="storeOverview">
+      <div class="store-admin-kpi"><span>在售商品</span><strong id="storeProductCount">--</strong></div>
+      <div class="store-admin-kpi"><span>订单总数</span><strong id="storeOrderCount">--</strong></div>
+      <div class="store-admin-kpi"><span>交易金额</span><strong id="storeGrossAmount">--</strong></div>
+      <div class="store-admin-kpi"><span>待处理</span><strong id="storePendingOrders">--</strong></div>
+    </div>
+
+    <div class="store-admin-form-grid full-width-section">
+      <div class="card store-admin-card">
+        <div class="card-header"><h2>新增商品</h2></div>
+        <div class="card-body">
+          <form id="storeProductForm" class="store-form">
+            <label>商品名称<input id="storeProductName" placeholder="家庭箱 10 斤" required maxlength="80" /></label>
+            <label>SKU<input id="storeProductSku" placeholder="FAMILY-10KG" required maxlength="40" /></label>
+            <label>规格说明<input id="storeProductUnit" placeholder="约 10 斤 / 箱" required maxlength="80" /></label>
+            <div class="store-form-row">
+              <label>售价（元）<input id="storeProductPrice" type="number" min="0.01" step="0.01" required /></label>
+              <label>库存（件）<input id="storeProductStock" type="number" min="0" step="1" value="0" required /></label>
+            </div>
+            <label>商品介绍<textarea id="storeProductDescription" rows="2" maxlength="500"></textarea></label>
+            <button class="primary" type="submit">创建商品</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card store-admin-card">
+        <div class="card-header"><h2>在售商品</h2><button class="ghost" id="btnRefreshStoreProducts">刷新</button></div>
+        <div class="card-body" style="padding: 0;"><div class="table-responsive" id="storeProductsWrap"></div></div>
+      </div>
+    </div>
+
+    <div class="card full-width-section store-admin-card">
+      <div class="card-header"><h2>订单与履约</h2><button class="ghost" id="btnRefreshStoreOrders">刷新订单</button></div>
+      <div class="card-body" style="padding: 0;"><div class="table-responsive" id="storeOrdersWrap"></div></div>
+    </div>
+    </section>
 
     <section class="admin-page" data-admin-page="overview" aria-labelledby="overviewSection">
     <div class="section-title admin-section-marker" id="overviewSection">数据总览</div>

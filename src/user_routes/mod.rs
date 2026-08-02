@@ -8,6 +8,7 @@ mod commerce;
 mod dto;
 mod registration;
 mod session;
+mod store;
 
 pub(crate) use auth::{
     ensure_admin, ensure_authenticated, extract_auth_token, now_secs, parse_requested_role,
@@ -84,6 +85,27 @@ pub fn router(state: AppState) -> Router<AppState> {
             "/admin/commerce/overview",
             post(commerce::commerce_overview_handler),
         )
+        .route(
+            "/store/orders",
+            post(store::create_store_order_handler).get(store::list_user_store_orders_handler),
+        )
+        .route(
+            "/admin/store/products",
+            post(store::create_store_product_handler).get(store::list_store_products_admin_handler),
+        )
+        .route(
+            "/admin/store/products/{product_id}/toggle",
+            post(store::toggle_store_product_handler),
+        )
+        .route(
+            "/admin/store/orders",
+            post(store::list_admin_store_orders_handler),
+        )
+        .route(
+            "/admin/store/orders/status",
+            post(store::update_store_order_status_handler),
+        )
+        .route("/admin/store/overview", post(store::store_overview_handler))
         .route(
             "/admin/dashboard/stats",
             post(admin::dashboard_stats_handler),

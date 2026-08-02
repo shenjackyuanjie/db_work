@@ -33,6 +33,10 @@ pub(crate) async fn orchard_3d_page_handler() -> Response {
     read_static_page("orchard-3d.html", "3D 沙盘").await
 }
 
+pub(crate) async fn store_page_handler() -> Response {
+    read_static_page("store.html", "普通购买").await
+}
+
 async fn read_static_page(filename: &str, page_name: &str) -> Response {
     match tokio::fs::read_to_string(format!("static/{filename}")).await {
         Ok(content) => Html(content).into_response(),

@@ -19,6 +19,7 @@ mod bootstrap;
 mod handlers_ai;
 mod handlers_commerce;
 mod handlers_core;
+mod handlers_store;
 mod shared;
 
 pub(crate) use shared::{
@@ -56,10 +57,7 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
 
     Router::new()
         .route("/health", get(handlers_core::health_handler))
-        .route(
-            "/",
-            get(handlers_core::index_page_handler),
-        )
+        .route("/", get(handlers_core::index_page_handler))
         .route(
             "/index.html",
             get(|| async { axum::response::Redirect::permanent("/") }),
@@ -102,10 +100,12 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             "/commerce.html",
             get(|| async { axum::response::Redirect::permanent("/commerce") }),
         )
+        .route("/store", get(handlers_core::store_page_handler))
         .route(
-            "/orchard-3d",
-            get(handlers_core::orchard_3d_page_handler),
+            "/store.html",
+            get(|| async { axum::response::Redirect::permanent("/store") }),
         )
+        .route("/orchard-3d", get(handlers_core::orchard_3d_page_handler))
         .route(
             "/orchard-3d.html",
             get(|| async { axum::response::Redirect::permanent("/orchard-3d") }),
@@ -157,6 +157,10 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
         .route(
             "/api/commerce/batches/{batch_id}/trace",
             get(handlers_commerce::batch_trace_handler),
+        )
+        .route(
+            "/api/store/products",
+            get(handlers_store::storefront_handler),
         )
         .nest("/user", crate::user_routes::router(state.clone()))
         .nest_service(

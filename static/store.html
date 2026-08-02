@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>普通购买 | 橙管家</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/store.css" />
+</head>
+
+<body>
+  <header class="app-header">
+    <a class="app-brand" href="/store">
+      <span class="app-brand__mark" aria-hidden="true">橙</span>
+      <span class="app-brand__copy">
+        <span class="app-brand__name">橙管家</span>
+        <span class="app-brand__page">赣南脐橙现货商城</span>
+      </span>
+    </a>
+    <nav class="app-nav" aria-label="主导航">
+      <a class="app-nav__link" href="/store" aria-current="page">普通购买</a>
+      <a class="app-nav__link" href="/analyze">病害识别</a>
+      <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
+      <a class="app-nav__link" id="adminNavLink" href="/admin" hidden>管理后台</a>
+      <span class="app-nav__divider" aria-hidden="true"></span>
+      <span class="badge" id="loginBadge">未登录</span>
+      <a class="app-nav__link" id="loginNavLink" href="/">登录 / 注册</a>
+      <button class="app-nav__button app-nav__button--danger" id="logoutButton" type="button" hidden>退出登录</button>
+    </nav>
+  </header>
+
+  <main class="store-shell">
+    <section class="store-hero" aria-labelledby="pageTitle">
+      <div>
+        <div class="eyebrow">现货直发 · 产地精选 · 随时下单</div>
+        <h1 id="pageTitle">赣南脐橙，现货直达</h1>
+        <p>无需等待开团，从合作果园精选的脐橙随时下单，付款后按顺序采摘、分选并发货。</p>
+      </div>
+      <div class="hero-facts" aria-label="商城信息">
+        <div><strong id="productCount">--</strong><span>在售商品</span></div>
+        <div><strong>产地直发</strong><span>赣南果园</span></div>
+        <div><strong>现货现发</strong><span>按单发货</span></div>
+      </div>
+    </section>
+
+    <div class="store-layout">
+      <section class="store-main" aria-labelledby="productsTitle">
+        <div class="section-heading">
+          <div>
+            <div class="eyebrow">FRESH STORE</div>
+            <h2 id="productsTitle">精选商品</h2>
+          </div>
+          <button class="app-nav__button" id="refreshButton" type="button">刷新</button>
+        </div>
+        <div class="message-bar" id="storeMessage" role="status">正在加载商品...</div>
+        <div class="product-grid" id="productList"></div>
+      </section>
+
+      <aside class="store-side">
+        <section class="store-panel cart-panel" aria-labelledby="cartTitle">
+          <div class="section-heading section-heading--compact">
+            <div>
+              <div class="eyebrow">CART</div>
+              <h2 id="cartTitle">购物车</h2>
+            </div>
+            <span class="panel-status" id="cartStatus">空</span>
+          </div>
+          <div id="cartEmpty" class="empty-block">选择商品并填写收货信息后提交订单。</div>
+          <form id="orderForm" hidden>
+            <div class="cart-items" id="cartItems"></div>
+            <div class="form-grid">
+              <label>收货人<input id="recipientName" name="recipient_name" required maxlength="40" /></label>
+              <label>联系电话<input id="recipientPhone" name="recipient_phone" inputmode="tel" required maxlength="30" /></label>
+            </div>
+            <label>收货地址<textarea id="shippingAddress" name="shipping_address" required maxlength="240" rows="3"></textarea></label>
+            <div class="order-total">
+              <div><span>订单金额</span><strong id="orderTotal">¥0.00</strong></div>
+              <small id="paymentHint">下单后等待管理员确认收款</small>
+            </div>
+            <button class="app-nav__button app-nav__button--primary submit-button" id="submitOrderButton" type="submit">提交订单</button>
+            <p class="form-note" id="loginNote" hidden>请先登录账户，再提交订单。</p>
+          </form>
+        </section>
+
+        <section class="store-panel orders-panel" aria-labelledby="ordersTitle">
+          <div class="section-heading section-heading--compact">
+            <div>
+              <div class="eyebrow">ACCOUNT</div>
+              <h2 id="ordersTitle">我的订单</h2>
+            </div>
+            <button class="text-button" id="refreshOrdersButton" type="button" hidden>刷新</button>
+          </div>
+          <div class="empty-block" id="ordersEmpty">登录后可以查看订单状态。</div>
+          <div class="orders-list" id="ordersList"></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="/store.js"></script>
+</body>
+
+</html>

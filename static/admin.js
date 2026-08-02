@@ -332,7 +332,7 @@ const orchardState = {
 let currentAdminUsername = "";
 let allLogs = [];
 
-const ADMIN_SECTIONS = new Set(["orchard", "access", "overview", "audit", "settings"]);
+const ADMIN_SECTIONS = new Set(["orchard", "access", "store", "overview", "audit", "settings"]);
 
 function requestedAdminSection() {
   const section = new URLSearchParams(window.location.search).get("section");
@@ -1462,11 +1462,211 @@ function bindCommerceActions() {
   });
 }
 
+// ====== 商城管理（普通购买） ======
+const storeOrderStatusLabels = {
+  pending_payment: "待收款",
+  paid: "已付款",
+  shipped: "已发货",
+  completed: "已完成",
+  cancelled: "已取消",
+  refunded: "已退款",
+};
+
+const storeAdminState = {
+  products: [],
+  orders: [],
+};
+
+async function storeRequest(url, method = "GET", body) {
+  try {
+    const hasBody = body !== undefined;
+    const res = await fetch(url, {
+      method,
+      credentials: "same-origin",
+      headers: requestHeaders(hasBody),
+      body: hasBody ? JSON.stringify(body) : undefined,
+    });
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
+    }
+    if (!res.ok) throw new Error(readErrorMessage(data, "商城接口请求失败"));
+    return unwrapApiPayload(data);
+  } catch (error) {
+    throw new Error(error.message || "网络请求失败");
+  }
+}
+
+function storeMoney(cents) {
+  return `¥${(Number(cents || 0) / 100).toFixed(2)}`;
+}
+
+function renderStoreOverview(data) {
+  if (!data) return;
+  $("storeProductCount").textContent = data.product_count ?? "--";
+  $("storeOrderCount").textContent = data.order_count ?? "--";
+  $("storeGrossAmount").textContent = storeMoney(data.gross_amount_cents);
+  $("storePendingOrders").textContent = data.pending_order_count ?? "--";
+}
+
+async function loadStoreOverview() {
+  const data = await storeRequest("/user/admin/store/overview", "POST");
+  renderStoreOverview(data);
+}
+
+function renderStoreProducts() {
+  const wrap = $("storeProductsWrap");
+  if (!storeAdminState.products.length) {
+    wrap.innerHTML = '<div class="empty-state">暂无商品，先在上方创建。</div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="store-orders-table">
+      <thead>
+        <tr><th>商品</th><th>SKU</th><th>规格</th><th>售价</th><th>库存</th><th>状态</th><th>操作</th></tr>
+      </thead>
+      <tbody>
+        ${storeAdminState.products.map((product) => `
+          <tr>
+            <td>${escapeHtml(product.name)}</td>
+            <td><code>${escapeHtml(product.sku)}</code></td>
+            <td>${escapeHtml(product.unit_label)}</td>
+            <td>${storeMoney(product.price_cents)}</td>
+            <td>${product.stock_quantity}</td>
+            <td><span class="pill ${product.is_active ? "admin" : "user"}">${product.is_active ? "在售" : "下架"}</span></td>
+            <td><button class="ghost" type="button" data-toggle-store-product="${product.id}">${product.is_active ? "下架" : "上架"}</button></td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+  wrap.querySelectorAll("[data-toggle-store-product]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      await toggleStoreProduct(Number(button.dataset.toggleStoreProduct));
+    });
+  });
+}
+
+async function loadStoreProducts() {
+  const data = await storeRequest("/user/admin/store/products");
+  storeAdminState.products = Array.isArray(data.products) ? data.products : [];
+  renderStoreProducts();
+}
+
+async function createStoreProduct(event) {
+  event.preventDefault();
+  const body = {
+    name: $("storeProductName").value.trim(),
+    sku: $("storeProductSku").value.trim(),
+    unit_label: $("storeProductUnit").value.trim(),
+    price_cents: Math.round(Number($("storeProductPrice").value) * 100),
+    stock_quantity: Math.round(Number($("storeProductStock").value || 0)),
+    description: $("storeProductDescription").value.trim(),
+  };
+  try {
+    await storeRequest("/user/admin/store/products", "POST", body);
+    showToast("商品创建成功");
+    $("storeProductForm").reset();
+    $("storeProductStock").value = "0";
+    await Promise.all([loadStoreProducts(), loadStoreOverview()]);
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+async function toggleStoreProduct(productId) {
+  try {
+    await storeRequest(`/user/admin/store/products/${productId}/toggle`, "POST");
+    showToast("商品状态已更新");
+    await loadStoreProducts();
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+function renderStoreOrders() {
+  const wrap = $("storeOrdersWrap");
+  if (!storeAdminState.orders.length) {
+    wrap.innerHTML = '<div class="empty-state">暂无订单。</div>';
+    return;
+  }
+  const statusOptions = Object.entries(storeOrderStatusLabels)
+    .map(([value, label]) => `<option value="${value}">${label}</option>`)
+    .join("");
+  wrap.innerHTML = `
+    <table class="store-orders-table">
+      <thead>
+        <tr><th>订单号</th><th>用户</th><th>收货信息</th><th>商品</th><th>金额</th><th>状态 / 操作</th></tr>
+      </thead>
+      <tbody>
+        ${storeAdminState.orders.map((order) => `
+          <tr>
+            <td><code>${escapeHtml(order.order_no)}</code><br /><small style="opacity:.7">${new Date(Number(order.created_at)).toLocaleString("zh-CN")}</small></td>
+            <td>${escapeHtml(order.username)}</td>
+            <td>${escapeHtml(order.recipient_name)} · ${escapeHtml(order.recipient_phone)}<br /><small style="opacity:.7">${escapeHtml(order.shipping_address)}</small></td>
+            <td>${(Array.isArray(order.items) ? order.items : []).map((item) => `${escapeHtml(item.product_name)} × ${item.quantity}`).join("<br />") || "--"}</td>
+            <td>${storeMoney(order.total_cents)}</td>
+            <td>
+              <select data-store-order-status="${order.id}">
+                ${statusOptions.replace(`<option value="${order.status}">`, `<option value="${order.status}" selected>`)}
+              </select>
+              <button class="ghost" type="button" data-save-store-order="${order.id}">保存</button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+  wrap.querySelectorAll("[data-save-store-order]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const orderId = button.dataset.saveStoreOrder;
+      const status = wrap.querySelector(`[data-store-order-status="${orderId}"]`).value;
+      await updateStoreOrderStatus(orderId, status);
+    });
+  });
+}
+
+async function loadStoreOrders() {
+  const data = await storeRequest("/user/admin/store/orders", "POST");
+  storeAdminState.orders = Array.isArray(data.orders) ? data.orders : [];
+  renderStoreOrders();
+}
+
+async function updateStoreOrderStatus(orderId, status) {
+  try {
+    await storeRequest("/user/admin/store/orders/status", "POST", { order_id: orderId, status });
+    showToast("订单状态已更新");
+    await Promise.all([loadStoreOrders(), loadStoreOverview()]);
+  } catch (error) {
+    showToast(error.message, "error");
+  }
+}
+
+async function refreshStoreData() {
+  await Promise.all([loadStoreOverview(), loadStoreProducts(), loadStoreOrders()]);
+}
+
+function bindStoreActions() {
+  $("storeProductForm").addEventListener("submit", createStoreProduct);
+  $("btnRefreshStoreProducts").addEventListener("click", async () => {
+    await loadStoreProducts();
+    showToast("商品已刷新");
+  });
+  $("btnRefreshStoreOrders").addEventListener("click", async () => {
+    await Promise.all([loadStoreOrders(), loadStoreOverview()]);
+    showToast("订单已刷新");
+  });
+}
+
 function bindEvents() {
   bindAdminSectionNavigation();
   bindInviteActions();
   bindDashboardActions();
   bindSettingsActions();
+  bindStoreActions();
 }
 
 async function initPage() {
@@ -1487,6 +1687,7 @@ async function initPage() {
     fetchStats(),
     fetchLogs(),
     fetchOrchardOverview(),
+    refreshStoreData(),
   ]);
 }
 

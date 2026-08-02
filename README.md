@@ -100,7 +100,7 @@ cargo run --release
 
 - `http://127.0.0.1:11000/`：会重定向到首页
 - `http://127.0.0.1:11000/`：公开首页 / 登录入口
-- `http://127.0.0.1:11000/commerce`：橙管家脐橙开园团入口
+- `http://127.0.0.1:11000/store`：橙管家脐橙现货商城（普通购买）入口
 - `http://127.0.0.1:11000/analyze`：识别分析页，需要有效登录态
 - `http://127.0.0.1:11000/admin`：管理员后台，需要管理员权限
 - `http://127.0.0.1:11000/orchard-3d`：3D 园区沙盘，页面可直接打开，数据接口需要有效登录态
@@ -150,29 +150,26 @@ cargo run --release
 - `GET /api/generate`：基于历史诊断记录生成施肥建议文本
 - `POST /api/generate/fertilization-plan`：生成结构化施肥方案
 
-### 脐橙商业 MVP
+### 脐橙商城（普通购买）
 
 公开销售接口：
 
-- `GET /api/commerce/storefront`：查询当前可购买的开团批次、商品规格和果园信息
-- `GET /api/commerce/batches/{batch_id}/trace`：查询公开批次追溯信息，可用于包装二维码
+- `GET /api/store/products`：查询在售商品（名称、规格、售价、库存）
 
 登录用户接口：
 
-- `POST /user/commerce/orders`：创建订单，提交收货信息和批次商品
-- `GET /user/commerce/orders`：查询当前用户订单
-- `GET /user/commerce/orders/{order_id}`：查询当前用户的订单详情
+- `POST /user/store/orders`：创建普通购买订单，提交收货信息和商品明细
+- `GET /user/store/orders`：查询当前用户订单
 
-管理员商业接口：
+管理员商城接口：
 
-- `POST/GET /user/admin/commerce/orchards`：创建和查询合作果园
-- `POST/GET /user/admin/commerce/products`：创建和查询商品规格
-- `POST/GET /user/admin/commerce/batches`：创建和查询销售批次
-- `POST /user/admin/commerce/orders`：查询全部订单
-- `POST /user/admin/commerce/orders/status`：推进订单履约状态和收款状态
-- `POST /user/admin/commerce/overview`：查询订单数、交易金额和履约统计
+- `POST/GET /user/admin/store/products`：创建和查询商城商品
+- `POST /user/admin/store/products/{product_id}/toggle`：上下架商品
+- `POST /user/admin/store/orders`：查询全部订单
+- `POST /user/admin/store/orders/status`：推进订单状态（待收款、已付款、已发货、已完成等）
+- `POST /user/admin/store/overview`：查询在售商品数、订单数、交易金额和待处理订单
 
-当前 MVP 使用 `price_cents` 和 `deposit_cents` 记录金额，订单创建后默认为 `unpaid / pending_payment`，暂不接入第三方支付。管理员可以先人工核销收款，再通过订单状态接口推进支付、采摘、分选、发货和完成流程。
+当前商城使用 `price_cents` 记录金额，订单创建后默认为 `pending_payment`，暂不接入第三方支付。管理员可人工核销收款后通过订单状态接口推进支付、发货和完成流程；下单时会校验并扣减商品库存。
 
 ### 管理员接口
 

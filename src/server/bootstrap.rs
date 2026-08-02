@@ -193,6 +193,42 @@ pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             created_at BIGINT NOT NULL
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_commerce_order_status_logs_order ON commerce_order_status_logs(order_id, created_at DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS store_products (
+            id BIGSERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            sku TEXT NOT NULL UNIQUE,
+            unit_label TEXT NOT NULL,
+            price_cents BIGINT NOT NULL CHECK (price_cents > 0),
+            stock_quantity INTEGER NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
+            description TEXT NOT NULL DEFAULT '',
+            cover_image TEXT NULL,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE TABLE IF NOT EXISTS store_orders (
+            id TEXT PRIMARY KEY,
+            order_no TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL REFERENCES app_users(username),
+            recipient_name TEXT NOT NULL,
+            recipient_phone TEXT NOT NULL,
+            shipping_address TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'pending_payment',
+            total_cents BIGINT NOT NULL CHECK (total_cents >= 0),
+            created_at BIGINT NOT NULL,
+            updated_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_store_orders_user_created ON store_orders(username, created_at DESC)"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_store_orders_status_created ON store_orders(status, created_at DESC)"#,
+        r#"CREATE TABLE IF NOT EXISTS store_order_items (
+            id BIGSERIAL PRIMARY KEY,
+            order_id TEXT NOT NULL REFERENCES store_orders(id) ON DELETE CASCADE,
+            product_id BIGINT NOT NULL REFERENCES store_products(id),
+            product_name TEXT NOT NULL,
+            unit_label TEXT NOT NULL,
+            quantity INTEGER NOT NULL CHECK (quantity > 0),
+            unit_price_cents BIGINT NOT NULL CHECK (unit_price_cents > 0)
+        )"#,
     ];
 
     for stmt in ddl {
@@ -204,6 +240,7 @@ pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
 
     crate::system_settings::ensure_default_settings(pool).await?;
     ensure_orchard_demo_data(pool).await?;
+    ensure_store_demo_data(pool).await?;
 
     Ok(())
 }
@@ -301,6 +338,62 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
                 .map_err(|e| anyhow::anyhow!("写入示例传感器数据失败: {}", e))?;
             }
         }
+    }
+
+    Ok(())
+}
+async fn ensure_store_demo_data(pool: &PgPool) -> anyhow::Result<()> {
+    let now = now_millis() as i64;
+    let demo_products = [
+        (
+            "试吃箱 5 斤",
+            "NAVEL-5KG",
+            "约 5 斤 / 箱",
+            3990,
+            200,
+            "赣南脐橙试吃装，适合首次尝鲜，产地直发。",
+        ),
+        (
+            "家庭箱 10 斤",
+            "NAVEL-10KG",
+            "约 10 斤 / 箱",
+            6990,
+            300,
+            "核心家庭装，现摘现发，甜度高、果味浓。",
+        ),
+        (
+            "礼赠箱 12 枚精品装",
+            "NAVEL-GIFT-12",
+            "12 枚 / 箱",
+            9990,
+            150,
+            "精品果礼赠装，附果园故事卡，适合送礼。",
+        ),
+        (
+            "大果装 10 斤",
+            "NAVEL-LG-10KG",
+            "约 10 斤 / 箱",
+            7990,
+            120,
+            "果径 75mm 以上大果，果肉饱满多汁。",
+        ),
+    ];
+    for (name, sku, unit_label, price_cents, stock, description) in demo_products {
+        sqlx::query(
+            "INSERT INTO store_products (name, sku, unit_label, price_cents, stock_quantity, description, is_active, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $7)
+             ON CONFLICT (sku) DO NOTHING",
+        )
+        .bind(name)
+        .bind(sku)
+        .bind(unit_label)
+        .bind(price_cents)
+        .bind(stock)
+        .bind(description)
+        .bind(now)
+        .execute(pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("写入示例商城商品失败: {}", e))?;
     }
 
     Ok(())

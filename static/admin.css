@@ -749,6 +749,86 @@ tbody tr:last-child td {
   padding: 6px 10px;
 }
 
+/* ====== 商城管理（普通购买） ====== */
+.store-admin-overview {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.store-admin-kpi {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--app-radius);
+  background: var(--panel);
+}
+
+.store-admin-kpi span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.store-admin-kpi strong {
+  color: #fbbf24;
+  font-size: 24px;
+}
+
+.store-admin-form-grid {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.store-admin-card {
+  min-width: 0;
+}
+
+.store-form {
+  display: grid;
+  gap: 12px;
+}
+
+.store-form label {
+  margin: 0;
+}
+
+.store-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+
+.store-form textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.store-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.store-orders-table select {
+  min-width: 118px;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.store-orders-table .ghost {
+  padding: 6px 10px;
+}
+
+
 @media (max-width: 900px) {
   .admin-section-nav {
     top: 0;
@@ -759,7 +839,9 @@ tbody tr:last-child td {
   }
 
   .commerce-admin-overview,
-  .commerce-admin-form-grid {
+  .commerce-admin-form-grid,
+  .store-admin-overview,
+  .store-admin-form-grid {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -776,7 +858,10 @@ tbody tr:last-child td {
   .commerce-admin-overview,
   .commerce-admin-form-grid,
   .commerce-form-row,
-  .commerce-product-quota {
+  .commerce-product-quota,
+  .store-admin-overview,
+  .store-admin-form-grid,
+  .store-form-row {
     grid-template-columns: 1fr;
   }
 
