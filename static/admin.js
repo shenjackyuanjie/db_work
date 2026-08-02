@@ -332,7 +332,7 @@ const orchardState = {
 let currentAdminUsername = "";
 let allLogs = [];
 
-const ADMIN_SECTIONS = new Set(["orchard", "access", "commerce", "overview", "audit", "settings"]);
+const ADMIN_SECTIONS = new Set(["orchard", "access", "overview", "audit", "settings"]);
 
 function requestedAdminSection() {
   const section = new URLSearchParams(window.location.search).get("section");
@@ -1467,7 +1467,6 @@ function bindEvents() {
   bindInviteActions();
   bindDashboardActions();
   bindSettingsActions();
-  bindCommerceActions();
 }
 
 async function initPage() {
@@ -1488,7 +1487,6 @@ async function initPage() {
     fetchStats(),
     fetchLogs(),
     fetchOrchardOverview(),
-    refreshCommerceData(),
   ]);
 }
 

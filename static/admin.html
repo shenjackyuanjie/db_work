@@ -19,7 +19,6 @@
       </span>
     </a>
     <nav class="app-nav" aria-label="主导航">
-      <a class="app-nav__link" href="/commerce">开园团</a>
       <a class="app-nav__link" href="/analyze">病害识别</a>
       <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
       <a class="app-nav__link" href="/admin" aria-current="page">管理后台</a>
@@ -33,7 +32,6 @@
       <div class="admin-section-nav__eyebrow">运营工作台</div>
       <a href="/admin?section=orchard" data-admin-section="orchard">果园监测<span>园区状态与 3D 入口</span></a>
       <a href="/admin?section=access" data-admin-section="access">用户与访问<span>审核、用户与邀请码</span></a>
-      <a href="/admin?section=commerce" data-admin-section="commerce">开团运营<span>果园、商品、批次与订单</span></a>
       <a href="/admin?section=overview" data-admin-section="overview">数据总览<span>识别与环境指标</span></a>
       <a href="/admin?section=audit" data-admin-section="audit">审计日志<span>操作与预警记录</span></a>
       <a href="/admin?section=settings" data-admin-section="settings">系统设置<span>注册、阈值与日志策略</span></a>
@@ -131,88 +129,6 @@
     </div>
     </section>
 
-    <!-- ====== 数据统计面板 (全宽) ====== -->
-    <section class="admin-page" data-admin-page="commerce" aria-labelledby="commerceSection">
-    <div class="section-title admin-section-marker" id="commerceSection">开团运营</div>
-
-    <div class="commerce-admin-overview full-width-section" id="commerceOverview">
-      <div class="commerce-admin-kpi"><span>有效批次</span><strong id="commerceBatchCount">--</strong></div>
-      <div class="commerce-admin-kpi"><span>订单总数</span><strong id="commerceOrderCount">--</strong></div>
-      <div class="commerce-admin-kpi"><span>交易金额</span><strong id="commerceGrossAmount">--</strong></div>
-      <div class="commerce-admin-kpi"><span>待履约</span><strong id="commerceActiveOrders">--</strong></div>
-    </div>
-
-    <div class="commerce-admin-form-grid full-width-section">
-      <div class="card commerce-admin-card">
-        <div class="card-header"><h2>合作果园</h2><button class="ghost" id="btnRefreshCommerceOrchards">刷新</button></div>
-        <div class="card-body">
-          <form id="commerceOrchardForm" class="commerce-form">
-            <label>果园名称<input id="commerceOrchardName" required maxlength="80" /></label>
-            <label>所在地<input id="commerceOrchardLocation" maxlength="80" /></label>
-            <label>果农/负责人<input id="commerceOrchardFarmer" maxlength="40" /></label>
-            <label>果园介绍<textarea id="commerceOrchardDescription" rows="3" maxlength="500"></textarea></label>
-            <button class="primary" type="submit">创建果园</button>
-          </form>
-          <div class="commerce-admin-list" id="commerceOrchardsWrap"></div>
-        </div>
-      </div>
-
-      <div class="card commerce-admin-card">
-        <div class="card-header"><h2>商品规格</h2><button class="ghost" id="btnRefreshCommerceProducts">刷新</button></div>
-        <div class="card-body">
-          <form id="commerceProductForm" class="commerce-form">
-            <label>商品名称<input id="commerceProductName" placeholder="家庭箱 10 斤" required maxlength="80" /></label>
-            <label>SKU<input id="commerceProductSku" placeholder="FAMILY-10KG" required maxlength="40" /></label>
-            <label>规格说明<input id="commerceProductUnit" placeholder="约 10 斤 / 箱" required maxlength="80" /></label>
-            <div class="commerce-form-row">
-              <label>售价（元）<input id="commerceProductPrice" type="number" min="0.01" step="0.01" required /></label>
-              <label>订金（元）<input id="commerceProductDeposit" type="number" min="0" step="0.01" value="0" required /></label>
-            </div>
-            <button class="primary" type="submit">创建商品</button>
-          </form>
-          <div class="commerce-admin-list" id="commerceProductsWrap"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card full-width-section commerce-admin-card">
-      <div class="card-header"><h2>创建销售批次</h2><button class="ghost" id="btnRefreshCommerceBatches">刷新批次</button></div>
-      <div class="card-body">
-        <form id="commerceBatchForm" class="commerce-form commerce-batch-form">
-          <div class="commerce-form-row commerce-form-row--three">
-            <label>批次编号<input id="commerceBatchCode" placeholder="2026-SEASON-01" required maxlength="50" /></label>
-            <label>开团标题<input id="commerceBatchTitle" placeholder="橙管家第一期开园团" required maxlength="120" /></label>
-            <label>合作果园<select id="commerceBatchOrchard" required><option value="">请先创建果园</option></select></label>
-          </div>
-          <div class="commerce-form-row commerce-form-row--three">
-            <label>批次状态<select id="commerceBatchStatus"><option value="draft">草稿</option><option value="preorder">预售中</option><option value="open">开团中</option></select></label>
-            <label>计划箱数<input id="commerceBatchQuantity" type="number" min="1" required /></label>
-            <label>预计发货<input id="commerceBatchShipAt" type="datetime-local" /></label>
-          </div>
-          <div class="commerce-form-row commerce-form-row--three">
-            <label>开团时间<input id="commerceBatchOpenAt" type="datetime-local" /></label>
-            <label>截团时间<input id="commerceBatchCloseAt" type="datetime-local" /></label>
-            <label>采摘开始<input id="commerceBatchHarvestStart" type="datetime-local" /></label>
-          </div>
-          <div class="commerce-form-row">
-            <label>采摘结束<input id="commerceBatchHarvestEnd" type="datetime-local" /></label>
-          </div>
-          <div class="commerce-product-quota" id="commerceBatchProducts"><div class="empty-state">先创建商品后配置批次商品配额。</div></div>
-          <button class="primary commerce-submit-wide" type="submit">创建销售批次</button>
-        </form>
-      </div>
-    </div>
-
-    <div class="card full-width-section commerce-admin-card">
-      <div class="card-header"><h2>销售批次</h2></div>
-      <div class="card-body" style="padding: 0;"><div class="table-responsive" id="commerceBatchesWrap"></div></div>
-    </div>
-
-    <div class="card full-width-section commerce-admin-card">
-      <div class="card-header"><h2>订单与履约</h2><button class="ghost" id="btnRefreshCommerceOrders">刷新订单</button></div>
-      <div class="card-body" style="padding: 0;"><div class="table-responsive" id="commerceOrdersWrap"></div></div>
-    </div>
-    </section>
 
     <section class="admin-page" data-admin-page="overview" aria-labelledby="overviewSection">
     <div class="section-title admin-section-marker" id="overviewSection">数据总览</div>
