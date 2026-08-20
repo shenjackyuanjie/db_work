@@ -1,0 +1,2 @@
+sample_id,file_path,task,true_label,source,acquired_date,permission_status,annotator,reviewer,training_overlap_checked,notes
+EXAMPLE-0001,relative/path/to/image.jpg,gate,是果树,field-or-public-source,YYYY-MM-DD,confirmed,annotator-id,reviewer-id,yes,Replace this example row with a real independently labeled sample.

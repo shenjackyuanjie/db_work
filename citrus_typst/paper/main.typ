@@ -1,21 +1,29 @@
 #import "./lib.typ": *
 
+// 默认生成清洁版；编译时传入 --input revision-marked=true 可生成高亮修改稿。
+#let revision_marked = sys.inputs.at("revision-marked", default: "false") == "true"
+#let revision(content) = if revision_marked {
+  highlight(fill: rgb("fff59d"))[#content]
+} else {
+  content
+}
+
 #show: academic-paper.with(
   title: "柑橘果园智能诊断与管理系统设计与实现",
   author: "沈瑗杰 林强",
   school: "北京信息科技大学",
   college: "管理科学与工程学院",
-  abstract-content: [
-    针对柑橘病害诊断依赖人工经验、识别结果难以形成后续管理记录、农事任务缺少闭环等问题，本文设计并实现了一套柑橘果园智能诊断与管理系统。系统采用 B/S 架构，后端基于 Rust、Axum 和 PostgreSQL 构建，推理层支持 Tract ONNX 本地模型与远端人工智能服务两种运行方式；前端集成病害识别、温湿度数据展示、任务管理、施肥建议、管理员后台及 Three.js 三维果园沙盘。病害诊断以两阶段视觉推理为基础，先过滤非目标叶片图像，再完成病害分类；当请求显式提供温湿度数据时，可选执行环境辅助校正，随后将诊断结果与环境记录和任务记录关联。达到置信度阈值的非健康诊断结果可自动创建未完成治理任务，任务支持查询、新建和完成。性能测试结果表明，在本次测试环境下，纯内存接口在并发数为 50 时达到约 9.69 万次/s，数据库接口峰值约为 3 821 次/s，性能测试过程未出现请求错误。人工功能验证覆盖了认证、诊断、环境采样、任务管理和后台管理等主要流程。该系统为中小型柑橘果园的数字化管理提供了一种可部署的实现方案。
-  ],
+  abstract-content: [#revision[
+    针对柑橘病害诊断依赖人工经验、识别结果难以形成后续管理记录、农事任务缺少闭环等问题，本文设计并实现了一套柑橘果园智能诊断与管理原型系统。系统采用 B/S 架构，后端基于 Rust、Axum 和 PostgreSQL 构建，推理层支持 Tract ONNX 本地模型与远端人工智能服务两种运行方式；前端集成病害识别、温湿度数据展示、任务管理、施肥建议、管理员后台及 Three.js 三维果园沙盘。病害诊断以两阶段视觉推理为基础，先过滤非目标图像，再完成病害分类；低置信度结果进入人工复核，达到阈值的非健康结果可自动创建未完成治理任务。性能测试结果表明，在本次开发环境下，纯内存接口在并发数为 50 时达到约 9.69 万次/s，数据库接口峰值约为 3 821 次/s，性能测试过程未出现请求错误。人工功能验证覆盖认证、诊断接口、环境采样、任务管理和后台管理等主要流程。上述测试仅反映接口与功能流程，不作为模型诊断准确率或田间可用性的证据。该系统为中小型柑橘果园数字化管理提供了可部署的原型实现。
+  ]],
   keywords: ("柑橘果园", "病害诊断", "图像识别", "环境监测", "任务管理"),
   english-title: "Design and Implementation of an Intelligent Diagnosis and Management System for Citrus Orchards",
   english-author: "Yuanjie Shen, Qiang Lin",
   english-school: "Beijing Information Science & Technology University",
   english-college: "School of Management Science and Engineering",
-  english-abstract-content: [
-    To address experience-dependent citrus disease diagnosis, the difficulty of linking recognition results with subsequent management records, and incomplete orchard task workflows, this paper designs and implements an intelligent citrus orchard diagnosis and management system. The system adopts a browser/server architecture. Its backend is built with Rust, Axum, and PostgreSQL, while the inference layer supports both local Tract ONNX models and remote artificial intelligence services. The frontend integrates disease diagnosis, temperature and humidity data display, task management, fertilization recommendations, an administration dashboard, and a Three.js-based three-dimensional orchard view. Diagnosis is based on two-stage visual inference: non-target leaf images are first filtered and valid images are then classified. When temperature and humidity are explicitly supplied, an optional environmental adjustment is applied before the result is associated with environmental and task records. Non-healthy results that meet the confidence threshold can create unfinished management tasks that support listing, creation, and completion. In the current test environment, the in-memory API achieved approximately 96,900 requests per second at a concurrency level of 50, while the database API peaked at about 3,821 requests per second, with no request errors observed during the performance tests. Manual functional checks covered the main workflows, including authentication, diagnosis, environmental sampling, task management, and administration. The system provides a deployable solution for the digital management of small and medium-sized citrus orchards.
-  ],
+  english-abstract-content: [#revision[
+    To address experience-dependent citrus disease diagnosis, the difficulty of linking recognition results with subsequent management records, and incomplete orchard task workflows, this paper designs and implements a prototype system for intelligent citrus orchard diagnosis and management. The system adopts a browser/server architecture. Its backend is built with Rust, Axum, and PostgreSQL, while the inference layer supports both local Tract ONNX models and remote artificial intelligence services. The frontend integrates disease diagnosis, temperature and humidity data display, task management, fertilization recommendations, an administration dashboard, and a Three.js-based three-dimensional orchard view. Diagnosis is based on two-stage visual inference: non-target images are first filtered and valid images are then classified. Low-confidence results are routed for manual review, while non-healthy results that meet the threshold can create unfinished management tasks. In the current development environment, the in-memory API achieved approximately 96,900 requests per second at a concurrency level of 50, while the database API peaked at about 3,821 requests per second, with no request errors observed during the performance tests. Manual functional checks covered the main workflows, including authentication, diagnosis interfaces, environmental sampling, task management, and administration. These checks demonstrate interface and workflow behavior only; they do not establish diagnostic accuracy or field usability. The system provides a deployable prototype for the digital management of small and medium-sized citrus orchards.
+  ]],
   english-keywords: ("citrus orchard", "disease diagnosis", "image recognition", "environmental monitoring", "task management"),
 )
 
@@ -30,10 +38,33 @@
 现有研究多聚焦于病害识别或三维展示中的单一环节，完整覆盖诊断记录、任务生成和执行追踪的应用仍相对不足#refmark("1-3,4,9-10")。针对这一问题，本文设计并实现一套柑橘果园智能诊断与管理系统，主要工作如下：
 
 // 纯文字
-- 构建本地 ONNX 与远端人工智能服务相结合的病害诊断流程，实现非目标图像过滤、病害分类以及可选的环境辅助校正；
+- #revision[构建以两阶段视觉推理为核心、支持本地 ONNX 与远端人工智能服务切换的病害诊断流程，实现非目标图像过滤和病害分类；]
 - 将环境采样、诊断记录、任务管理、施肥建议和三维果园展示整合到统一系统中，支持根据有效诊断结果或环境风险创建任务；
 - 实现用户注册、身份认证、权限控制、注册审核、动态设置和审计日志等管理功能，保证管理操作可控制、可追溯；
-- 对系统接口性能及主要功能流程进行测试，分析当前实现的能力与局限。
+- #revision[对系统接口性能及主要功能流程进行测试，并明确当前原型在独立诊断评测和田间试用方面的局限。]
+
+== 研究场景、系统边界与贡献定位
+
+#revision[本文面向具备智能手机或计算机终端、能够由种植人员上传叶片图像并维护基本记录的中小型柑橘果园。系统将图像、用户手动提交的环境读数和任务记录统一保存；当前版本不直接连接田间传感器，也不替代植保人员的现场诊断。图片不符合目标叶片条件、诊断置信度低于阈值或用户认为结果不合理时，均应重新采集或交由人工复核。]
+
+#revision[本文的贡献定位为诊断结果与管理记录之间的流程整合和可部署实现，而非提出新的病害识别网络、证明诊断精度优于已有模型，或证明已经替代人工巡检。与相关工作在本文可核验范围内的比较如表 1 所示。]
+
+#revision[#figure(
+  safe-table(
+    table(
+      columns: (1.15fr, 1.35fr, 1.2fr, 1.3fr),
+      inset: 4pt,
+      stroke: 0.5pt,
+      align: left,
+      [*工作类型*], [*主要关注点*], [*是否覆盖管理闭环*], [*与本文的关系*],
+      [柑橘叶片识别研究#refmark("3,5-8")], [病害检测、分类或分级], [通常不涉及], [为视觉诊断模块提供方法背景，不作为管理平台对比结论],
+      [果园三维/数字孪生研究#refmark("4,9-10")], [空间展示、交互或数字孪生], [侧重场景表达], [本文仅实现状态可视化，不宣称完整数字孪生],
+      [本文系统], [诊断记录、环境记录与治理任务关联], [支持基本关联与任务追踪], [工程原型；诊断效果仍需独立数据验证],
+    ),
+  ),
+  kind: table,
+  caption: [相关工作与本文系统的功能定位比较],
+)]
 
 = 系统设计
 
@@ -47,18 +78,47 @@
 
 在非功能需求方面，系统需要实现数据持久化、访问权限控制、异常处理和操作追溯；推理模块应同时支持离线与联网环境；前端静态资源、HTTP API 和识别图片归档应能够通过同一服务端口访问，从而降低部署复杂度。
 
-== 两阶段视觉识别与可选环境辅助流程
+#revision[#figure(
+  image("assets/usecase.svg", width: 96%),
+  caption: [系统用例图],
+)]
 
-深度学习已成为叶片病害分类和检测的主要技术路线，但实际图像可能包含非叶片、非柑橘或质量较差的输入#refmark("2,5-8")。为降低无关图像直接进入病害分类模型所造成的误判，系统采用两阶段视觉推理，并在显式提供环境数据时执行可选的辅助校正：
+== 两阶段视觉识别与人工复核流程
+
+深度学习已成为叶片病害分类和检测的主要技术路线，但实际图像可能包含非叶片、非柑橘或质量较差的输入#refmark("2,5-8")。为降低无关图像直接进入病害分类模型所造成的误判，系统采用两阶段视觉推理：
 
 + *目标门控阶段：* 对上传图片进行格式校验、尺寸调整和归一化处理，由第一阶段模型判断图像是否属于可识别的目标叶片；
 + *病害分类阶段：* 通过门控的图像进入第二阶段模型，输出健康状态或具体病害类别及其概率分布。
 
-  *可选环境辅助阶段（非默认链路）：* 在本地 ONNX 接口请求同时提供温湿度时，按内置规则对视觉结果进行有限幅度辅助重加权；当前默认识别页面未接入该数据链路。
+  #revision[*人工复核分流：* 对病害分类结果应用置信度阈值；低于阈值的结果标记为待人工复核，不自动生成治理任务。]
 
-前两个阶段构成默认视觉识别链路；环境辅助阶段属于可选能力，仅在本地接口请求显式携带温湿度数据时启用，默认识别页面和远端模式均不经过该阶段。
+#revision[两阶段视觉识别构成默认链路。代码中曾实现一项仅在显式传入温湿度时启用的规则化辅助重加权，但默认识别页面没有接入该数据链路，且其参数缺少独立数据验证。为避免将未经验证的规则作为研究结论，本文不把该功能列为方法贡献或实验结果，仅将其保留为后续研究方向。]
 
 系统提供两种推理模式。在本地模式下，Tract 加载 ONNX 模型完成视觉推理，适用于网络受限和数据不宜外传的环境；在远端模式下，本地模型先进行目标门控，再将有效图像交由 OpenRouter 生成病害分析结果。两种模式的结果均需与管理员设定的置信度阈值比较，低于阈值时标记为待人工复核。
+
+== 模型实现、参数与可追溯性
+
+#revision[两阶段模型均由项目早期的 PyTorch 实现导出为 ONNX，再由 Tract 在服务端加载。第一阶段为二分类模型，类别为“非果树”和“是果树”；第二阶段为四分类模型，类别依次为黄龙病、健康果树、溃疡病和沙皮病。二者均采用 EfficientNet-B0 作为特征提取骨干，并在其后接两层全连接分类头（128 个中间单元、Dropout 和 ReLU）。输入图像统一转换为 RGB、缩放至 224 x 224，并按 ImageNet 均值 (0.485, 0.456, 0.406) 与标准差 (0.229, 0.224, 0.225) 标准化。]
+
+#revision[#figure(
+  safe-table(
+    table(
+      columns: (0.8fr, 1.25fr, 1.75fr, 1.15fr, 1.05fr),
+      inset: 4pt,
+      stroke: 0.5pt,
+      align: left,
+      [*阶段*], [*任务*], [*类别*], [*模型与输入*], [*输出与后续处理*],
+      [第一阶段], [目标门控], [非果树；是果树], [EfficientNet-B0；RGB 224 x 224], [二类 logits；非目标图像终止后续分类],
+      [第二阶段], [病害分类], [黄龙病；健康果树；溃疡病；沙皮病], [EfficientNet-B0；RGB 224 x 224], [四类 logits；Softmax 后进入阈值分流],
+    ),
+  ),
+  kind: table,
+  caption: [两阶段 ONNX 模型规格],
+)]
+
+#revision[原始训练程序显示使用随机裁剪、水平翻转和颜色扰动进行训练，批量大小为 16、训练轮数为 20、优化器为 AdamW，学习率为 1e-4，权重衰减为 0.01，并采用余弦退火调度。训练和验证图像的原始目录、采集来源、授权信息及当时的数据划分未被完整保留在当前项目中。因此，本文仅将这两个模型作为原型系统的集成组件，报告其结构、类别和推理预处理；不以权重文件名中的历史数字作为诊断性能证据，也不对模型许可或独立泛化能力作未经核验的声明。]
+
+#revision[系统设置中置信度阈值的默认值为 0.75，允许管理员在 0.30 至 0.99 的范围内调整。该值是用于降低自动创建任务风险的工程初始配置，并非经独立验证集选出的最优阈值。当前规则为：非果树不创建任务；健康结果不创建任务；低于阈值的结果进入人工复核；仅非健康且不低于阈值的结果自动创建治理任务。阈值的准确率、误报率和人工复核比例需在独立标注集上进一步评估。]
 
 == 管理闭环
 
@@ -74,7 +134,7 @@
 
 // 化简 印刷标准
 #figure(
-  image("architecture.svg", width: 100%),
+  image("assets/architecture.svg", width: 100%),
   caption: [系统总体架构图],
 )
 // 标题居中
@@ -169,7 +229,7 @@
 启动流程为：准备数据库和模型文件，完成配置后执行 `cargo run --release`。系统启动时检查数据表并初始化演示数据，随后通过指定端口访问前端页面。服务监听终止信号并执行优雅关闭。
 
 = 系统测试
-系统测试包括接口性能测试和功能集成测试。性能测试在 Release 模式下运行，使用自定义 PowerShell 脚本分别测试健康检查、静态首页、纯内存接口和数据库接口。每组持续 8 s，并设置 1、10 和 50 三种并发级别。测试不包含 ONNX 模型推理和远端人工智能请求，因此结果仅反映 Web 服务、静态资源和数据库查询部分的性能。
+#revision[系统测试包括接口性能测试和功能集成测试。性能测试在 Release 模式下运行，使用自定义 PowerShell 脚本分别测试健康检查、静态首页、纯内存接口和数据库接口。每组持续 8 s，并设置 1、10 和 50 三种并发级别。测试不包含 ONNX 模型推理和远端人工智能请求，因此结果仅反映 Web 服务、静态资源和数据库查询部分的性能，不能证明诊断模型的准确性或端到端诊断时延。]
 
 由于当前记录未包含处理器型号、内存、操作系统负载和网络拓扑等完整硬件信息，以下数据只能用于分析本次部署环境中的相对性能，不能直接与其他研究或不同设备的测试结果进行横向比较。Web 服务性能测试结果如表 3 所示。
 
@@ -204,7 +264,7 @@
 
 数据库接口在并发数为 10 时达到约 3 821 次/s，并发增加至 50 后吞吐量基本不再增长，平均延迟由 2.616 ms 上升至 13.138 ms。该现象与数据库连接池上限为 3 有关：请求数量超过可用连接后，需要在连接池中排队等待。全部测试均未出现错误，表明系统在短时压力下保持了稳定响应，但数据库连接池大小仍应根据实际部署资源和业务负载进行调整。
 
-人工功能验证覆盖认证、病害诊断、环境采样、任务管理、管理员功能和数据持久化等流程，主要功能测试内容如表 4 所示。
+#revision[人工功能验证覆盖认证、病害诊断接口、环境采样、任务管理、管理员功能和数据持久化等流程，主要功能测试内容如表 4 所示。]
 
 #figure(
   safe-table([
@@ -230,13 +290,19 @@
 
 接口验证使用正常参数、缺失参数、无效 Token、越权访问和不存在资源等场景，检查 HTTP 状态和返回字段。不同接口的响应结构并不完全一致，不能将所有接口概括为同一 JSON 格式。数据验证确认识别记录、任务、图片路径和环境数据能够正确写入数据库。安全检查确认密码字段以 BLAKE3 摘要保存而非明文，真实配置文件和密钥不进入版本控制。
 
+== 诊断评测与实地验证的限制
+
+#revision[功能测试中“上传有效叶片返回完整字段”仅验证了接口链路、结果持久化和任务分流规则，不能替代诊断有效性评测。项目备份中虽保留了按类别存放的图像文件，但没有可追溯的训练/测试划分、采集与标注记录；将其直接作为测试集会产生训练数据重叠风险。因此，本次修改不报告门控准确率、四分类 Top-1 准确率、分类别 Precision/Recall/F1 或环境辅助效果，亦不将 Web 接口吞吐量作为模型性能证据。]
+
+#revision[后续验证应构建与训练数据独立的标注集，分别报告门控二分类指标、四分类的 Top-1 准确率和各类别 Precision、Recall、F1，以及混淆矩阵；并应以多组阈值统计自动建任务比例、人工复核比例及相应误报/漏报情况。系统当前仅在开发环境完成了功能和短时性能测试，尚未开展可报告的真实果园试用；因此本文将其定位为可部署的原型系统，而非已经过田间验证的应用系统。]
+
 = 结论
 
-本文设计并实现了一套集病害诊断、环境监测、任务管理、施肥建议、后台管理和三维可视化于一体的柑橘果园智能管理系统。系统以两阶段视觉推理完成非目标图像过滤和细粒度分类，并在显式提供温湿度数据时支持可选的环境辅助校正；达到置信度阈值的非健康诊断结果能够生成未完成治理任务，低置信度结果则进入待人工复核状态，从而形成从识别到任务记录的基本关联。
+#revision[本文设计并实现了一套集病害诊断、环境监测、任务管理、施肥建议、后台管理和三维可视化于一体的柑橘果园智能管理原型系统。系统以两阶段视觉推理完成非目标图像过滤和细粒度分类；达到置信度阈值的非健康诊断结果能够生成未完成治理任务，低置信度结果则进入待人工复核状态，从而形成从识别到任务记录的基本关联。]
 
 系统后端基于 Rust、Axum 和 PostgreSQL 实现，本地推理采用 Tract ONNX，同时保留远端人工智能辅助分析能力。性能测试表明，在本次环境下，纯内存接口具有较低延迟，数据库接口性能主要受到连接池规模限制；功能测试验证了用户认证、病害诊断、环境采样、任务管理和管理员功能的基本可用性。
 
-后续工作将重点完善病害模型的独立测试和田间验证，补充 HTTP 集成测试，接入真实传感器并完善环境数据管理，增加任务处理中状态、负责人分派和状态历史。同时，可进一步优化三维场景的大规模渲染和实时数据同步，使系统逐步由状态可视化平台向数据驱动的果园管理与决策平台扩展。
+#revision[本文没有以当前功能测试证明模型诊断准确率，亦没有将实验室/开发环境结果外推为田间效果。后续工作将重点完善病害模型的独立测试和田间验证，补充 HTTP 集成测试，接入真实传感器并完善环境数据管理，增加任务处理中状态、负责人分派和状态历史。同时，可进一步优化三维场景的大规模渲染和实时数据同步，使系统逐步由状态可视化平台向数据驱动的果园管理与决策平台扩展。]
 
 // 原中文参考文献留档；按会议模板要求不参与排版。
 /*

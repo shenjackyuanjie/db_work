@@ -1,0 +1,34 @@
+flowchart LR
+    User[普通用户]
+    Admin[管理员]
+
+    subgraph System[柑橘果园智能诊断与管理系统]
+        UC1([注册、登录与退出])
+        UC2([上传叶片图像并查看诊断结果])
+        UC3([查询诊断记录、温湿度与健康状态])
+        UC4([查看、新建和完成农事任务])
+        UC5([生成施肥辅助建议])
+        UC6([查看三维果园状态])
+        UC7([管理用户、邀请码与注册审核])
+        UC8([维护系统设置、查看统计与审计日志])
+    end
+
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    User --> UC4
+    User --> UC5
+    User --> UC6
+    Admin --> UC1
+    Admin --> UC2
+    Admin --> UC3
+    Admin --> UC4
+    Admin --> UC5
+    Admin --> UC6
+    Admin --> UC7
+    Admin --> UC8
+
+    classDef actor fill:#fff7e6,stroke:#b26a00,stroke-width:1.5px,color:#222;
+    classDef usecase fill:#eef5ff,stroke:#2468a2,stroke-width:1.2px,color:#222;
+    class User,Admin actor;
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8 usecase;
