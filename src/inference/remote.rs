@@ -12,11 +12,15 @@ pub struct RemoteInference {
 }
 
 impl RemoteInference {
-    pub fn new(client: OpenRouterClient, model_1_path: String, model_2_path: String) -> Self {
-        Self {
+    pub fn new(
+        client: OpenRouterClient,
+        model_1_path: String,
+        model_2_path: String,
+    ) -> anyhow::Result<Self> {
+        Ok(Self {
             client,
-            fruit_tree_gate: OnnxInference::new(model_1_path, model_2_path),
-        }
+            fruit_tree_gate: OnnxInference::new(model_1_path, model_2_path)?,
+        })
     }
 
     pub async fn predict_fruit_tree(

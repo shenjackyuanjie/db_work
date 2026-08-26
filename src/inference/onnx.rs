@@ -22,6 +22,7 @@ use base64::Engine;
 use image::imageops::FilterType;
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::sync::Arc;
 use tract_onnx::prelude::*;
 
 use math::{argmax_with_confidence, softmax};
@@ -42,16 +43,16 @@ struct ClimateProfile {
 
 #[derive(Clone)]
 pub struct OnnxInference {
-    pub model_1_path: String,
-    pub model_2_path: String,
+    model_1: Arc<TypedRunnableModel<TypedModel>>,
+    model_2: Arc<TypedRunnableModel<TypedModel>>,
 }
 
 impl OnnxInference {
-    pub fn new(model_1_path: String, model_2_path: String) -> Self {
-        Self {
-            model_1_path,
-            model_2_path,
-        }
+    pub fn new(model_1_path: String, model_2_path: String) -> anyhow::Result<Self> {
+        Ok(Self {
+            model_1: Arc::new(load_model(&model_1_path)?),
+            model_2: Arc::new(load_model(&model_2_path)?),
+        })
     }
 
     pub async fn predict_citrus_disease(
@@ -61,9 +62,23 @@ impl OnnxInference {
         humidity: Option<f64>,
     ) -> anyhow::Result<DiseasePrediction> {
         let image_data = image_data.ok_or_else(|| anyhow::anyhow!("缺少图片数据"))?;
+        let inference = self.clone();
+        tokio::task::spawn_blocking(move || {
+            inference.predict_citrus_disease_blocking(image_data, temperature, humidity)
+        })
+        .await
+        .map_err(|err| anyhow::anyhow!("ONNX 推理任务中断: {}", err))?
+    }
+
+    fn predict_citrus_disease_blocking(
+        &self,
+        image_data: String,
+        temperature: Option<f64>,
+        humidity: Option<f64>,
+    ) -> anyhow::Result<DiseasePrediction> {
         let input = preprocess_image_data(&image_data)?;
 
-        let logits_1 = run_model(&self.model_1_path, &input)?;
+        let logits_1 = run_model(&self.model_1, &input)?;
         let prob_1 = softmax(&logits_1);
         let (idx_1, conf_1) = argmax_with_confidence(&prob_1);
 
@@ -86,7 +101,7 @@ impl OnnxInference {
             });
         }
 
-        let logits_2 = run_model(&self.model_2_path, &input)?;
+        let logits_2 = run_model(&self.model_2, &input)?;
         let prob_2 = softmax(&logits_2);
         let (idx_2, conf_2) = argmax_with_confidence(&prob_2);
         let image_predicted = DISEASE_CLASSES
@@ -143,9 +158,19 @@ impl OnnxInference {
         image_data: Option<String>,
     ) -> anyhow::Result<FruitTreeGatePrediction> {
         let image_data = image_data.ok_or_else(|| anyhow::anyhow!("缺少图片数据"))?;
+        let inference = self.clone();
+        tokio::task::spawn_blocking(move || inference.predict_fruit_tree_blocking(image_data))
+            .await
+            .map_err(|err| anyhow::anyhow!("ONNX 推理任务中断: {}", err))?
+    }
+
+    fn predict_fruit_tree_blocking(
+        &self,
+        image_data: String,
+    ) -> anyhow::Result<FruitTreeGatePrediction> {
         let input = preprocess_image_data(&image_data)?;
 
-        let logits = run_model(&self.model_1_path, &input)?;
+        let logits = run_model(&self.model_1, &input)?;
         let prob = softmax(&logits);
         let (idx, conf) = argmax_with_confidence(&prob);
         let is_fruit_tree = idx == 1;
@@ -160,6 +185,20 @@ impl OnnxInference {
             confidence: conf * 100.0,
         })
     }
+}
+
+fn load_model(model_path: &str) -> anyhow::Result<TypedRunnableModel<TypedModel>> {
+    if !Path::new(model_path).exists() {
+        anyhow::bail!("ONNX 模型文件不存在: {}", model_path);
+    }
+
+    tract_onnx::onnx()
+        .model_for_path(model_path)
+        .map_err(|e| anyhow::anyhow!("加载 ONNX 模型失败: {}", e))?
+        .into_optimized()
+        .map_err(|e| anyhow::anyhow!("优化 ONNX 模型失败: {}", e))?
+        .into_runnable()
+        .map_err(|e| anyhow::anyhow!("构建 ONNX 可执行模型失败: {}", e))
 }
 
 fn preprocess_image_data(image_data: &str) -> anyhow::Result<Tensor> {
@@ -223,19 +262,7 @@ fn decode_image_data(image_data: &str) -> anyhow::Result<Vec<u8>> {
         .map_err(|e| anyhow::anyhow!("base64 图片解码失败: {}", e))
 }
 
-fn run_model(model_path: &str, input: &Tensor) -> anyhow::Result<Vec<f32>> {
-    if !Path::new(model_path).exists() {
-        anyhow::bail!("ONNX 模型文件不存在: {}", model_path);
-    }
-
-    let model = tract_onnx::onnx()
-        .model_for_path(model_path)
-        .map_err(|e| anyhow::anyhow!("加载 ONNX 模型失败: {}", e))?
-        .into_optimized()
-        .map_err(|e| anyhow::anyhow!("优化 ONNX 模型失败: {}", e))?
-        .into_runnable()
-        .map_err(|e| anyhow::anyhow!("构建 ONNX 可执行模型失败: {}", e))?;
-
+fn run_model(model: &TypedRunnableModel<TypedModel>, input: &Tensor) -> anyhow::Result<Vec<f32>> {
     let outputs = model
         .run(tvec!(input.clone().into()))
         .map_err(|e| anyhow::anyhow!("ONNX 推理失败: {}", e))?;

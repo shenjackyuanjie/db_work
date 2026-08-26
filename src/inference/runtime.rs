@@ -13,17 +13,20 @@ pub enum InferenceRuntime {
 }
 
 impl InferenceRuntime {
-    pub fn new(config: &crate::config::InferenceConfig, client: OpenRouterClient) -> Self {
+    pub fn new(
+        config: &crate::config::InferenceConfig,
+        client: OpenRouterClient,
+    ) -> anyhow::Result<Self> {
         match config.mode {
-            InferenceMode::Remote => Self::Remote(RemoteInference::new(
+            InferenceMode::Remote => Ok(Self::Remote(RemoteInference::new(
                 client,
                 config.model_1_path.clone(),
                 config.model_2_path.clone(),
-            )),
-            InferenceMode::Onnx => Self::Onnx(OnnxInference::new(
+            )?)),
+            InferenceMode::Onnx => Ok(Self::Onnx(OnnxInference::new(
                 config.model_1_path.clone(),
                 config.model_2_path.clone(),
-            )),
+            )?)),
         }
     }
 
