@@ -145,7 +145,7 @@
 
     <div class="store-admin-form-grid full-width-section">
       <div class="card store-admin-card">
-        <div class="card-header"><h2>新增商品</h2></div>
+        <div class="card-header"><h2 id="storeProductFormTitle">新增商品</h2></div>
         <div class="card-body">
           <form id="storeProductForm" class="store-form">
             <label>商品名称<input id="storeProductName" placeholder="家庭箱 10 斤" required maxlength="80" /></label>
@@ -156,8 +156,13 @@
               <label>库存（件）<input id="storeProductStock" type="number" min="0" step="1" value="0" required /></label>
             </div>
             <label>商品介绍<textarea id="storeProductDescription" rows="2" maxlength="500"></textarea></label>
-            <button class="primary" type="submit">创建商品</button>
+            <label>封面图地址<small class="store-form-hint">可选，留空则使用占位图；可先保存后再上传封面。</small><input id="storeProductCover" placeholder="https://... 或 /store-images/xxx.jpg" maxlength="300" /></label>
+            <div class="store-form-actions">
+              <button class="primary" id="storeProductSubmit" type="submit">创建商品</button>
+              <button class="ghost" id="storeProductCancel" type="button" hidden>取消编辑</button>
+            </div>
           </form>
+          <input id="storeCoverFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
         </div>
       </div>
 

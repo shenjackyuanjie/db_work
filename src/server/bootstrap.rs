@@ -2,7 +2,7 @@ use sqlx::{PgPool, Row};
 
 use super::shared::now_millis;
 
-pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
+pub(super) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow::Result<()> {
     let ddl = [
         r#"CREATE TABLE IF NOT EXISTS app_users (
             username TEXT PRIMARY KEY,
@@ -16,7 +16,8 @@ pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
         r#"CREATE TABLE IF NOT EXISTS app_sessions (
             token TEXT PRIMARY KEY,
             username TEXT NOT NULL,
-            created_at BIGINT NOT NULL
+            created_at BIGINT NOT NULL,
+            expires_at BIGINT NOT NULL
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_app_sessions_username ON app_sessions(username)"#,
         r#"CREATE TABLE IF NOT EXISTS app_invitations (
@@ -111,6 +112,7 @@ pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             source TEXT NOT NULL DEFAULT 'sensor'
         )"#,
         r#"CREATE INDEX IF NOT EXISTS idx_app_tree_sensor_records_tag_sampled ON app_tree_sensor_records(tag_serial_number, sampled_at DESC)"#,
+        // Legacy batch-commerce tables remain part of the public API contract.
         r#"CREATE TABLE IF NOT EXISTS commerce_orchards (
             id BIGSERIAL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -238,9 +240,32 @@ pub(super) async fn init_database(pool: &PgPool) -> anyhow::Result<()> {
             .map_err(|e| anyhow::anyhow!("初始化数据库表失败: {}", e))?;
     }
 
+    sqlx::query("ALTER TABLE app_sessions ADD COLUMN IF NOT EXISTS expires_at BIGINT")
+        .execute(pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("初始化会话过期字段失败: {}", e))?;
+    sqlx::query(
+        "UPDATE app_sessions SET expires_at = created_at + 2592000 WHERE expires_at IS NULL",
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| anyhow::anyhow!("回填会话过期时间失败: {}", e))?;
+    sqlx::query("ALTER TABLE app_sessions ALTER COLUMN expires_at SET NOT NULL")
+        .execute(pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("设置会话过期字段约束失败: {}", e))?;
+    sqlx::query(
+        "CREATE INDEX IF NOT EXISTS idx_app_sessions_expires_at ON app_sessions(expires_at)",
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| anyhow::anyhow!("创建会话过期索引失败: {}", e))?;
+
     crate::system_settings::ensure_default_settings(pool).await?;
-    ensure_orchard_demo_data(pool).await?;
-    ensure_store_demo_data(pool).await?;
+    if seed_demo_data {
+        ensure_orchard_demo_data(pool).await?;
+        ensure_store_demo_data(pool).await?;
+    }
 
     Ok(())
 }

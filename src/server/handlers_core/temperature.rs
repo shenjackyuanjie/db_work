@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
 use chrono::{NaiveDateTime, TimeZone, Utc};
@@ -16,34 +16,34 @@ use super::super::{
 
 pub(crate) async fn temperature_humidity_api_handler(
     State(state): State<AppState>,
-    Query(query): Query<UsernameQuery>,
+    headers: HeaderMap,
+    Query(_legacy_query): Query<UsernameQuery>,
 ) -> Response {
-    let rows = if let Some(username) = Some(query.username.as_str())
-        .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-    {
-        sqlx::query(
-            "SELECT username, timestamp, temperature, humidity FROM app_temperature_humidity WHERE username = $1 ORDER BY timestamp DESC LIMIT 10",
-        )
-        .bind(username)
-        .fetch_all(&state.db)
-        .await
-    } else {
-        sqlx::query(
-            "SELECT username, timestamp, temperature, humidity FROM app_temperature_humidity ORDER BY timestamp DESC LIMIT 10",
-        )
-        .fetch_all(&state.db)
-        .await
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
     };
+    if !crate::user_routes::username_matches_session(_legacy_query.username.as_deref(), &username) {
+        return api_response(
+            StatusCode::FORBIDDEN,
+            403,
+            "username does not match the authenticated session",
+            serde_json::Value::Null,
+        )
+        .into_response();
+    }
+    let rows = sqlx::query(
+        "SELECT timestamp, temperature, humidity FROM app_temperature_humidity WHERE username = $1 ORDER BY timestamp DESC LIMIT 10",
+    )
+    .bind(username)
+    .fetch_all(&state.db)
+    .await;
 
     let mut samples = match rows {
         Ok(rows) => rows
             .into_iter()
             .rev()
             .map(|item| TemperatureHumiditySample {
-                username: item
-                    .try_get::<Option<String>, _>("username")
-                    .unwrap_or(None),
                 timestamp: item.try_get::<i64, _>("timestamp").unwrap_or(0).max(0) as u64,
                 temperature: item.try_get::<f64, _>("temperature").unwrap_or(0.0),
                 humidity: item.try_get::<f64, _>("humidity").unwrap_or(0.0),
@@ -69,8 +69,22 @@ pub(crate) async fn temperature_humidity_api_handler(
 
 pub(crate) async fn post_temperature_humidity_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(request): Json<TagTemperatureHumidityRequest>,
 ) -> Response {
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+    if !crate::user_routes::username_matches_session(Some(&request.username), &username) {
+        return api_response(
+            StatusCode::FORBIDDEN,
+            403,
+            "username does not match the authenticated session",
+            serde_json::Value::Null,
+        )
+        .into_response();
+    }
     let sampled_at = NaiveDateTime::parse_from_str(&request.record_time, "%Y-%m-%dT%H:%M:%S%.3f")
         .map(|datetime| datetime.and_utc().timestamp_millis())
         .unwrap_or_else(|_| now_millis() as i64);
@@ -102,7 +116,7 @@ pub(crate) async fn post_temperature_humidity_handler(
         "INSERT INTO app_temperature_humidity (username, timestamp, temperature, humidity) \
          VALUES ($1, $2, $3, $4)",
     )
-    .bind(&request.username)
+    .bind(&username)
     .bind(sampled_at)
     .bind(request.temperature)
     .bind(request.humidity)

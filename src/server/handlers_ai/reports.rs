@@ -18,46 +18,37 @@ pub(crate) async fn citrus_analyze_handler(
     headers: HeaderMap,
     Json(request): Json<ChatApiRequest>,
 ) -> Response {
-    let token = match crate::user_routes::extract_auth_token(&headers).or(request.token.clone()) {
-        Some(token) => token,
-        None => {
-            return (
-                StatusCode::UNAUTHORIZED,
-                Json(json!({ "error": "Missing token" })),
-            )
-                .into_response();
-        }
+    let authenticated = if crate::user_routes::ensure_authenticated(&state, &headers)
+        .await
+        .is_ok()
+    {
+        true
+    } else if let Some(token) = request.token.as_deref() {
+        username_by_token(&state, token).await.is_some()
+    } else {
+        false
     };
-
-    if username_by_token(&state, &token).await.is_none() {
+    if !authenticated {
         return (
             StatusCode::UNAUTHORIZED,
-            Json(json!({ "error": "Invalid token" })),
+            Json(json!({ "error": "authentication required" })),
         )
             .into_response();
     }
 
-    println!(
-        "处理请求 图像数据长度: {}",
-        request.image.as_ref().map_or(0, |image| image.len())
-    );
-
     match state.client.analyze_citrus(request.image).await {
-        Ok(response) => {
-            println!("柑橘分析请求处理成功 usage: {:?}", response.usage);
-            (
-                StatusCode::OK,
-                Json(json!({
-                    "success": true,
-                    "data": response.data,
-                    "usage": response.usage,
-                    "metrics": response.metrics
-                })),
-            )
-                .into_response()
-        }
+        Ok(response) => (
+            StatusCode::OK,
+            Json(json!({
+                "success": true,
+                "data": response.data,
+                "usage": response.usage,
+                "metrics": response.metrics
+            })),
+        )
+            .into_response(),
         Err(err) => {
-            println!("柑橘分析请求处理失败: {}", err);
+            tracing::error!(%err, "柑橘分析请求失败");
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
@@ -70,10 +61,18 @@ pub(crate) async fn citrus_analyze_handler(
     }
 }
 
-pub(crate) async fn generate_handler(State(state): State<AppState>) -> Response {
+pub(crate) async fn generate_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Response {
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
     let rows = sqlx::query(
-        "SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path FROM app_diagnosis_records ORDER BY timestamp DESC LIMIT 200",
+        "SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp DESC LIMIT 200",
     )
+    .bind(username)
     .fetch_all(&state.db)
     .await;
 
@@ -157,8 +156,12 @@ pub(crate) async fn generate_handler(State(state): State<AppState>) -> Response 
 
 pub(crate) async fn generate_fertilization_plan_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(request): Json<FertilizationPlanRequest>,
 ) -> Response {
+    if let Err((code, body)) = crate::user_routes::ensure_authenticated(&state, &headers).await {
+        return (code, Json(body)).into_response();
+    }
     match state.client.generate_fertilization_plan(&request).await {
         Ok(plan) => (
             StatusCode::OK,

@@ -90,7 +90,17 @@ pub(crate) async fn register_handler(
     }
 
     let now = now_secs();
-    let password_hash = hash_password(&password);
+    let password_hash = match hash_password(&password) {
+        Ok(hash) => hash,
+        Err(err) => {
+            tracing::error!(%err, "注册时生成密码哈希失败");
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(app_response(500, "密码处理失败", serde_json::Value::Null)),
+            )
+                .into_response();
+        }
+    };
     let invitation_code = payload.invitation_code.trim();
 
     if invitation_code.is_empty() {

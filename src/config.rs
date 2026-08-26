@@ -6,6 +6,8 @@ pub struct AppConfig {
     pub ai: AiConfig,
     pub database: DatabaseConfig,
     #[serde(default)]
+    pub bootstrap: BootstrapConfig,
+    #[serde(default)]
     pub inference: InferenceConfig,
 }
 
@@ -14,6 +16,10 @@ pub struct ServerConfig {
     pub addr: String,
     #[serde(default = "default_log_level")]
     pub log_level: String,
+    #[serde(default = "default_database_max_connections")]
+    pub database_max_connections: u32,
+    #[serde(default)]
+    pub secure_session_cookie: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -24,6 +30,20 @@ pub struct AiConfig {
 #[derive(Debug, Clone, Deserialize)]
 pub struct DatabaseConfig {
     pub postgres_url: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct BootstrapConfig {
+    #[serde(default)]
+    pub seed_demo_data: bool,
+}
+
+impl Default for BootstrapConfig {
+    fn default() -> Self {
+        Self {
+            seed_demo_data: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
@@ -47,16 +67,20 @@ fn default_log_level() -> String {
     "info".to_string()
 }
 
+fn default_database_max_connections() -> u32 {
+    10
+}
+
 fn default_inference_mode() -> InferenceMode {
     InferenceMode::Remote
 }
 
 fn default_model_1_path() -> String {
-    "../navel_back/model/onnx/model_1.onnx".to_string()
+    "onnx/model_1.onnx".to_string()
 }
 
 fn default_model_2_path() -> String {
-    "../navel_back/model/onnx/model_2.onnx".to_string()
+    "onnx/model_2.onnx".to_string()
 }
 
 impl Default for InferenceConfig {

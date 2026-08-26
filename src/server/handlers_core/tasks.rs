@@ -1,7 +1,7 @@
 use axum::{
     Json,
     extract::{Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
 use sqlx::Row;
@@ -9,34 +9,23 @@ use sqlx::Row;
 use super::super::{
     AddTaskRequest, AppState, CompleteTaskRequest, GenerateDiseaseTaskRequest,
     GenerateEnvironmentTaskRequest, TaskRecord, UsernameQuery, api_response, api_success,
-    classify_environment_risk, disease_treatment_text, now_millis, task_payload, user_exists,
+    classify_environment_risk, disease_treatment_text, now_millis, task_payload,
 };
 
 pub(crate) async fn get_tasks_api_handler(
     State(state): State<AppState>,
-    Query(query): Query<UsernameQuery>,
+    headers: HeaderMap,
+    Query(_legacy_query): Query<UsernameQuery>,
 ) -> Response {
-    let username = match Some(query.username.as_str())
-        .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-    {
-        Some(name) => name,
-        None => {
-            return api_response(
-                StatusCode::BAD_REQUEST,
-                400,
-                "username parameter is required",
-                serde_json::Value::Null,
-            )
-            .into_response();
-        }
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
     };
-
-    if !user_exists(&state, username).await {
+    if !crate::user_routes::username_matches_session(_legacy_query.username.as_deref(), &username) {
         return api_response(
-            StatusCode::NOT_FOUND,
-            404,
-            "User not found",
+            StatusCode::FORBIDDEN,
+            403,
+            "username does not match the authenticated session",
             serde_json::Value::Null,
         )
         .into_response();
@@ -45,7 +34,7 @@ pub(crate) async fn get_tasks_api_handler(
     let rows = sqlx::query(
         "SELECT id, title, description, risk_level, task_type, source, is_completed, created_at, completed_at FROM app_tasks WHERE username = $1 ORDER BY created_at DESC",
     )
-    .bind(username)
+    .bind(&username)
     .fetch_all(&state.db)
     .await;
 
@@ -84,23 +73,18 @@ pub(crate) async fn get_tasks_api_handler(
 
 pub(crate) async fn add_task_api_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(request): Json<AddTaskRequest>,
 ) -> Response {
-    let username = request.username.trim();
-    if username.is_empty() {
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+    if !crate::user_routes::username_matches_session(Some(&request.username), &username) {
         return api_response(
-            StatusCode::BAD_REQUEST,
-            400,
-            "username is required",
-            serde_json::Value::Null,
-        )
-        .into_response();
-    }
-    if !user_exists(&state, username).await {
-        return api_response(
-            StatusCode::NOT_FOUND,
-            404,
-            "User not found",
+            StatusCode::FORBIDDEN,
+            403,
+            "username does not match the authenticated session",
             serde_json::Value::Null,
         )
         .into_response();
@@ -108,7 +92,7 @@ pub(crate) async fn add_task_api_handler(
 
     let task = TaskRecord {
         id: uuid::Uuid::new_v4().to_string(),
-        username: username.to_string(),
+        username,
         title: request.title,
         description: request.description,
         risk_level: request.risk_level.unwrap_or_else(|| "中风险".to_string()),
@@ -165,23 +149,30 @@ pub(crate) async fn add_task_api_handler(
 
 pub(crate) async fn complete_task_api_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(request): Json<CompleteTaskRequest>,
 ) -> Response {
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
     let completed_at = now_millis() as i64;
 
     let updated =
-        sqlx::query("UPDATE app_tasks SET is_completed = TRUE, completed_at = $1 WHERE id = $2")
+        sqlx::query("UPDATE app_tasks SET is_completed = TRUE, completed_at = $1 WHERE id = $2 AND username = $3")
             .bind(completed_at)
             .bind(&request.task_id)
+            .bind(&username)
             .execute(&state.db)
             .await;
 
     match updated {
         Ok(result) if result.rows_affected() > 0 => {
             let row = sqlx::query(
-                "SELECT id, title, description, risk_level, task_type, source, is_completed, created_at, completed_at FROM app_tasks WHERE id = $1 LIMIT 1",
+                "SELECT id, title, description, risk_level, task_type, source, is_completed, created_at, completed_at FROM app_tasks WHERE id = $1 AND username = $2 LIMIT 1",
             )
             .bind(&request.task_id)
+            .bind(&username)
             .fetch_optional(&state.db)
             .await
             .ok()
@@ -235,25 +226,28 @@ pub(crate) async fn complete_task_api_handler(
 
 pub(crate) async fn generate_task_from_disease_api_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(request): Json<GenerateDiseaseTaskRequest>,
 ) -> Response {
-    let username = request.username.trim();
-    let disease_name = request.disease_name.trim();
-    if username.is_empty() || disease_name.is_empty() {
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+    if !crate::user_routes::username_matches_session(Some(&request.username), &username) {
         return api_response(
-            StatusCode::BAD_REQUEST,
-            400,
-            "disease_name and username are required",
+            StatusCode::FORBIDDEN,
+            403,
+            "username does not match the authenticated session",
             serde_json::Value::Null,
         )
         .into_response();
     }
-
-    if !user_exists(&state, username).await {
+    let disease_name = request.disease_name.trim();
+    if disease_name.is_empty() {
         return api_response(
-            StatusCode::NOT_FOUND,
-            404,
-            "User not found",
+            StatusCode::BAD_REQUEST,
+            400,
+            "disease_name is required",
             serde_json::Value::Null,
         )
         .into_response();
@@ -271,7 +265,7 @@ pub(crate) async fn generate_task_from_disease_api_handler(
 
     let task = TaskRecord {
         id: uuid::Uuid::new_v4().to_string(),
-        username: username.to_string(),
+        username,
         title: format!("{}治理", disease_name),
         description: disease_treatment_text(disease_name).to_string(),
         risk_level: "高风险".to_string(),
@@ -328,24 +322,18 @@ pub(crate) async fn generate_task_from_disease_api_handler(
 
 pub(crate) async fn generate_task_from_environment_api_handler(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(request): Json<GenerateEnvironmentTaskRequest>,
 ) -> Response {
-    let username = request.username.trim();
-    if username.is_empty() {
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+    if !crate::user_routes::username_matches_session(Some(&request.username), &username) {
         return api_response(
-            StatusCode::BAD_REQUEST,
-            400,
-            "username, temperature and humidity are required",
-            serde_json::Value::Null,
-        )
-        .into_response();
-    }
-
-    if !user_exists(&state, username).await {
-        return api_response(
-            StatusCode::NOT_FOUND,
-            404,
-            "User not found",
+            StatusCode::FORBIDDEN,
+            403,
+            "username does not match the authenticated session",
             serde_json::Value::Null,
         )
         .into_response();
@@ -354,7 +342,7 @@ pub(crate) async fn generate_task_from_environment_api_handler(
     let _ = sqlx::query(
         "INSERT INTO app_temperature_humidity (username, timestamp, temperature, humidity) VALUES ($1, $2, $3, $4)",
     )
-    .bind(username)
+    .bind(&username)
     .bind(now_millis() as i64)
     .bind(request.temperature)
     .bind(request.humidity)
@@ -375,7 +363,7 @@ pub(crate) async fn generate_task_from_environment_api_handler(
 
     let task = TaskRecord {
         id: uuid::Uuid::new_v4().to_string(),
-        username: username.to_string(),
+        username,
         title: format!("环境监测-{}", risk_level),
         description: description.to_string(),
         risk_level: risk_level.to_string(),

@@ -1,6 +1,4 @@
 (() => {
-  const SESSION_COOKIE = "session_token";
-  const COOKIE_AGE = 30 * 24 * 60 * 60;
   const PASSWORD_ICONS = {
     open: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><circle cx="12" cy="12" r="3"></circle></svg>',
     closed: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6"></ellipse><circle cx="12" cy="12" r="3"></circle><line x1="4" y1="4" x2="20" y2="20"></line></svg>'
@@ -54,25 +52,6 @@
     if (el.id === "login-msg" || el.id === "register-msg") {
       el.style.display = text ? "block" : "none";
     }
-  }
-
-  function getCookie(name) {
-    const prefix = `${name}=`;
-    const part = document.cookie
-      .split(";")
-      .map((item) => item.trim())
-      .find((item) => item.startsWith(prefix));
-    if (!part) return "";
-    return decodeURIComponent(part.slice(prefix.length));
-  }
-
-  function setSessionToken(token) {
-    if (!token) return;
-    document.cookie = `${SESSION_COOKIE}=${encodeURIComponent(token)}; path=/; max-age=${COOKIE_AGE}; samesite=lax`;
-  }
-
-  function clearSessionToken() {
-    document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
   }
 
   function showTab(tabName) {
@@ -257,7 +236,6 @@
       return;
     }
 
-    setSessionToken(data.token || raw.token);
     const validatedUser = await fetchValidatedSession();
     applyLoggedInState(validatedUser || data);
   }
@@ -315,24 +293,21 @@
   }
 
   async function checkSessionOnLoad() {
-    const token = getCookie(SESSION_COOKIE);
-    if (!token) return;
-
-    setMsg(els.loginMsg, "检测到会话，验证中...");
     const validatedUser = await fetchValidatedSession();
     if (validatedUser) {
-      setSessionToken(token);
       applyLoggedInState(validatedUser);
       return;
     }
 
-    clearSessionToken();
     restoreLoggedOutState();
   }
 
-  function logout() {
-    clearSessionToken();
-    setTimeout(() => location.reload(), 80);
+  async function logout() {
+    try {
+      await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+    } finally {
+      location.reload();
+    }
   }
 
   function initPasswordToggles() {

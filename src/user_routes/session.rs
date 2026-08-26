@@ -12,8 +12,9 @@ use crate::server::AppState;
 
 use super::{
     auth::{
-        app_response, build_clear_cookie, build_login_cookie, current_system_settings,
-        ensure_authenticated, extract_auth_token, generate_token, now_secs, verify_password,
+        SESSION_MAX_AGE_SECONDS, app_response, build_clear_cookie, build_login_cookie,
+        current_system_settings, ensure_authenticated, extract_auth_token, generate_token,
+        hash_password, needs_password_rehash, now_secs, verify_password,
     },
     dto::LoginRequest,
 };
@@ -104,14 +105,33 @@ pub(crate) async fn login_handler(
             .into_response();
     }
 
+    if needs_password_rehash(&password_hash) {
+        match hash_password(password) {
+            Ok(new_hash) => {
+                if let Err(err) =
+                    sqlx::query("UPDATE app_users SET password_hash = $1 WHERE username = $2")
+                        .bind(new_hash)
+                        .bind(username)
+                        .execute(&state.db)
+                        .await
+                {
+                    tracing::warn!(%err, username, "旧密码哈希迁移失败，将在下次登录重试");
+                }
+            }
+            Err(err) => tracing::warn!(%err, username, "生成新的密码哈希失败，将在下次登录重试"),
+        }
+    }
+
     let token = generate_token();
     let now = now_secs() as i64;
+    let expires_at = now + SESSION_MAX_AGE_SECONDS as i64;
 
     if let Err(err) =
-        sqlx::query("INSERT INTO app_sessions (token, username, created_at) VALUES ($1, $2, $3)")
+        sqlx::query("INSERT INTO app_sessions (token, username, created_at, expires_at) VALUES ($1, $2, $3, $4)")
             .bind(&token)
             .bind(username)
             .bind(now)
+            .bind(expires_at)
             .execute(&state.db)
             .await
     {
@@ -132,7 +152,7 @@ pub(crate) async fn login_handler(
         .execute(&state.db)
         .await;
 
-    let cookie_header = match build_login_cookie(&token) {
+    let cookie_header = match build_login_cookie(&token, state.secure_session_cookie) {
         Ok(value) => value,
         Err((code, body)) => return (code, Json(body)).into_response(),
     };
@@ -238,9 +258,10 @@ pub(crate) async fn validate_token_handler(
     };
 
     let row = sqlx::query(
-        "SELECT u.username, u.is_admin FROM app_sessions s JOIN app_users u ON u.username = s.username WHERE s.token = $1 LIMIT 1",
+        "SELECT u.username, u.is_admin FROM app_sessions s JOIN app_users u ON u.username = s.username WHERE s.token = $1 AND s.expires_at > $2 LIMIT 1",
     )
     .bind(&token)
+    .bind(now_secs() as i64)
     .fetch_optional(&state.db)
     .await;
 

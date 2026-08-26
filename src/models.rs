@@ -75,7 +75,6 @@ impl ResponseFormat {
             json_schema: None,
         }
     }
-
 }
 
 /// OpenRouter 错误响应
@@ -144,7 +143,7 @@ pub struct ChatApiRequest {
     pub temperature: Option<f64>,
     pub top_p: Option<f64>,
     pub max_tokens: Option<u32>,
-    /// 可选的登录 token
+    /// 为现有 API 客户端保留的会话 token；浏览器应使用 HttpOnly Cookie。
     pub token: Option<String>,
     /// 指定首选供应商（如 "Moonshot AI", "Together", "Fireworks" 等）
     pub preferred_provider: Option<String>,

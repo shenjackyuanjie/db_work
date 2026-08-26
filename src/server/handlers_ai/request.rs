@@ -9,7 +9,7 @@ use base64::Engine;
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-use super::super::{AppState, username_by_token};
+use super::super::AppState;
 
 #[derive(Debug)]
 pub(super) struct ParsedCitrusRequest {
@@ -34,21 +34,10 @@ struct CitrusDiseaseJsonRequest {
 async fn auth_username_from_headers(
     state: &AppState,
     headers: &HeaderMap,
-) -> Result<Option<String>, Response> {
-    match crate::user_routes::extract_auth_token(headers) {
-        Some(token) => match username_by_token(state, &token).await {
-            Some(name) => Ok(Some(name)),
-            None => Err((
-                StatusCode::UNAUTHORIZED,
-                Json(json!({
-                    "code": 401,
-                    "message": "Invalid token",
-                    "data": null
-                })),
-            )
-                .into_response()),
-        },
-        None => Ok(None),
+) -> Result<String, Response> {
+    match crate::user_routes::ensure_authenticated(state, headers).await {
+        Ok((_, username)) => Ok(username),
+        Err((code, body)) => Err((code, Json(body)).into_response()),
     }
 }
 
@@ -127,7 +116,6 @@ pub(super) async fn extract_citrus_request(
 
     let mut image_data: Option<String> = None;
     let mut image_base64_text: Option<String> = None;
-    let mut username: Option<String> = None;
     let mut area: Option<String> = None;
     let mut temperature: Option<f64> = None;
     let mut humidity: Option<f64> = None;
@@ -172,10 +160,6 @@ pub(super) async fn extract_citrus_request(
         );
 
         image_base64_text = payload.image_upper.or(payload.image);
-        username = payload
-            .username
-            .map(|value| value.trim().to_string())
-            .filter(|value| !value.is_empty());
         area = payload
             .area
             .map(|value| value.trim().to_string())
@@ -271,14 +255,6 @@ pub(super) async fn extract_citrus_request(
                                     .into_response());
                             }
                         },
-                        Some("username") => {
-                            if let Ok(text) = field.text().await {
-                                let trimmed = text.trim();
-                                if !trimmed.is_empty() {
-                                    username = Some(trimmed.to_string());
-                                }
-                            }
-                        }
                         Some("area") => {
                             if let Ok(text) = field.text().await {
                                 let trimmed = text.trim();
@@ -370,14 +346,7 @@ pub(super) async fn extract_citrus_request(
         image_data = Some(base64_image);
     }
 
-    if username.is_none() {
-        username = auth_username;
-    }
-
-    let username = match username {
-        Some(u) => u,
-        None => return Err(bad_request_response("请求中未包含 username".to_string())),
-    };
+    let username = auth_username;
 
     let image_data = match image_data {
         Some(image_data) => image_data,

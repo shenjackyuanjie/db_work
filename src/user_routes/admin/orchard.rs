@@ -9,9 +9,7 @@ use sqlx::Row;
 
 use crate::server::AppState;
 
-use super::super::{
-    OrchardOverviewRequest, ensure_admin, ensure_authenticated,
-};
+use super::super::{OrchardOverviewRequest, ensure_admin, ensure_authenticated};
 
 #[derive(Debug)]
 enum WeatherLookupError {
@@ -40,15 +38,15 @@ async fn fetch_weather_by_coordinates(latitude: f64, longitude: f64) -> Result<V
     }))
 }
 
-
-async fn fetch_weather_for_user(state: &AppState, username: &str) -> Result<Option<Value>, WeatherLookupError> {
-    let row = sqlx::query(
-        "SELECT latitude, longitude FROM app_users WHERE username = $1 LIMIT 1",
-    )
-    .bind(username)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(WeatherLookupError::Database)?;
+async fn fetch_weather_for_user(
+    state: &AppState,
+    username: &str,
+) -> Result<Option<Value>, WeatherLookupError> {
+    let row = sqlx::query("SELECT latitude, longitude FROM app_users WHERE username = $1 LIMIT 1")
+        .bind(username)
+        .fetch_optional(&state.db)
+        .await
+        .map_err(WeatherLookupError::Database)?;
 
     let Some(row) = row else {
         return Err(WeatherLookupError::UserNotFound);

@@ -1,6 +1,5 @@
 (() => {
 const $ = (id) => document.getElementById(id);
-const SESSION_COOKIE = "session_token";
 const DEFAULT_ORCHARD_BOUNDS = Object.freeze({
   min_x: 0,
   max_x: 500,
@@ -83,9 +82,12 @@ function copyInviteCode() {
   copyText(code);
 }
 
-function logout() {
-  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
-  setTimeout(() => location.reload(), 80);
+async function logout() {
+  try {
+    await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+  } finally {
+    location.reload();
+  }
 }
 
 function exposeGlobalActions() {
@@ -99,22 +101,9 @@ function exposeGlobalActions() {
   });
 }
 
-function getCookie(name) {
-  const prefix = `${name}=`;
-  const part = document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(prefix));
-  if (!part) return "";
-  return decodeURIComponent(part.slice(prefix.length));
-}
-
-function getToken() {
-  return getCookie(SESSION_COOKIE);
-}
-
 function requestHeaders(withJsonBody) {
   const headers = {};
   if (withJsonBody) headers["Content-Type"] = "application/json";
-  const token = getToken();
-  if (token) headers["X-Session-Token"] = token;
   return headers;
 }
 
@@ -139,8 +128,6 @@ async function postJson(url, body) {
 }
 
 async function validateAdmin() {
-  const token = getToken();
-  if (!token) return null;
   const resp = await postJson("/user/validate");
   if (!resp.ok || !resp.data.valid || !resp.data.is_admin) {
     return null;
@@ -1475,6 +1462,8 @@ const storeOrderStatusLabels = {
 const storeAdminState = {
   products: [],
   orders: [],
+  editingId: null,
+  coverTargetId: null,
 };
 
 async function storeRequest(url, method = "GET", body) {
@@ -1531,13 +1520,27 @@ function renderStoreProducts() {
       <tbody>
         ${storeAdminState.products.map((product) => `
           <tr>
-            <td>${escapeHtml(product.name)}</td>
+            <td>
+              <div class="store-product-cell">
+                <div class="store-product-cover ${product.cover_image ? "has-image" : "no-image"}">
+                  ${product.cover_image
+                    ? `<img class="store-product-cover__img" src="${escapeHtml(product.cover_image)}" alt="${escapeHtml(product.name)}" />`
+                    : '<span class="store-product-cover__placeholder">暂无封面</span>'}
+                </div>
+                <div class="store-product-cell__name">${escapeHtml(product.name)}</div>
+                <div class="store-product-cell__note">${product.cover_image ? "已上传封面" : "尚未上传封面"}</div>
+              </div>
+            </td>
             <td><code>${escapeHtml(product.sku)}</code></td>
             <td>${escapeHtml(product.unit_label)}</td>
             <td>${storeMoney(product.price_cents)}</td>
             <td>${product.stock_quantity}</td>
             <td><span class="pill ${product.is_active ? "admin" : "user"}">${product.is_active ? "在售" : "下架"}</span></td>
-            <td><button class="ghost" type="button" data-toggle-store-product="${product.id}">${product.is_active ? "下架" : "上架"}</button></td>
+            <td>
+              <button class="ghost" type="button" data-edit-store-product="${product.id}">编辑</button>
+              <button class="ghost" type="button" data-upload-store-cover="${product.id}">上传封面</button>
+              <button class="ghost" type="button" data-toggle-store-product="${product.id}">${product.is_active ? "下架" : "上架"}</button>
+            </td>
           </tr>
         `).join("")}
       </tbody>
@@ -1548,6 +1551,17 @@ function renderStoreProducts() {
       await toggleStoreProduct(Number(button.dataset.toggleStoreProduct));
     });
   });
+  wrap.querySelectorAll("[data-edit-store-product]").forEach((button) => {
+    button.addEventListener("click", () => {
+      editStoreProduct(Number(button.dataset.editStoreProduct));
+    });
+  });
+  wrap.querySelectorAll("[data-upload-store-cover]").forEach((button) => {
+    button.addEventListener("click", () => {
+      storeAdminState.coverTargetId = Number(button.dataset.uploadStoreCover);
+      $("storeCoverFile").click();
+    });
+  });
 }
 
 async function loadStoreProducts() {
@@ -1556,24 +1570,103 @@ async function loadStoreProducts() {
   renderStoreProducts();
 }
 
-async function createStoreProduct(event) {
-  event.preventDefault();
-  const body = {
+function storeProductFormBody() {
+  return {
     name: $("storeProductName").value.trim(),
     sku: $("storeProductSku").value.trim(),
     unit_label: $("storeProductUnit").value.trim(),
     price_cents: Math.round(Number($("storeProductPrice").value) * 100),
     stock_quantity: Math.round(Number($("storeProductStock").value || 0)),
     description: $("storeProductDescription").value.trim(),
+    cover_image: $("storeProductCover").value.trim() || undefined,
   };
+}
+
+function resetStoreProductForm() {
+  storeAdminState.editingId = null;
+  $("storeProductForm").reset();
+  $("storeProductStock").value = "0";
+  $("storeProductFormTitle").textContent = "新增商品";
+  $("storeProductSubmit").textContent = "创建商品";
+  $("storeProductCancel").hidden = true;
+}
+
+function editStoreProduct(productId) {
+  const product = storeAdminState.products.find((p) => p.id === productId);
+  if (!product) return;
+  storeAdminState.editingId = productId;
+  $("storeProductName").value = product.name || "";
+  $("storeProductSku").value = product.sku || "";
+  $("storeProductUnit").value = product.unit_label || "";
+  $("storeProductPrice").value = (product.price_cents / 100).toFixed(2);
+  $("storeProductStock").value = product.stock_quantity ?? 0;
+  $("storeProductDescription").value = product.description || "";
+  $("storeProductCover").value = product.cover_image || "";
+  $("storeProductFormTitle").textContent = "编辑商品";
+  $("storeProductSubmit").textContent = "保存修改";
+  $("storeProductCancel").hidden = false;
+  $("storeProductForm").scrollIntoView({ block: "center", behavior: "smooth" });
+}
+
+async function submitStoreProduct(event) {
+  event.preventDefault();
+  const body = storeProductFormBody();
+  const editingId = storeAdminState.editingId;
   try {
-    await storeRequest("/user/admin/store/products", "POST", body);
-    showToast("商品创建成功");
-    $("storeProductForm").reset();
-    $("storeProductStock").value = "0";
+    if (editingId) {
+      await storeRequest(`/user/admin/store/products/${editingId}`, "PUT", body);
+      showToast("商品已更新");
+    } else {
+      await storeRequest("/user/admin/store/products", "POST", body);
+      showToast("商品创建成功");
+    }
+    resetStoreProductForm();
     await Promise.all([loadStoreProducts(), loadStoreOverview()]);
   } catch (error) {
     showToast(error.message, "error");
+  }
+}
+
+async function uploadStoreCover(file) {
+  const productId = storeAdminState.coverTargetId;
+  if (!productId || !file) return;
+  const MAX_COVER_BYTES = 8 * 1024 * 1024;
+  // 前端先做一次校验，给出明确提示，避免把明显不合法的文件上传。
+  if (!/^image\//.test(file.type)) {
+    showToast("请选择图片文件（JPEG / PNG / WebP）", "error");
+    $("storeCoverFile").value = "";
+    storeAdminState.coverTargetId = null;
+    return;
+  }
+  if (file.size > MAX_COVER_BYTES) {
+    showToast("封面图片过大，最大 8MB", "error");
+    $("storeCoverFile").value = "";
+    storeAdminState.coverTargetId = null;
+    return;
+  }
+  const formData = new FormData();
+  formData.append("image", file);
+  try {
+    const res = await fetch(`/user/admin/store/products/${productId}/cover`, {
+      method: "POST",
+      credentials: "same-origin",
+      body: formData,
+    });
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
+    }
+    if (!res.ok) throw new Error(readErrorMessage(data, "封面上传失败"));
+    showToast("封面已上传");
+    await Promise.all([loadStoreProducts(), loadStoreOverview()]);
+  } catch (error) {
+    showToast(error.message, "error");
+  } finally {
+    storeAdminState.coverTargetId = null;
+    $("storeCoverFile").value = "";
   }
 }
 
@@ -1650,7 +1743,12 @@ async function refreshStoreData() {
 }
 
 function bindStoreActions() {
-  $("storeProductForm").addEventListener("submit", createStoreProduct);
+  $("storeProductForm").addEventListener("submit", submitStoreProduct);
+  $("storeProductCancel").addEventListener("click", resetStoreProductForm);
+  $("storeCoverFile").addEventListener("change", (event) => {
+    const file = event.target.files && event.target.files[0];
+    if (file) uploadStoreCover(file);
+  });
   $("btnRefreshStoreProducts").addEventListener("click", async () => {
     await loadStoreProducts();
     showToast("商品已刷新");

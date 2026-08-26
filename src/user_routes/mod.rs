@@ -1,4 +1,7 @@
-use axum::{Router, routing::post};
+use axum::{
+    Router,
+    routing::{post, put},
+};
 
 use crate::server::AppState;
 
@@ -12,6 +15,7 @@ mod store;
 
 pub(crate) use auth::{
     ensure_admin, ensure_authenticated, extract_auth_token, now_secs, parse_requested_role,
+    username_matches_session,
 };
 pub(crate) use dto::{
     ApprovePendingUserRequest, CreateInvitationRequest, OrchardOverviewRequest, PendingPublicUser,
@@ -96,6 +100,14 @@ pub fn router(state: AppState) -> Router<AppState> {
         .route(
             "/admin/store/products/{product_id}/toggle",
             post(store::toggle_store_product_handler),
+        )
+        .route(
+            "/admin/store/products/{product_id}",
+            put(store::update_store_product_handler),
+        )
+        .route(
+            "/admin/store/products/{product_id}/cover",
+            post(store::upload_store_cover_handler),
         )
         .route(
             "/admin/store/orders",

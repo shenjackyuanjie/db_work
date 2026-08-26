@@ -1,6 +1,6 @@
 use axum::{
     extract::State,
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
 use serde_json::json;
@@ -9,7 +9,13 @@ use sqlx::Row;
 use super::super::{AppState, api_response, api_success, now_millis};
 use crate::inference::is_climate_in_range;
 
-pub(crate) async fn health_point_handler(State(state): State<AppState>) -> Response {
+pub(crate) async fn health_point_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Response {
+    if let Err((code, body)) = crate::user_routes::ensure_authenticated(&state, &headers).await {
+        return (code, axum::Json(body)).into_response();
+    }
     // 最近1天 = 86400秒 = 86_400_000 毫秒
     let one_day_ago = now_millis() as i64 - 86_400_000_i64;
 
@@ -46,7 +52,10 @@ pub(crate) async fn health_point_handler(State(state): State<AppState>) -> Respo
     let total = rows.len();
 
     if total == 0 {
-        tracing::warn!("No sensor records found in the last 24 hours (since {})", one_day_ago);
+        tracing::warn!(
+            "No sensor records found in the last 24 hours (since {})",
+            one_day_ago
+        );
 
         return api_success(json!({
             "total": 0,

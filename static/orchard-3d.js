@@ -2,7 +2,6 @@ import * as THREE from "three";
 import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/controls/OrbitControls.js";
 
 const $ = (id) => document.getElementById(id);
-const SESSION_COOKIE = "session_token";
 const DEFAULT_ORCHARD_BOUNDS = Object.freeze({
   min_x: 0,
   max_x: 500,
@@ -69,27 +68,18 @@ function disposeSceneNode(node) {
   });
 }
 
-function getCookie(name) {
-  const prefix = `${name}=`;
-  const part = document.cookie
-    .split(";")
-    .map((item) => item.trim())
-    .find((item) => item.startsWith(prefix));
-
-  return part ? decodeURIComponent(part.slice(prefix.length)) : "";
-}
-
-function logout() {
-  document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
-  window.location.href = "/";
+async function logout() {
+  try {
+    await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+  } finally {
+    window.location.href = "/";
+  }
 }
 
 function requestHeaders(withJsonBody) {
   const headers = {};
   if (withJsonBody) headers["Content-Type"] = "application/json";
 
-  const token = getCookie(SESSION_COOKIE);
-  if (token) headers["X-Session-Token"] = token;
   return headers;
 }
 

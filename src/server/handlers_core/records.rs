@@ -1,6 +1,6 @@
 use axum::{
     extract::{Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
 use chrono::{TimeZone, Utc};
@@ -14,9 +14,22 @@ use super::super::{
 
 pub(crate) async fn recognition_records_api_handler(
     State(state): State<AppState>,
-    Query(query): Query<UsernameQuery>,
+    headers: HeaderMap,
+    Query(_legacy_query): Query<UsernameQuery>,
 ) -> Response {
-    let username = query.username;
+    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+        Ok(value) => value,
+        Err((code, body)) => return (code, axum::Json(body)).into_response(),
+    };
+    if !crate::user_routes::username_matches_session(_legacy_query.username.as_deref(), &username) {
+        return api_response(
+            StatusCode::FORBIDDEN,
+            403,
+            "username does not match the authenticated session",
+            serde_json::Value::Null,
+        )
+        .into_response();
+    }
 
     let rows = sqlx::query(
         "SELECT id, predicted_class, area, confidence, timestamp, image_path FROM app_diagnosis_records WHERE username = $1 ORDER BY timestamp DESC LIMIT 20",

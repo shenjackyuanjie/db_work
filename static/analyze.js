@@ -1,5 +1,5 @@
 (() => {
-  const SESSION_COOKIE = "session_token";
+  let session = null;
 
   const els = {
     uploadZone: document.getElementById("uploadZone"),
@@ -30,19 +30,8 @@
     }
   };
 
-  function getCookie(name) {
-    const prefix = `${name}=`;
-    const part = document.cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(prefix));
-    return part ? decodeURIComponent(part.slice(prefix.length)) : "";
-  }
-
-  function getToken() {
-    return getCookie(SESSION_COOKIE);
-  }
-
   function updateLoginUI() {
-    const token = getToken();
-    if (token) {
+    if (session) {
       els.loginBadge.textContent = "已登录";
       els.loginBadge.className = "badge success";
       els.loginNavLink.hidden = true;
@@ -62,17 +51,15 @@
   }
 
   async function refreshSessionNavigation() {
-    const token = getToken();
-    if (!token) return;
-
     try {
       const response = await fetch("/user/validate", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "X-Session-Token": token },
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.valid) {
+        session = null;
+        updateLoginUI();
         els.loginBadge.textContent = "会话失效";
         els.loginBadge.className = "badge warning";
         els.loginNavLink.hidden = false;
@@ -82,8 +69,12 @@
         return;
       }
 
+      session = data;
+      updateLoginUI();
       els.adminNavLink.hidden = !data.is_admin;
     } catch {
+      session = null;
+      updateLoginUI();
       els.adminNavLink.hidden = true;
     }
   }
@@ -186,8 +177,7 @@
     setError("");
     resetResult();
 
-    const token = getToken();
-    if (!token) {
+    if (!session) {
       setError("未登录，请先登录");
       return;
     }
@@ -208,7 +198,6 @@
         credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
-          "X-Session-Token": token,
         },
         body: JSON.stringify({ image: imageDataUrl }),
       });
@@ -253,9 +242,12 @@
     }
   }
 
-  function logout() {
-    document.cookie = `${SESSION_COOKIE}=; path=/; max-age=0; samesite=lax`;
-    setTimeout(() => location.reload(), 80);
+  async function logout() {
+    try {
+      await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+    } finally {
+      location.reload();
+    }
   }
 
   function bindUploadEvents() {
