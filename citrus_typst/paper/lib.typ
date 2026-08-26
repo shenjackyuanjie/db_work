@@ -1,6 +1,6 @@
 // 中文学术论文模板
 // 符合标准学术论文格式要求
-#import "@preview/cuti:0.3.0": fakebold
+#import "@preview/cuti:0.4.0": fakebold
 
 // ============ 字号定义 ============
 #let 一号 = 26pt
