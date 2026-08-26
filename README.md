@@ -1,300 +1,109 @@
-# 柑橘果园智能诊断与管理后端
+# 柑橘果园智能诊断与管理系统
 
-这是一个基于 Rust 构建的单体后端服务，用于支撑柑橘果园场景下的用户登录、病害识别、环境监测、任务管理、管理员后台和施肥方案生成。
+一个同端口部署的 Rust 单体服务：Axum 托管原生多页 Web 前端，同时提供果园诊断、园区监测、账号与权限、现货商城和管理员运营接口。
 
-服务启动后会同时提供：
+```text
+Browser (HTML/CSS/JS)
+        │ Cookie / HTTP API
+        ▼
+Axum application
+ ├─ accounts, admin, tasks, orchard, store
+ ├─ PostgreSQL (SQLx)
+ ├─ cached local ONNX gate/classifier
+ └─ OpenRouter diagnosis and fertilization client
+```
 
-- Web 页面（`/`、`/analyze`、`/admin`、`/orchard-3d`、`/commerce`）
-- 面向前端的 HTTP API
-- PostgreSQL 数据存储与启动时自动建表
-- 本地 ONNX 推理或 OpenRouter 驱动的混合推理能力
+## 运行
 
-当前仓库的入口在 `src/main.rs`，默认读取 `config.toml` 并直接启动 HTTP 服务，不再是早期 README 中描述的 CLI 聊天工具。
+要求：Rust 1.85+、PostgreSQL、两个 ONNX 模型；使用高级诊断和施肥建议时还需要 OpenRouter API Key。
 
-## 主要能力
-
-- 用户注册、登录、登出、会话校验
-- 管理员后台、待审核用户、邀请码、系统设置、审计日志
-- 柑橘病害识别，支持本地 ONNX 推理和远端 AI 混合推理
-- 识别记录落库、图片归档、历史记录查询
-- 温湿度采样、果园健康点统计、任务生成与完成管理
-- 果园总览、后台二维地图、Three.js 3D 沙盘
-- 树位与传感器示例数据自动初始化
-- 基于 OpenRouter 的柑橘分析和施肥建议生成
-- 前后端同端口部署，静态资源由服务直接托管
-
-## 技术栈
-
-- Rust 2024
-- Tokio
-- Axum
-- SQLx + PostgreSQL
-- Tract ONNX
-- Reqwest
-- Serde
-- Tower HTTP
-- Three.js（前端 3D 沙盘，经 CDN 加载）
-
-## 运行要求
-
-- Rust 1.85 或更新的稳定版
-- 可访问的 PostgreSQL 实例
-- 本地 ONNX 模型文件（使用 `onnx` 模式时必需）
-- OpenRouter API Key（使用柑橘分析、施肥建议等 AI 能力时必需）
-- 可访问 jsDelivr CDN 的浏览器网络环境（使用 3D 沙盘页面时必需）
-
-## 配置说明
-
-服务从根目录的 `config.toml` 读取配置。一个最小可用示例如下：
+创建本机 `config.toml`（该文件被 Git 忽略）：
 
 ```toml
 [server]
-addr = "0.0.0.0:11000"
+addr = "127.0.0.1:11000"
 log_level = "info"
+database_max_connections = 10
+# HTTPS 或可信反向代理环境设为 true；本地 HTTP 开发保持 false。
+secure_session_cookie = false
 
 [ai]
 openrouter_api_key = "sk-or-v1-your-key"
 
 [database]
-postgres_url = "postgres://user:password@127.0.0.1:5432/db_name"
+postgres_url = "postgres://user:password@127.0.0.1:5432/citrus"
+
+[bootstrap]
+# 仅开发演示环境启用，生产环境不会自动写入树位、传感器或商品数据。
+seed_demo_data = false
 
 [inference]
-mode = "onnx"
+mode = "remote" # remote 或 onnx
 model_1_path = "onnx/model_1.onnx"
 model_2_path = "onnx/model_2.onnx"
 ```
 
-配置项含义：
-
-- `server.addr`：服务监听地址
-- `server.log_level`：日志级别
-- `ai.openrouter_api_key`：OpenRouter 调用密钥
-- `database.postgres_url`：PostgreSQL 连接串
-- `inference.mode`：推理模式，支持 `onnx` 和 `remote`
-- `inference.model_1_path`：第一阶段果树识别模型路径
-- `inference.model_2_path`：第二阶段病害识别模型路径
-
-推理模式说明：
-
-- `onnx`：本地完成果树识别和病害分类，适合离线或低延迟场景
-- `remote`：先用本地模型判断是否为果树，再调用 OpenRouter 做病害分析与建议生成
-
-注意事项：
-
-- 服务启动时会自动创建所需数据表
-- 当果树与传感器表为空时，会自动写入一组演示树位和采样数据
-- 请不要把真实数据库地址或 API Key 提交到版本库
-
-## 快速启动
-
-1. 准备 PostgreSQL 数据库并确保连接串可用。
-2. 将 ONNX 模型放到 `onnx/model_1.onnx` 和 `onnx/model_2.onnx`，或在配置里改成你的实际路径。
-3. 修改根目录 `config.toml`。
-4. 启动服务。
-
-```bash
+```powershell
 cargo run --release
 ```
 
-启动成功后，默认可通过以下地址访问：
+服务会安全地补齐表、会话过期列和索引；不会在默认配置下写入演示数据。
 
-- `http://127.0.0.1:11000/`：会重定向到首页
-- `http://127.0.0.1:11000/`：公开首页 / 登录入口
-- `http://127.0.0.1:11000/store`：橙管家脐橙现货商城（普通购买）入口
-- `http://127.0.0.1:11000/analyze`：识别分析页，需要有效登录态
-- `http://127.0.0.1:11000/admin`：管理员后台，需要管理员权限
-- `http://127.0.0.1:11000/orchard-3d`：3D 园区沙盘，页面可直接打开，数据接口需要有效登录态
+## Web 页面
 
-## 关键接口概览
+| 路径 | 页面 | 权限 |
+|---|---|---|
+| `/` | 登录、注册 | 公开 |
+| `/analyze` | 病害识别 | 已登录 |
+| `/orchard-3d` | 三维果园沙盘 | 页面公开，数据需登录 |
+| `/store` | 脐橙现货商城 | 商品公开；下单和订单需登录 |
+| `/cart` | 购物车与结算 | 商品公开；下单需登录 |
+| `/admin` | 管理后台 | 管理员 |
+| `/commerce` | 历史开团入口 | 兼容跳转至 `/store` |
 
-下面列的是当前代码中已注册的主要接口分组，具体行为以 `src/server.rs` 和 `src/user_routes/mod.rs` 中的路由为准。
+## 会话与权限
 
-### 基础与会话
+- 浏览器登录使用 `HttpOnly; SameSite=Lax` Cookie，前端不会读取或复制令牌。
+- 旧 API 客户端仍可从登录响应读取 `token`，并通过 `X-Session-Token` 发送；此兼容方式建议逐步迁移到 Cookie 或专用服务凭据。
+- 会话在服务端强制 30 天过期，旧的 BLAKE3 密码摘要会在账户下次成功登录时自动升级为 Argon2id。
+- 用户级接口以当前登录用户为准。为兼容旧请求保留的 `username` 字段和查询参数只能与当前会话一致，不能再用于读取或修改其他用户的数据。
+- 识别图片保存在 `storage/recognition_records/`；读取图片需要通过所属用户会话验证。旧 `/uploads/{file}` 路径也会走相同验证。
 
-- `GET /health`：健康检查
-- `POST /api/register`：注册
-- `POST /api/login`：登录
-- `POST /api/logout`：登出
-- `POST /api/validate`：校验 token
-- `GET /api/user`：获取当前用户或默认用户信息
-- `GET /api/system-status`：获取系统设置状态
-- `POST /user/login`、`POST /user/register`、`POST /user/logout`、`POST /user/validate`：同名用户路由命名空间
-- `POST /user/me`：获取当前登录用户
+## API 兼容性
 
-### 首页与看板
+历史路由、HTTP 方法和字段继续保留，包括：
 
-- `GET /api/home`：首页摘要数据
-- `GET /api/growth-tracking`：生长追踪数据
-- `GET /api/diagnose`：诊断模块静态数据
-- `GET /api/temperature-humidity`：温湿度采样
-- `POST /api/temperature-humidity`：提交带标签序列号的温湿度采样，同时写入树传感器记录
-- `GET /api/health-point`：果园健康点统计
-- `POST /user/orchard/overview`：当前登录用户的果园树位、传感器、诊断和天气摘要数据
+- 账号：`/api/register`、`/api/login`、`/api/logout`、`/api/validate` 与 `/user/*` 等价路由。
+- 诊断、任务、温湿度、果园：`/api/citrus-disease*`、`/api/tasks*`、`/api/temperature-humidity`、`/api/recognition-records`、`/user/orchard/overview`。
+- 现货商城：`/api/store/products`、`/user/store/orders`、`/user/admin/store/*`。商城管理支持商品编辑与封面上传：`PUT /user/admin/store/products/{id}` 与 `POST /user/admin/store/products/{id}/cover`（multipart `image` 字段），封面图通过公开路由 `/store-images/{file_name}` 访问。
+- 历史批次团购兼容 API：`/api/commerce/*`、`/user/commerce/*`、`/user/admin/commerce/*`。这些接口与 `commerce_*` 表保留，新的 Web 界面不再主动调用它们。
 
-### 病害识别与记录
-
-- `POST /api/citrus-disease`：病害识别
-- `POST /api/citrus-disease-v2`：增强版病害识别
-- `POST /citrus/analyze`：调用 OpenRouter 做柑橘图像分析
-- `GET /api/recognition-records`：识别记录列表
-- `GET /api/disease-treatment`：病害处置建议
-- `GET /media/recognition_records/*`：识别图片静态访问
-
-### 任务与建议生成
-
-- `GET /api/tasks`：任务列表
-- `POST /api/tasks/add`：新增任务
-- `POST /api/tasks/complete`：完成任务
-- `POST /api/tasks/generate/disease`：根据病害生成任务
-- `POST /api/tasks/generate/environment`：根据环境生成任务
-- `GET /api/generate`：基于历史诊断记录生成施肥建议文本
-- `POST /api/generate/fertilization-plan`：生成结构化施肥方案
-
-### 脐橙商城（普通购买）
-
-公开销售接口：
-
-- `GET /api/store/products`：查询在售商品（名称、规格、售价、库存）
-
-登录用户接口：
-
-- `POST /user/store/orders`：创建普通购买订单，提交收货信息和商品明细
-- `GET /user/store/orders`：查询当前用户订单
-
-管理员商城接口：
-
-- `POST/GET /user/admin/store/products`：创建和查询商城商品
-- `POST /user/admin/store/products/{product_id}/toggle`：上下架商品
-- `POST /user/admin/store/orders`：查询全部订单
-- `POST /user/admin/store/orders/status`：推进订单状态（待收款、已付款、已发货、已完成等）
-- `POST /user/admin/store/overview`：查询在售商品数、订单数、交易金额和待处理订单
-
-当前商城使用 `price_cents` 记录金额，订单创建后默认为 `pending_payment`，暂不接入第三方支付。管理员可人工核销收款后通过订单状态接口推进支付、发货和完成流程；下单时会校验并扣减商品库存。
-
-### 管理员接口
-
-管理员接口挂在 `/user/admin/*` 下，包含：
-
-- 用户管理与管理员设置
-- 邀请码创建与查询
-- 系统设置读取与更新
-- 指定用户的果园总览与天气数据聚合
-- 仪表盘统计与日志
-- 待审核用户审批与驳回
-
-## 示例请求
-
-健康检查：
-
-```bash
-curl http://127.0.0.1:11000/health
-```
-
-上传叶片图片做病害识别：
-
-```bash
-curl -X POST http://127.0.0.1:11000/api/citrus-disease \
-  -F "username=demo" \
-  -F "area=NAVEL-001" \
-  -F "image=@./leaf.jpg"
-```
-
-生成施肥方案：
-
-```bash
-curl -X POST http://127.0.0.1:11000/api/generate/fertilization-plan \
-  -H "Content-Type: application/json" \
-  -d '{
-    "soilType": "红壤",
-    "phValue": 5.5,
-    "nitrogenLevel": "medium",
-    "phosphorusLevel": "low",
-    "potassiumLevel": "low",
-    "growthStage": "涨果期",
-    "treeAge": 5,
-    "areaSize": 1000
-  }'
-```
-
-## 数据表
-
-服务启动时会自动初始化以下核心表：
-
-- `app_users`
-- `app_sessions`
-- `app_invitations`
-- `app_pending_users`
-- `app_tasks`
-- `app_temperature_humidity`
-- `app_diagnosis_records`
-- `app_system_settings`
-- `app_admin_audit_logs`
-- `app_orchard_trees`
-- `app_tree_sensor_records`
-- `commerce_orchards`
-- `commerce_products`
-- `commerce_batches`
-- `commerce_batch_products`
-- `commerce_orders`
-- `commerce_order_items`
-- `commerce_order_status_logs`
-
-这意味着本项目默认采用“启动即建表”的方式，而不是独立迁移框架。
+跨域策略暂保持原有宽松行为以避免中断既有 API 调用；部署到公网时应在反向代理或后续配置中按调用方白名单收紧来源。
 
 ## 项目结构
 
 ```text
-.
-├── src/
-│   ├── main.rs                 # 服务入口
-│   ├── config.rs               # 配置加载
-│   ├── server.rs               # 路由注册与服务启动
-│   ├── server/                 # 页面、看板、识别记录、任务等处理器
-│   ├── user_routes/            # 登录、注册、管理员接口
-│   ├── inference/              # ONNX / 远端推理运行时
-│   ├── client/                 # OpenRouter 客户端与施肥建议调用
-│   ├── system_settings.rs      # 系统设置默认值与读取逻辑
-│   └── models.rs               # 请求/响应模型
-├── static/                     # 前端静态页面与资源
-│   └── uploads/                # 识别图片归档目录
-├── onnx/                       # 本地推理模型
-├── scripts/                    # 数据迁移与辅助脚本
-├── config.toml                 # 运行配置
-└── README.md
+src/
+├── main.rs                 # 启动入口
+├── config.rs               # TOML 配置
+├── server.rs               # Router、状态与服务生命周期
+├── server/                 # 核心、AI、商城和数据库初始化
+├── user_routes/            # 注册、会话、管理员与商城 API
+├── inference/              # ONNX 缓存推理与远程推理运行时
+├── client/                 # OpenRouter 和施肥建议客户端
+└── system_settings.rs      # 可配置业务设置
+static/                     # 原生多页前端
+storage/recognition_records/# 运行时识别图片（Git 忽略）
+onnx/                       # 本地模型
+scripts/                    # 运维与测试脚本
 ```
 
-## 开发命令
+## 验证
 
-```bash
+```powershell
+cargo fmt --check
 cargo check
 cargo test
-cargo fmt
 ```
 
-## 常见问题
-
-### 1. 服务启动时报数据库连接错误
-
-优先检查 `config.toml` 中的 `database.postgres_url`、数据库账号权限以及目标库是否存在。
-
-### 2. 识别接口返回模型加载失败
-
-通常是 `onnx/model_1.onnx` 或 `onnx/model_2.onnx` 路径不对，或文件本身缺失。
-
-### 3. AI 生成接口调用失败
-
-检查 `ai.openrouter_api_key` 是否有效，以及外网是否可以访问 OpenRouter。
-
-### 4. 为什么访问 `/admin.html` 会被重定向
-
-管理员页面要求管理员会话；普通用户或未登录访问时会被重定向到首页。
-
-## 相关文件
-
-- `scripts/migrate_sqlite_to_pg.py`：历史数据迁移脚本
-- `scripts/migrate_add_user_coordinates.sql`：用户坐标字段相关 SQL
-
-## 许可证
-
-仓库中未声明单独许可证时，请按团队或项目约定使用。
-
+`WebServer性能测试报告.md` 是本机短时 HTTP 基线，不包含 ONNX 推理和远端 AI 请求；生产容量需要独立压测机、真实数据库配置和长时混合流量验证。

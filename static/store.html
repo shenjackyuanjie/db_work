@@ -20,6 +20,7 @@
     </a>
     <nav class="app-nav" aria-label="主导航">
       <a class="app-nav__link" href="/store" aria-current="page">普通购买</a>
+      <a class="app-nav__link" href="/cart">购物车<span class="cart-nav-count" id="cartNavCount" hidden>0</span></a>
       <a class="app-nav__link" href="/analyze">病害识别</a>
       <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
       <a class="app-nav__link" id="adminNavLink" href="/admin" hidden>管理后台</a>
@@ -58,7 +59,7 @@
       </section>
 
       <aside class="store-side">
-        <section class="store-panel cart-panel" aria-labelledby="cartTitle">
+        <section class="store-panel cart-panel">
           <div class="section-heading section-heading--compact">
             <div>
               <div class="eyebrow">CART</div>
@@ -66,21 +67,10 @@
             </div>
             <span class="panel-status" id="cartStatus">空</span>
           </div>
-          <div id="cartEmpty" class="empty-block">选择商品并填写收货信息后提交订单。</div>
-          <form id="orderForm" hidden>
-            <div class="cart-items" id="cartItems"></div>
-            <div class="form-grid">
-              <label>收货人<input id="recipientName" name="recipient_name" required maxlength="40" /></label>
-              <label>联系电话<input id="recipientPhone" name="recipient_phone" inputmode="tel" required maxlength="30" /></label>
-            </div>
-            <label>收货地址<textarea id="shippingAddress" name="shipping_address" required maxlength="240" rows="3"></textarea></label>
-            <div class="order-total">
-              <div><span>订单金额</span><strong id="orderTotal">¥0.00</strong></div>
-              <small id="paymentHint">下单后等待管理员确认收款</small>
-            </div>
-            <button class="app-nav__button app-nav__button--primary submit-button" id="submitOrderButton" type="submit">提交订单</button>
-            <p class="form-note" id="loginNote" hidden>请先登录账户，再提交订单。</p>
-          </form>
+          <div class="cart-summary-box" id="cartSummary">
+            <div class="empty-block">还没有选择商品，快去挑选吧。</div>
+          </div>
+          <a class="app-nav__button app-nav__button--primary cart-checkout-link" href="/cart">去结算 · 进入购物车</a>
         </section>
 
         <section class="store-panel orders-panel" aria-labelledby="ordersTitle">

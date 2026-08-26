@@ -1,6 +1,7 @@
 (() => {
   const state = { products: [], cart: {}, session: null };
   const $ = (id) => document.getElementById(id);
+  const CART_KEY = "store_cart_v1";
 
   const statusLabels = {
     pending_payment: "待收款",
@@ -24,15 +25,54 @@
     return `¥${(Number(cents || 0) / 100).toFixed(2)}`;
   }
 
-  function cookieToken() {
-    const item = document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith("session_token="));
-    return item ? decodeURIComponent(item.slice("session_token=".length)) : "";
+  function loadCart() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CART_KEY) || "{}");
+      state.cart = parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      state.cart = {};
+    }
+  }
+
+  function saveCart() {
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(state.cart));
+    } catch {
+      /* localStorage 可能不可用，忽略 */
+    }
+  }
+
+  // 仅保留仍可购买的商品，并裁剪超出库存的数量。
+  function pruneCart() {
+    for (const [id, quantity] of Object.entries(state.cart)) {
+      const product = state.products.find((p) => p.id === Number(id));
+      if (!product || product.stock_quantity <= 0 || quantity <= 0) {
+        delete state.cart[id];
+      } else if (quantity > product.stock_quantity) {
+        state.cart[id] = product.stock_quantity;
+      }
+    }
+    saveCart();
+  }
+
+  // 只允许展示可信的封面来源，避免注入任意属性/URL。
+  function coverImageSrc(value) {
+    const src = String(value || "").trim();
+    if (/^(https?:\/\/|\/store-images\/|\/uploads\/)/.test(src)) return src;
+    return "";
+  }
+
+  function cartEntries() {
+    return Object.entries(state.cart)
+      .map(([productId, quantity]) => {
+        const product = state.products.find((p) => p.id === Number(productId));
+        return product ? { product, quantity } : null;
+      })
+      .filter(Boolean);
   }
 
   async function request(url, options = {}) {
     const headers = new Headers(options.headers || {});
-    const token = cookieToken();
-    if (token) headers.set("X-Session-Token", token);
     const response = await fetch(url, { ...options, headers, credentials: "same-origin" });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -59,7 +99,7 @@
     $("adminNavLink").hidden = !state.session?.is_admin;
     $("refreshOrdersButton").hidden = !loggedIn;
     $("ordersEmpty").hidden = loggedIn;
-    renderCart();
+    renderCartSummary();
   }
 
   async function validateSession() {
@@ -72,6 +112,43 @@
     renderSession();
   }
 
+  function renderCartSummary() {
+    const entries = cartEntries();
+    const count = entries.reduce((sum, entry) => sum + entry.quantity, 0);
+    const subtotal = entries.reduce((sum, entry) => sum + entry.product.price_cents * entry.quantity, 0);
+    const badge = $("cartNavCount");
+    badge.hidden = count === 0;
+    badge.textContent = count > 99 ? "99+" : String(count);
+
+    $("cartStatus").textContent = count ? `${count} 件` : "空";
+    if (!entries.length) {
+      $("cartSummary").innerHTML = '<div class="empty-block">还没有选择商品，快去挑选吧。</div>';
+      return;
+    }
+    $("cartSummary").innerHTML = `
+      <div class="mini-cart-list">
+        ${entries.map(({ product, quantity }) => `
+          <div class="mini-cart-item">
+            <div class="mini-cart-item__info">
+              <strong>${escapeHtml(product.name)}</strong>
+              <small>${escapeHtml(product.unit_label)} · ${money(product.price_cents)}</small>
+            </div>
+            <div class="mini-cart-item__qty">
+              <button type="button" data-dec-product="${product.id}" aria-label="减少">−</button>
+              <span>${quantity}</span>
+              <button type="button" data-inc-product="${product.id}" aria-label="增加">+</button>
+            </div>
+            <div class="mini-cart-item__line">${money(product.price_cents * quantity)}</div>
+            <button class="mini-cart-item__remove" type="button" data-remove-product="${product.id}" aria-label="移除">×</button>
+          </div>
+        `).join("")}
+      </div>
+      <div class="cart-summary-total">
+        <span>合计</span><strong>${money(subtotal)}</strong>
+      </div>
+    `;
+  }
+
   function renderProducts() {
     const list = $("productList");
     $("productCount").textContent = state.products.length;
@@ -82,8 +159,14 @@
 
     list.innerHTML = state.products.map((product) => {
       const soldOut = product.stock_quantity <= 0;
+      const coverSrc = coverImageSrc(product.cover_image);
       return `
         <article class="product-card">
+          <div class="product-card__image ${coverSrc ? "" : "product-card__image--placeholder"}">
+            ${coverSrc
+              ? `<img loading="lazy" src="${escapeHtml(coverSrc)}" alt="${escapeHtml(product.name)}" />`
+              : '<span class="product-card__placeholder-mark">橙</span>'}
+          </div>
           <div>
             <h3 class="product-card__name">${escapeHtml(product.name)}</h3>
             <div class="product-card__unit">${escapeHtml(product.unit_label)}</div>
@@ -100,62 +183,41 @@
     }).join("");
   }
 
-  function renderCart() {
-    const entries = Object.entries(state.cart)
-      .map(([productId, quantity]) => {
-        const product = state.products.find((p) => p.id === Number(productId));
-        return product ? { product, quantity } : null;
-      })
-      .filter(Boolean);
-    const loggedIn = Boolean(state.session?.username);
-    const count = entries.reduce((sum, entry) => sum + entry.quantity, 0);
-    $("cartStatus").textContent = count ? `${count} 件` : "空";
-    $("cartEmpty").hidden = entries.length > 0;
-    $("orderForm").hidden = entries.length === 0;
-    if (!entries.length) return;
-
-    $("cartItems").innerHTML = entries.map(({ product, quantity }) => `
-      <div class="cart-item">
-        <div class="cart-item__info">
-          <strong>${escapeHtml(product.name)}</strong>
-          <small>${escapeHtml(product.unit_label)} · 单价 ${money(product.price_cents)}</small>
-        </div>
-        <div class="cart-item__qty">
-          <button type="button" data-dec-product="${product.id}" aria-label="减少">−</button>
-          <span>${quantity}</span>
-          <button type="button" data-inc-product="${product.id}" aria-label="增加">+</button>
-        </div>
-        <div class="cart-item__price">${money(product.price_cents * quantity)}</div>
-      </div>
-    `).join("");
-
-    let total = 0;
-    entries.forEach(({ product, quantity }) => {
-      total += product.price_cents * quantity;
-    });
-    $("orderTotal").textContent = money(total);
-    $("loginNote").hidden = loggedIn;
-    $("submitOrderButton").disabled = !loggedIn;
-  }
-
   function renderOrders(orders) {
     const list = $("ordersList");
     if (!orders.length) {
       list.innerHTML = state.session ? '<div class="empty-block">还没有订单。</div>' : "";
       return;
     }
-    list.innerHTML = orders.map((order) => `
-      <article class="order-card">
-        <div class="order-card__top">
-          <strong>${escapeHtml(order.order_no)}</strong>
-          <span class="order-card__status">${statusLabels[order.status] || escapeHtml(order.status)}</span>
-        </div>
-        <div class="order-card__meta">
-          ${escapeHtml(order.recipient_name)} · ${escapeHtml(order.recipient_phone)}<br />
-          金额 ${money(order.total_cents)} · ${new Date(Number(order.created_at)).toLocaleString("zh-CN")}
-        </div>
-      </article>
-    `).join("");
+    list.innerHTML = orders.map((order) => {
+      const items = (Array.isArray(order.items) ? order.items : []).map((item) => {
+        const lineTotal = item.line_total_cents ?? item.unit_price_cents * item.quantity;
+        return `
+          <li class="order-item">
+            <span class="order-item__name">${escapeHtml(item.product_name)}${item.unit_label ? `（${escapeHtml(item.unit_label)}）` : ""}</span>
+            <span class="order-item__qty">× ${item.quantity}</span>
+            <span class="order-item__price">${money(lineTotal)}</span>
+          </li>
+        `;
+      }).join("");
+      const statusText = statusLabels[order.status] || escapeHtml(order.status);
+      return `
+        <article class="order-card">
+          <div class="order-card__top">
+            <strong>${escapeHtml(order.order_no)}</strong>
+            <span class="order-card__status order-card__status--${escapeHtml(order.status)}">${statusText}</span>
+          </div>
+          <div class="order-card__meta">
+            ${escapeHtml(order.recipient_name)} · ${escapeHtml(order.recipient_phone)}<br />
+            金额 ${money(order.total_cents)} · ${new Date(Number(order.created_at)).toLocaleString("zh-CN")}
+          </div>
+          <details class="order-card__items">
+            <summary>查看商品明细</summary>
+            <ul>${items || "<li class='order-item'>无商品明细</li>"}</ul>
+          </details>
+        </article>
+      `;
+    }).join("");
   }
 
   async function loadOrders() {
@@ -173,58 +235,35 @@
     try {
       const data = await request("/api/store/products");
       state.products = Array.isArray(data.products) ? data.products : [];
+      pruneCart();
       renderProducts();
-      renderCart();
-      $("storeMessage").textContent = state.products.length ? "选择商品加入购物车，填写收货信息后提交订单。" : "当前没有在售商品。";
+      renderCartSummary();
+      $("storeMessage").textContent = state.products.length ? "选择商品加入购物车，再到购物车页结算。" : "当前没有在售商品。";
     } catch (error) {
       $("storeMessage").textContent = error.message;
       showToast(error.message, true);
     }
   }
 
-  async function submitOrder(event) {
-    event.preventDefault();
-    if (!state.session) {
-      window.location.href = "/";
-      return;
+  function setCartQuantity(productId, quantity) {
+    const product = state.products.find((p) => p.id === productId);
+    const stock = Math.max(0, product?.stock_quantity ?? 0);
+    const next = Math.min(stock, Math.max(0, quantity));
+    if (next <= 0) {
+      delete state.cart[productId];
+    } else {
+      state.cart[productId] = next;
     }
-    const items = Object.entries(state.cart)
-      .map(([productId, quantity]) => ({ product_id: Number(productId), quantity }))
-      .filter((item) => item.quantity > 0);
-    if (!items.length) {
-      showToast("请至少选择一件商品", true);
-      return;
-    }
-
-    const button = $("submitOrderButton");
-    button.disabled = true;
-    button.textContent = "提交中...";
-    try {
-      const data = await request("/user/store/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          recipient_name: $("recipientName").value.trim(),
-          recipient_phone: $("recipientPhone").value.trim(),
-          shipping_address: $("shippingAddress").value.trim(),
-          items,
-        }),
-      });
-      showToast(`订单已提交：${data.order_no}`);
-      state.cart = {};
-      $("orderForm").reset();
-      await Promise.all([loadProducts(), loadOrders()]);
-      renderCart();
-    } catch (error) {
-      showToast(error.message, true);
-    } finally {
-      button.disabled = !state.session;
-      button.textContent = "提交订单";
-    }
+    saveCart();
+    renderCartSummary();
   }
 
   async function logout() {
-    try { await request("/user/logout", { method: "POST" }); } catch { /* session may already be expired */ }
+    try {
+      await request("/user/logout", { method: "POST" });
+    } catch {
+      /* 会话可能已过期 */
+    }
     state.session = null;
     renderSession();
     renderOrders([]);
@@ -234,44 +273,60 @@
   function bindEvents() {
     $("refreshButton").addEventListener("click", loadProducts);
     $("refreshOrdersButton").addEventListener("click", loadOrders);
-    $("orderForm").addEventListener("submit", submitOrder);
     $("logoutButton").addEventListener("click", logout);
 
     $("productList").addEventListener("click", (event) => {
       const button = event.target.closest("[data-add-product]");
       if (!button) return;
       const productId = Number(button.dataset.addProduct);
-      const input = document.querySelector(`input[data-product-id="${button.dataset.addProduct}"]`);
-      const quantity = Math.max(1, Number(input?.value || 1));
       const product = state.products.find((p) => p.id === productId);
-      const max = Math.max(0, product?.stock_quantity ?? 0);
-      state.cart[productId] = Math.min(max, (state.cart[productId] || 0) + quantity);
-      if (state.cart[productId] <= 0) delete state.cart[productId];
-      renderCart();
+      const stock = Math.max(0, product?.stock_quantity ?? 0);
+      if (stock <= 0) {
+        showToast("该商品暂时售罄", true);
+        return;
+      }
+      const input = document.querySelector(`input[data-product-id="${button.dataset.addProduct}"]`);
+      const raw = Number(input?.value || 1);
+      const quantity = Math.min(Math.max(1, Number.isFinite(raw) ? raw : 1), stock);
+      const current = state.cart[productId] || 0;
+      setCartQuantity(productId, Math.min(stock, current + quantity));
+      showToast(`已加入 ${quantity} 件 ${product.name}，去购物车结算`);
     });
 
-    $("cartItems").addEventListener("click", (event) => {
+    // 侧栏购物车摘要：数量增减与移除
+    $("cartSummary").addEventListener("click", (event) => {
       const dec = event.target.closest("[data-dec-product]");
       if (dec) {
         const id = Number(dec.dataset.decProduct);
-        state.cart[id] = Math.max(0, (state.cart[id] || 0) - 1);
-        if (state.cart[id] <= 0) delete state.cart[id];
-        renderCart();
+        setCartQuantity(id, (state.cart[id] || 0) - 1);
         return;
       }
       const inc = event.target.closest("[data-inc-product]");
       if (inc) {
         const id = Number(inc.dataset.incProduct);
         const product = state.products.find((p) => p.id === id);
-        const max = Math.max(0, product?.stock_quantity ?? 0);
-        state.cart[id] = Math.min(max, (state.cart[id] || 0) + 1);
-        if (state.cart[id] <= 0) delete state.cart[id];
-        renderCart();
+        const stock = Math.max(0, product?.stock_quantity ?? 0);
+        const next = (state.cart[id] || 0) + 1;
+        if (next > stock) {
+          showToast("已达库存上限", true);
+          return;
+        }
+        setCartQuantity(id, next);
+        return;
+      }
+      const remove = event.target.closest("[data-remove-product]");
+      if (remove) {
+        const id = Number(remove.dataset.removeProduct);
+        delete state.cart[id];
+        saveCart();
+        renderCartSummary();
+        showToast("已移除该商品");
       }
     });
   }
 
   async function init() {
+    loadCart();
     bindEvents();
     await validateSession();
     await loadProducts();

@@ -6,7 +6,6 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
 };
 use serde_json::json;
-use sqlx::Row;
 
 use super::super::{AppState, api_response, api_success, username_by_token};
 
@@ -25,16 +24,16 @@ pub(crate) async fn index_page_handler() -> Response {
     read_static_page("index.html", "首页").await
 }
 
-pub(crate) async fn commerce_page_handler() -> Response {
-    read_static_page("commerce.html", "开园团").await
-}
-
 pub(crate) async fn orchard_3d_page_handler() -> Response {
     read_static_page("orchard-3d.html", "3D 沙盘").await
 }
 
 pub(crate) async fn store_page_handler() -> Response {
     read_static_page("store.html", "普通购买").await
+}
+
+pub(crate) async fn cart_page_handler() -> Response {
+    read_static_page("cart.html", "购物车").await
 }
 
 async fn read_static_page(filename: &str, page_name: &str) -> Response {
@@ -129,35 +128,11 @@ pub(crate) async fn api_user_handler(
             .into_response();
     }
 
-    let row = sqlx::query(
-        "SELECT username, created_at, latitude, longitude FROM app_users ORDER BY created_at ASC LIMIT 1",
+    api_response(
+        StatusCode::UNAUTHORIZED,
+        401,
+        "authentication required",
+        serde_json::Value::Null,
     )
-    .fetch_optional(&state.db)
-    .await;
-
-    match row {
-        Ok(Some(user)) => api_success(json!({
-            "id": user.try_get::<String, _>("username").unwrap_or_default(),
-            "username": user.try_get::<String, _>("username").unwrap_or_default(),
-            "email": null,
-            "orchard_address": null,
-            "latitude": user.try_get::<Option<f64>, _>("latitude").unwrap_or(None),
-            "longitude": user.try_get::<Option<f64>, _>("longitude").unwrap_or(None),
-            "created_at": user.try_get::<i64, _>("created_at").unwrap_or(0)
-        })),
-        Ok(None) => api_response(
-            StatusCode::NOT_FOUND,
-            404,
-            "User not found",
-            serde_json::Value::Null,
-        )
-        .into_response(),
-        Err(err) => api_response(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            500,
-            format!("db error: {}", err),
-            serde_json::Value::Null,
-        )
-        .into_response(),
-    }
+    .into_response()
 }

@@ -1,6 +1,6 @@
 use axum::{
     Json,
-    extract::{Json as AxumJson, Path, State},
+    extract::{Json as AxumJson, Multipart, Path, State},
     http::{HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
@@ -11,7 +11,7 @@ use std::collections::HashSet;
 use uuid::Uuid;
 
 use crate::{
-    server::{AppState, api_response, api_success, now_millis},
+    server::{AppState, api_response, api_success, now_millis, save_store_cover_image},
     system_settings::append_audit_log,
 };
 
@@ -26,6 +26,10 @@ const STORE_ORDER_STATUSES: &[&str] = &[
     "refunded",
 ];
 
+/// 商城商品封面上传大小与尺寸上限。
+const MAX_STORE_COVER_BYTES: usize = 8 * 1024 * 1024;
+const MAX_STORE_COVER_DIMENSION: u32 = 4096;
+
 #[derive(Debug, Deserialize)]
 pub(crate) struct CreateStoreProductRequest {
     pub name: String,
@@ -36,6 +40,21 @@ pub(crate) struct CreateStoreProductRequest {
     #[serde(default)]
     pub description: String,
     pub cover_image: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub(crate) struct UpdateStoreProductRequest {
+    pub name: String,
+    pub sku: String,
+    pub unit_label: String,
+    pub price_cents: i64,
+    pub stock_quantity: i32,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub cover_image: Option<String>,
+    #[serde(default)]
+    pub is_active: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -235,6 +254,181 @@ pub(crate) async fn toggle_store_product_handler(
     )
     .await;
     api_success(json!({ "id": product_id }))
+}
+
+pub(crate) async fn update_store_product_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(product_id): Path<i64>,
+    AxumJson(payload): AxumJson<UpdateStoreProductRequest>,
+) -> Response {
+    let admin = match ensure_admin(&state, &headers).await {
+        Ok(username) => username,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+    if payload.name.trim().is_empty()
+        || payload.sku.trim().is_empty()
+        || payload.unit_label.trim().is_empty()
+        || payload.price_cents <= 0
+        || payload.stock_quantity < 0
+    {
+        return error_response(StatusCode::BAD_REQUEST, 400, "商品信息不完整");
+    }
+    let cover_image = payload
+        .cover_image
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty());
+    let now = now_millis() as i64;
+    let affected = sqlx::query(
+        "UPDATE store_products SET name = $1, sku = $2, unit_label = $3, price_cents = $4, stock_quantity = $5, description = $6, cover_image = $7, is_active = $8, updated_at = $9 WHERE id = $10",
+    )
+    .bind(payload.name.trim())
+    .bind(payload.sku.trim())
+    .bind(payload.unit_label.trim())
+    .bind(payload.price_cents)
+    .bind(payload.stock_quantity)
+    .bind(payload.description.trim())
+    .bind(cover_image)
+    .bind(payload.is_active.unwrap_or(true))
+    .bind(now)
+    .bind(product_id)
+    .execute(&state.db)
+    .await
+    .map(|result| result.rows_affected())
+    .unwrap_or(0);
+    if affected == 0 {
+        return error_response(StatusCode::NOT_FOUND, 404, "商品不存在");
+    }
+    let _ = append_audit_log(
+        &state.db,
+        "action",
+        Some(&admin),
+        &format!(
+            "更新商城商品: {} ({})",
+            payload.name.trim(),
+            payload.sku.trim()
+        ),
+    )
+    .await;
+    api_success(json!({ "id": product_id }))
+}
+
+pub(crate) async fn upload_store_cover_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Path(product_id): Path<i64>,
+    mut multipart: Multipart,
+) -> Response {
+    let admin = match ensure_admin(&state, &headers).await {
+        Ok(username) => username,
+        Err((code, body)) => return (code, Json(body)).into_response(),
+    };
+    let exists = sqlx::query_scalar::<_, i64>("SELECT id FROM store_products WHERE id = $1")
+        .bind(product_id)
+        .fetch_optional(&state.db)
+        .await
+        .map(|row| row.is_some())
+        .unwrap_or(false);
+    if !exists {
+        return error_response(StatusCode::NOT_FOUND, 404, "商品不存在");
+    }
+
+    let mut cover_image: Option<String> = None;
+    loop {
+        match multipart.next_field().await {
+            Ok(Some(field)) => {
+                if field.name().map(|name| name == "image").unwrap_or(false) {
+                    let mime_type = field
+                        .content_type()
+                        .map(|value| value.to_string())
+                        .unwrap_or_else(|| "image/jpeg".to_string());
+                    match field.bytes().await {
+                        Ok(bytes) => {
+                            if bytes.len() > MAX_STORE_COVER_BYTES {
+                                return error_response(
+                                    StatusCode::BAD_REQUEST,
+                                    400,
+                                    "封面图片过大，最大 8MB",
+                                );
+                            }
+                            match image::ImageReader::new(std::io::Cursor::new(&bytes))
+                                .with_guessed_format()
+                                .map_err(|_| ())
+                                .and_then(|reader| reader.into_dimensions().map_err(|_| ()))
+                            {
+                                Ok((width, height)) => {
+                                    if width > MAX_STORE_COVER_DIMENSION
+                                        || height > MAX_STORE_COVER_DIMENSION
+                                    {
+                                        return error_response(
+                                            StatusCode::BAD_REQUEST,
+                                            400,
+                                            "封面图片尺寸过大，最长边不可超过 4096px",
+                                        );
+                                    }
+                                }
+                                Err(_) => {
+                                    return error_response(
+                                        StatusCode::BAD_REQUEST,
+                                        400,
+                                        "封面图片无法解析，请上传有效的图片",
+                                    );
+                                }
+                            }
+                            match save_store_cover_image(&mime_type, &bytes) {
+                                Ok(path) => cover_image = Some(path),
+                                Err(error) => {
+                                    return error_response(
+                                        StatusCode::BAD_REQUEST,
+                                        400,
+                                        &error.to_string(),
+                                    );
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            return error_response(StatusCode::BAD_REQUEST, 400, "读取图片失败");
+                        }
+                    }
+                }
+            }
+            Ok(None) => break,
+            Err(error) => {
+                return error_response(
+                    StatusCode::BAD_REQUEST,
+                    400,
+                    &format!("解析上传失败: {}", error),
+                );
+            }
+        }
+    }
+    let cover_image = match cover_image {
+        Some(path) => path,
+        None => return error_response(StatusCode::BAD_REQUEST, 400, "缺少 image 字段"),
+    };
+
+    let now = now_millis() as i64;
+    let affected =
+        sqlx::query("UPDATE store_products SET cover_image = $1, updated_at = $2 WHERE id = $3")
+            .bind(&cover_image)
+            .bind(now)
+            .bind(product_id)
+            .execute(&state.db)
+            .await
+            .map(|result| result.rows_affected())
+            .unwrap_or(0);
+    if affected == 0 {
+        return error_response(StatusCode::NOT_FOUND, 404, "商品不存在");
+    }
+    let _ = append_audit_log(
+        &state.db,
+        "action",
+        Some(&admin),
+        &format!("更新商城商品封面: id={}", product_id),
+    )
+    .await;
+    api_success(json!({ "id": product_id, "cover_image": cover_image }))
 }
 
 pub(crate) async fn create_store_order_handler(

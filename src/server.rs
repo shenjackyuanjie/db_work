@@ -24,11 +24,11 @@ mod shared;
 
 pub(crate) use shared::{
     AddTaskRequest, AppState, CompleteTaskRequest, DiseaseTreatmentQuery,
-    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, RECOGNITION_RECORDS_UPLOAD_DIR,
-    TagTemperatureHumidityRequest, TaskRecord, TemperatureHumiditySample, UsernameQuery,
-    api_response, api_success, build_temp_humidity_payload, classify_environment_risk,
-    default_temperature_samples, disease_treatment_text, normalize_recognition_record_image_path,
-    now_millis, risk_from_disease_name, save_recognition_record_image, task_payload, user_exists,
+    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, TagTemperatureHumidityRequest,
+    TaskRecord, TemperatureHumiditySample, UsernameQuery, api_response, api_success,
+    build_temp_humidity_payload, classify_environment_risk, default_temperature_samples,
+    disease_treatment_text, normalize_recognition_record_image_path, now_millis,
+    risk_from_disease_name, save_recognition_record_image, save_store_cover_image, task_payload,
     username_by_token,
 };
 
@@ -44,18 +44,19 @@ async fn log_request_path(req: Request<Body>, next: Next) -> Response {
     next.run(req).await
 }
 
-pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
+pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::Result<Router> {
     let api_key = config.ai.openrouter_api_key.clone();
 
     let client = OpenRouterClient::new(api_key);
-    let inference = crate::inference::InferenceRuntime::new(&config.inference, client.clone());
+    let inference = crate::inference::InferenceRuntime::new(&config.inference, client.clone())?;
     let state = AppState {
         client,
         inference,
         db,
+        secure_session_cookie: config.server.secure_session_cookie,
     };
 
-    Router::new()
+    Ok(Router::new()
         .route("/health", get(handlers_core::health_handler))
         .route("/", get(handlers_core::index_page_handler))
         .route(
@@ -95,15 +96,24 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             "/analyze.html",
             get(|| async { axum::response::Redirect::permanent("/analyze") }),
         )
-        .route("/commerce", get(handlers_core::commerce_page_handler))
+        // 已保留的历史入口：开团页面已合并到现货商城。
+        .route(
+            "/commerce",
+            get(|| async { axum::response::Redirect::permanent("/store") }),
+        )
         .route(
             "/commerce.html",
-            get(|| async { axum::response::Redirect::permanent("/commerce") }),
+            get(|| async { axum::response::Redirect::permanent("/store") }),
         )
         .route("/store", get(handlers_core::store_page_handler))
         .route(
             "/store.html",
             get(|| async { axum::response::Redirect::permanent("/store") }),
+        )
+        .route("/cart", get(handlers_core::cart_page_handler))
+        .route(
+            "/cart.html",
+            get(|| async { axum::response::Redirect::permanent("/cart") }),
         )
         .route("/orchard-3d", get(handlers_core::orchard_3d_page_handler))
         .route(
@@ -162,10 +172,18 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
             "/api/store/products",
             get(handlers_store::storefront_handler),
         )
+        .route(
+            "/store-images/{file_name}",
+            get(handlers_store::store_cover_image_handler),
+        )
         .nest("/user", crate::user_routes::router(state.clone()))
-        .nest_service(
-            "/media/recognition_records",
-            ServeDir::new(RECOGNITION_RECORDS_UPLOAD_DIR),
+        .route(
+            "/media/recognition_records/{file_name}",
+            get(handlers_core::recognition_image_handler),
+        )
+        .route(
+            "/uploads/{file_name}",
+            get(handlers_core::recognition_image_handler),
         )
         .fallback_service(ServeDir::new("static"))
         .layer(axum::middleware::from_fn(log_request_path))
@@ -175,7 +193,7 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> Router {
                 .allow_methods(Any)
                 .allow_headers(Any),
         )
-        .with_state(state.clone())
+        .with_state(state.clone()))
 }
 
 pub fn init_tracing(log_level: &str) {
@@ -228,13 +246,13 @@ pub async fn run_server(config: crate::config::AppConfig) -> anyhow::Result<()> 
         .parse()
         .map_err(|e| anyhow::anyhow!("解析 server.addr 失败: {}", e))?;
     let db = PgPoolOptions::new()
-        .max_connections(3)
+        .max_connections(config.server.database_max_connections)
         .connect(&config.database.postgres_url)
         .await
         .map_err(|e| anyhow::anyhow!("连接 PostgreSQL 失败: {}", e))?;
-    bootstrap::init_database(&db).await?;
+    bootstrap::init_database(&db, config.bootstrap.seed_demo_data).await?;
 
-    let app = create_router(&config, db);
+    let app = create_router(&config, db)?;
 
     let listener = tokio::net::TcpListener::bind(addr)
         .await

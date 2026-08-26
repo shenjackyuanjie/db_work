@@ -10,14 +10,18 @@ use sqlx::{PgPool, Row};
 
 use crate::client::OpenRouterClient;
 
-pub(crate) const RECOGNITION_RECORDS_UPLOAD_DIR: &str = "static/uploads";
+pub(crate) const RECOGNITION_RECORDS_UPLOAD_DIR: &str = "storage/recognition_records";
 const RECOGNITION_RECORDS_MEDIA_PREFIX: &str = "/media/recognition_records";
+
+pub(crate) const STORE_COVER_UPLOAD_DIR: &str = "storage/store_covers";
+pub(crate) const STORE_COVER_MEDIA_PREFIX: &str = "/store-images";
 
 #[derive(Clone)]
 pub struct AppState {
     pub client: OpenRouterClient,
     pub inference: crate::inference::InferenceRuntime,
     pub db: PgPool,
+    pub secure_session_cookie: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -36,15 +40,16 @@ pub struct TaskRecord {
 
 #[derive(Debug, Clone)]
 pub struct TemperatureHumiditySample {
-    pub username: Option<String>,
     pub timestamp: u64,
     pub temperature: f64,
     pub humidity: f64,
 }
 
+/// 保留历史查询参数；受保护接口会以当前会话账户为准。
 #[derive(Debug, Deserialize)]
 pub struct UsernameQuery {
-    pub username: String,
+    #[serde(default)]
+    pub username: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -54,6 +59,7 @@ pub struct DiseaseTreatmentQuery {
 
 #[derive(Debug, Deserialize)]
 pub struct AddTaskRequest {
+    #[serde(default)]
     pub username: String,
     pub title: String,
     pub description: String,
@@ -70,11 +76,13 @@ pub struct CompleteTaskRequest {
 #[derive(Debug, Deserialize)]
 pub struct GenerateDiseaseTaskRequest {
     pub disease_name: String,
+    #[serde(default)]
     pub username: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct GenerateEnvironmentTaskRequest {
+    #[serde(default)]
     pub username: String,
     pub temperature: f64,
     pub humidity: f64,
@@ -82,6 +90,7 @@ pub struct GenerateEnvironmentTaskRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct TagTemperatureHumidityRequest {
+    #[serde(default)]
     pub username: String,
     pub temperature: f64,
     pub humidity: f64,
@@ -121,10 +130,6 @@ pub(crate) fn normalize_recognition_record_image_path(path: Option<&str>) -> Opt
         return Some(trimmed.to_string());
     }
 
-    if trimmed.starts_with('/') {
-        return Some(format!("http://shenjack.top:11000{}", trimmed));
-    }
-
     if trimmed.starts_with("/uploads/")
         || trimmed.starts_with("uploads/")
         || trimmed.starts_with("/media/recognition_records/")
@@ -160,6 +165,27 @@ pub(crate) fn save_recognition_record_image(
     std::fs::write(&full_path, &bytes).map_err(|e| anyhow::anyhow!("写入图片失败: {}", e))?;
 
     Ok(recognition_record_public_path(&file_name))
+}
+
+/// 保存商城商品封面图，返回公开访问路径 `/store-images/{file_name}`。
+pub(crate) fn save_store_cover_image(mime_type: &str, bytes: &[u8]) -> anyhow::Result<String> {
+    let extension = match mime_type {
+        "image/jpeg" | "image/jpg" => "jpg",
+        "image/png" => "png",
+        "image/webp" => "webp",
+        _ => return Err(anyhow::anyhow!("仅支持 JPEG / PNG / WebP 图片")),
+    };
+    if bytes.is_empty() {
+        return Err(anyhow::anyhow!("图片内容为空"));
+    }
+    let file_name = format!("{}.{}", uuid::Uuid::new_v4(), extension);
+    let full_path = format!("{STORE_COVER_UPLOAD_DIR}/{file_name}");
+
+    std::fs::create_dir_all(STORE_COVER_UPLOAD_DIR)
+        .map_err(|e| anyhow::anyhow!("创建封面目录失败: {}", e))?;
+    std::fs::write(&full_path, bytes).map_err(|e| anyhow::anyhow!("写入封面失败: {}", e))?;
+
+    Ok(format!("{STORE_COVER_MEDIA_PREFIX}/{file_name}"))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -209,19 +235,10 @@ pub(crate) fn api_success(data: serde_json::Value) -> Response {
     api_response(StatusCode::OK, 200, "success", data)
 }
 
-pub(crate) async fn user_exists(state: &AppState, username: &str) -> bool {
-    sqlx::query("SELECT 1 FROM app_users WHERE username = $1 LIMIT 1")
-        .bind(username)
-        .fetch_optional(&state.db)
-        .await
-        .ok()
-        .flatten()
-        .is_some()
-}
-
 pub(crate) async fn username_by_token(state: &AppState, token: &str) -> Option<String> {
-    sqlx::query("SELECT username FROM app_sessions WHERE token = $1 LIMIT 1")
+    sqlx::query("SELECT username FROM app_sessions WHERE token = $1 AND expires_at > $2 LIMIT 1")
         .bind(token)
+        .bind(crate::user_routes::now_secs() as i64)
         .fetch_optional(&state.db)
         .await
         .ok()
@@ -290,7 +307,6 @@ pub(crate) fn default_temperature_samples() -> Vec<TemperatureHumiditySample> {
         .zip(humidities.iter())
         .enumerate()
         .map(|(index, (temp, humidity))| TemperatureHumiditySample {
-            username: None,
             timestamp: now
                 .saturating_sub(((temperatures.len() - index - 1) as u64) * 10 * 60 * 1000),
             temperature: *temp,
