@@ -1,34 +1,105 @@
-flowchart LR
-    User[普通用户]
-    Admin[管理员]
+---
+title: 柑橘果园智能诊断与管理系统
+---
 
-    subgraph System[柑橘果园智能诊断与管理系统]
-        UC1([注册、登录与退出])
-        UC2([上传叶片图像并查看诊断结果])
-        UC3([查询诊断记录、温湿度与健康状态])
-        UC4([查看、新建和完成农事任务])
-        UC5([生成施肥辅助建议])
-        UC6([查看三维果园状态])
-        UC7([管理用户、邀请码与注册审核])
-        UC8([维护系统设置、查看统计与审计日志])
+%%{init: {
+  "theme": "base",
+  "flowchart": {
+    "curve": "basis",
+    "nodeSpacing": 14,
+    "rankSpacing": 18,
+    "padding": 14
+  },
+  "themeVariables": {
+    "fontFamily": "Microsoft YaHei, Noto Sans SC, sans-serif",
+    "fontSize": "40px",
+    "primaryColor": "#F7FAFF",
+    "primaryBorderColor": "#4A78A8",
+    "primaryTextColor": "#202020",
+    "lineColor": "#6B7280",
+    "clusterBkg": "#FCFDF8",
+    "clusterBorder": "#B5BD83"
+  }
+}}%%
+
+flowchart LR
+
+    %% 角色
+    subgraph ACTOR["角色"]
+        direction TB
+        U["普通用户"]
+        A["管理员"]
+        A -. 权限继承 .-> U
     end
 
-    User --> UC1
-    User --> UC2
-    User --> UC3
-    User --> UC4
-    User --> UC5
-    User --> UC6
-    Admin --> UC1
-    Admin --> UC2
-    Admin --> UC3
-    Admin --> UC4
-    Admin --> UC5
-    Admin --> UC6
-    Admin --> UC7
-    Admin --> UC8
+    %% 系统
+    subgraph SYS[" "]
+        direction TB
 
-    classDef actor fill:#fff7e6,stroke:#b26a00,stroke-width:1.5px,color:#222;
-    classDef usecase fill:#eef5ff,stroke:#2468a2,stroke-width:1.2px,color:#222;
-    class User,Admin actor;
-    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8 usecase;
+        subgraph ACCOUNT[" "]
+            direction LR
+            ACCOUNT_TITLE["账户与身份"]
+            UC1(["注册"])
+            UC2(["登录"])
+            UC3(["退出"])
+            ACCOUNT_TITLE ~~~ UC1 ~~~ UC2 ~~~ UC3
+        end
+
+        subgraph DIAG[" "]
+            direction LR
+            DIAG_TITLE["病害诊断"]
+            UC4(["上传叶片图像"])
+            UC5(["查看诊断结果"])
+            UC6(["查询历史诊断记录"])
+            DIAG_TITLE ~~~ UC4 ~~~ UC5 ~~~ UC6
+        end
+
+        subgraph MONITOR[" "]
+            direction LR
+            MONITOR_TITLE["果园监测与辅助决策"]
+            UC7(["查看温湿度"])
+            UC8(["查看健康状态"])
+            UC9(["查看三维果园状态"])
+            UC10(["生成施肥辅助建议"])
+            MONITOR_TITLE ~~~ UC7 ~~~ UC8 ~~~ UC9 ~~~ UC10
+        end
+
+        subgraph TASK[" "]
+            direction LR
+            TASK_TITLE["农事管理"]
+            UC11(["查看农事任务"])
+            UC12(["新建农事任务"])
+            UC13(["完成农事任务"])
+            TASK_TITLE ~~~ UC11 ~~~ UC12 ~~~ UC13
+        end
+
+        subgraph ADMIN[" "]
+            direction LR
+            ADMIN_TITLE["系统管理"]
+            UC14(["用户管理"])
+            UC15(["邀请码管理"])
+            UC16(["注册审核"])
+            UC17(["系统设置维护"])
+            UC18(["查看统计信息"])
+            UC19(["查看审计日志"])
+            ADMIN_TITLE ~~~ UC14 ~~~ UC15 ~~~ UC16 ~~~ UC17 ~~~ UC18 ~~~ UC19
+        end
+    end
+
+    %% 普通用户权限
+    U --> ACCOUNT
+    U --> DIAG
+    U --> MONITOR
+    U --> TASK
+
+    %% 管理员专属权限
+    A --> ADMIN
+
+    %% 样式
+    classDef actor fill:#FFF8E8,stroke:#C98218,stroke-width:1.5px,color:#222;
+    classDef usecase fill:#F7FAFF,stroke:#4679B8,stroke-width:1.2px,color:#222;
+    classDef group_title fill:transparent,stroke:transparent,color:#4B5563,font-weight:bold;
+
+    class U,A actor;
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7,UC8,UC9,UC10,UC11,UC12,UC13,UC14,UC15,UC16,UC17,UC18,UC19 usecase;
+    class ACCOUNT_TITLE,DIAG_TITLE,MONITOR_TITLE,TASK_TITLE,ADMIN_TITLE group_title;
