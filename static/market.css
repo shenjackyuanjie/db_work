@@ -1,0 +1,196 @@
+:root {
+  --app-primary: #ff5000;
+  --app-primary-hover: #df4500;
+  --store-orange: #ff5000;
+  --store-bg: #f6f6f6;
+  --store-orange-soft: #fff0e7;
+}
+body {
+  background:
+    radial-gradient(ellipse at 80% 0, #ffe6d1, transparent 40%), #f6f6f6;
+}
+.store-shell {
+  max-width: 1440px;
+  margin: auto;
+  padding: 26px;
+}
+.store-hero {
+  background: linear-gradient(115deg, #fff0d9, #ffdab1);
+  border: 0;
+  border-radius: 20px;
+  padding: 38px;
+  position: relative;
+  overflow: hidden;
+}
+.store-hero h1 {
+  color: #80320d;
+  font-family: "STSong", "SimSun", serif;
+  font-size: clamp(30px, 4vw, 50px);
+  letter-spacing: 2px;
+}
+.store-hero .eyebrow {
+  color: #b54614;
+}
+.hero-facts strong {
+  color: #a3390c;
+}
+.market-search {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: white;
+  padding: 16px 22px;
+  margin: 22px 0 0;
+  border-radius: 14px;
+}
+.market-search label {
+  font-size: 21px;
+  font-weight: bold;
+  color: #ff5000;
+  white-space: nowrap;
+}
+.market-search input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid #ff5000;
+  border-radius: 30px;
+  padding: 13px 20px;
+  background: white;
+  color: #292524;
+}
+.market-search button,
+.market-benefits button {
+  border: 0;
+  border-radius: 24px;
+  background: #ff5000;
+  color: white;
+  padding: 12px 24px;
+  cursor: pointer;
+}
+.market-benefits {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  color: #9c471c;
+}
+.market-benefits button {
+  background: transparent;
+  color: #c74608;
+  padding: 6px;
+}
+.store-layout {
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 22px;
+}
+.product-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.product-card {
+  background: #fff;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  overflow: hidden;
+  transition:
+    transform 0.18s,
+    border-color 0.18s;
+}
+.product-card:hover {
+  border-color: #ff5000;
+  transform: translateY(-3px);
+}
+.product-card__image {
+  aspect-ratio: 1.15;
+  background: radial-gradient(circle at 35% 35%, #fff4d0, #ffc96d);
+}
+.product-card__placeholder-mark {
+  color: #c76617;
+  font-family: "STSong", "SimSun", serif;
+  font-size: 70px;
+}
+.product-card__price {
+  color: #ff5000;
+  font-size: 28px;
+  font-weight: 800;
+}
+.product-card__name {
+  font-size: 17px;
+}
+.product-card__buy button {
+  border-radius: 24px;
+}
+.store-panel {
+  border-radius: 16px;
+}
+.section-heading select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  color: #444;
+}
+.app-brand__mark {
+  background: #ff5000;
+}
+@media (max-width: 1150px) {
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 850px) {
+  .store-layout {
+    grid-template-columns: 1fr;
+  }
+  .store-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .market-search label {
+    display: none;
+  }
+}
+@media (max-width: 560px) {
+  .store-shell {
+    padding: 12px;
+  }
+  .store-hero {
+    padding: 22px;
+  }
+  .hero-facts {
+    display: none;
+  }
+  .market-search {
+    padding: 12px;
+    gap: 8px;
+  }
+  .market-search button {
+    padding: 12px;
+    white-space: nowrap;
+  }
+  .market-benefits {
+    font-size: 12px;
+    flex-wrap: wrap;
+  }
+  .store-side {
+    grid-template-columns: 1fr;
+  }
+  .product-grid {
+    gap: 9px;
+  }
+  .product-card {
+    padding: 10px;
+  }
+  .product-card__buy {
+    flex-wrap: wrap;
+  }
+  .product-card__buy button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .product-card {
+    transition: none;
+  }
+}

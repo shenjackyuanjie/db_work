@@ -1,93 +1,152 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>购物车 | 橙管家</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/store.css" />
+    <link rel="stylesheet" href="/cart.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>购物车 | 橙管家</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <link rel="stylesheet" href="/store.css" />
-  <link rel="stylesheet" href="/cart.css" />
-</head>
+  <body>
+    <header class="app-header">
+      <a class="app-brand" href="/store">
+        <span class="app-brand__mark" aria-hidden="true">橙</span>
+        <span class="app-brand__copy">
+          <span class="app-brand__name">橙管家</span>
+          <span class="app-brand__page">赣南脐橙现货商城</span>
+        </span>
+      </a>
+      <nav class="app-nav" aria-label="主导航">
+        <a class="app-nav__link" href="/store">普通购买</a>
+        <a class="app-nav__link" href="/cart" aria-current="page"
+          >购物车<span class="cart-nav-count" id="cartNavCount" hidden
+            >0</span
+          ></a
+        >
+        <a class="app-nav__link" href="/analyze">病害识别</a>
+        <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
+        <a class="app-nav__link" id="adminNavLink" href="/admin" hidden
+          >管理后台</a
+        >
+        <span class="app-nav__divider" aria-hidden="true"></span>
+        <span class="badge" id="loginBadge">未登录</span>
+        <a class="app-nav__link" id="loginNavLink" href="/">登录 / 注册</a>
+        <button
+          class="app-nav__button app-nav__button--danger"
+          id="logoutButton"
+          type="button"
+          hidden
+        >
+          退出登录
+        </button>
+      </nav>
+    </header>
 
-<body>
-  <header class="app-header">
-    <a class="app-brand" href="/store">
-      <span class="app-brand__mark" aria-hidden="true">橙</span>
-      <span class="app-brand__copy">
-        <span class="app-brand__name">橙管家</span>
-        <span class="app-brand__page">赣南脐橙现货商城</span>
-      </span>
-    </a>
-    <nav class="app-nav" aria-label="主导航">
-      <a class="app-nav__link" href="/store">普通购买</a>
-      <a class="app-nav__link" href="/cart" aria-current="page">购物车<span class="cart-nav-count" id="cartNavCount" hidden>0</span></a>
-      <a class="app-nav__link" href="/analyze">病害识别</a>
-      <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
-      <a class="app-nav__link" id="adminNavLink" href="/admin" hidden>管理后台</a>
-      <span class="app-nav__divider" aria-hidden="true"></span>
-      <span class="badge" id="loginBadge">未登录</span>
-      <a class="app-nav__link" id="loginNavLink" href="/">登录 / 注册</a>
-      <button class="app-nav__button app-nav__button--danger" id="logoutButton" type="button" hidden>退出登录</button>
-    </nav>
-  </header>
-
-  <main class="cart-shell">
-    <section class="cart-head" aria-labelledby="pageTitle">
-      <div>
-        <div class="eyebrow">SHOPPING CART</div>
-        <h1 id="pageTitle">购物车</h1>
-        <p class="cart-head__sub">核对商品与数量，填写收货信息后提交订单。订单需登录后提交。</p>
-      </div>
-      <a class="cart-head__continue" href="/store">← 继续选购</a>
-    </section>
-
-    <div class="message-bar cart-message" id="cartMessage" role="status">正在加载购物车...</div>
-
-    <section class="cart-empty" id="cartEmpty" hidden>
-      <div class="cart-empty__mark">橙</div>
-      <h2>购物车还是空的</h2>
-      <p>去挑选几款赣南产地直发的脐橙吧。</p>
-      <a class="app-nav__button app-nav__button--primary" href="/store">去逛逛</a>
-    </section>
-
-    <div class="cart-layout" id="cartLayout" hidden>
-      <section class="cart-main" aria-labelledby="itemsTitle">
-        <div class="cart-table cart-table--head" aria-hidden="true">
-          <span>商品</span><span>单价</span><span>数量</span><span>小计</span><span></span>
+    <main class="cart-shell">
+      <section class="cart-head" aria-labelledby="pageTitle">
+        <div>
+          <div class="eyebrow">SHOPPING CART</div>
+          <h1 id="pageTitle">购物车</h1>
+          <p class="cart-head__sub">
+            核对商品与数量，填写收货信息后提交订单。订单需登录后提交。
+          </p>
         </div>
-        <div class="cart-items" id="cartItems"></div>
+        <a class="cart-head__continue" href="/store">← 继续选购</a>
       </section>
 
-      <aside class="cart-side">
-        <section class="cart-panel">
-          <div class="section-heading section-heading--compact">
-            <div>
-              <div class="eyebrow">ORDER SUMMARY</div>
-              <h2>订单摘要</h2>
-            </div>
-          </div>
-          <div class="cart-summary">
-            <div><span>商品件数</span><strong id="summaryQty">0 件</strong></div>
-            <div><span>商品小计</span><strong id="summarySubtotal">¥0.00</strong></div>
-            <div><span>运费</span><strong class="summary-free">免运费</strong></div>
-            <div class="cart-summary__total"><span>应付合计</span><strong id="summaryTotal">¥0.00</strong></div>
-          </div>
+      <div class="message-bar cart-message" id="cartMessage" role="status">
+        正在加载购物车...
+      </div>
 
-          <form id="checkoutForm" class="checkout-form">
-            <label>收货人<input id="recipientName" name="recipient_name" required maxlength="40" placeholder="请输入姓名" /></label>
-            <label>联系电话<input id="recipientPhone" name="recipient_phone" inputmode="tel" required maxlength="30" placeholder="请输入手机号" /></label>
-            <label>收货地址<textarea id="shippingAddress" name="shipping_address" required maxlength="240" rows="3" placeholder="省市区 / 街道 / 门牌号"></textarea></label>
-            <button class="app-nav__button app-nav__button--primary submit-button" id="submitOrderButton" type="submit">提交订单</button>
-            <p class="form-note" id="loginNote" hidden>请先登录账户，再提交订单。</p>
-          </form>
+      <section class="cart-empty" id="cartEmpty" hidden>
+        <div class="cart-empty__mark">橙</div>
+        <h2>购物车还是空的</h2>
+        <p>去挑选几款赣南产地直发的脐橙吧。</p>
+        <a class="app-nav__button app-nav__button--primary" href="/store"
+          >去逛逛</a
+        >
+      </section>
+
+      <div class="cart-layout" id="cartLayout" hidden>
+        <section class="cart-main" aria-labelledby="itemsTitle">
+          <div class="cart-table cart-table--head" aria-hidden="true">
+            <span>商品</span><span>单价</span><span>数量</span><span>小计</span
+            ><span></span>
+          </div>
+          <div class="cart-items" id="cartItems"></div>
         </section>
-      </aside>
-    </div>
-  </main>
 
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="/cart.js"></script>
-</body>
+        <aside class="cart-side">
+          <section class="cart-panel">
+            <div class="section-heading section-heading--compact">
+              <div>
+                <div class="eyebrow">ORDER SUMMARY</div>
+                <h2>订单摘要</h2>
+              </div>
+            </div>
+            <div class="cart-summary">
+              <div>
+                <span>商品件数</span><strong id="summaryQty">0 件</strong>
+              </div>
+              <div>
+                <span>商品小计</span><strong id="summarySubtotal">¥0.00</strong>
+              </div>
+              <div>
+                <span>运费</span><strong class="summary-free">免运费</strong>
+              </div>
+              <div class="cart-summary__total">
+                <span>应付合计</span><strong id="summaryTotal">¥0.00</strong>
+              </div>
+            </div>
 
+            <form id="checkoutForm" class="checkout-form">
+              <label
+                >收货人<input
+                  id="recipientName"
+                  name="recipient_name"
+                  required
+                  maxlength="40"
+                  placeholder="请输入姓名"
+              /></label>
+              <label
+                >联系电话<input
+                  id="recipientPhone"
+                  name="recipient_phone"
+                  inputmode="tel"
+                  required
+                  maxlength="30"
+                  placeholder="请输入手机号"
+              /></label>
+              <label
+                >收货地址<textarea
+                  id="shippingAddress"
+                  name="shipping_address"
+                  required
+                  maxlength="240"
+                  rows="3"
+                  placeholder="省市区 / 街道 / 门牌号"
+                ></textarea>
+              </label>
+              <button
+                class="app-nav__button app-nav__button--primary submit-button"
+                id="submitOrderButton"
+                type="submit"
+              >
+                提交订单
+              </button>
+              <p class="form-note" id="loginNote" hidden>
+                请先登录账户，再提交订单。
+              </p>
+            </form>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/cart.js"></script>
+    <script src="/store-support.js"></script>
+  </body>
 </html>

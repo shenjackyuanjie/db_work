@@ -73,10 +73,16 @@
 
   async function request(url, options = {}) {
     const headers = new Headers(options.headers || {});
-    const response = await fetch(url, { ...options, headers, credentials: "same-origin" });
+    const response = await fetch(url, {
+      ...options,
+      headers,
+      credentials: "same-origin",
+    });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
-      throw new Error(body.message || body.error || body.data?.message || "请求失败");
+      throw new Error(
+        body.message || body.error || body.data?.message || "请求失败",
+      );
     }
     return body.data ?? body;
   }
@@ -87,7 +93,10 @@
     toast.classList.toggle("is-error", isError);
     toast.classList.add("is-visible");
     window.clearTimeout(showToast.timer);
-    showToast.timer = window.setTimeout(() => toast.classList.remove("is-visible"), 3200);
+    showToast.timer = window.setTimeout(
+      () => toast.classList.remove("is-visible"),
+      3200,
+    );
   }
 
   function renderSession() {
@@ -115,19 +124,25 @@
   function renderCartSummary() {
     const entries = cartEntries();
     const count = entries.reduce((sum, entry) => sum + entry.quantity, 0);
-    const subtotal = entries.reduce((sum, entry) => sum + entry.product.price_cents * entry.quantity, 0);
+    const subtotal = entries.reduce(
+      (sum, entry) => sum + entry.product.price_cents * entry.quantity,
+      0,
+    );
     const badge = $("cartNavCount");
     badge.hidden = count === 0;
     badge.textContent = count > 99 ? "99+" : String(count);
 
     $("cartStatus").textContent = count ? `${count} 件` : "空";
     if (!entries.length) {
-      $("cartSummary").innerHTML = '<div class="empty-block">还没有选择商品，快去挑选吧。</div>';
+      $("cartSummary").innerHTML =
+        '<div class="empty-block">还没有选择商品，快去挑选吧。</div>';
       return;
     }
     $("cartSummary").innerHTML = `
       <div class="mini-cart-list">
-        ${entries.map(({ product, quantity }) => `
+        ${entries
+          .map(
+            ({ product, quantity }) => `
           <div class="mini-cart-item">
             <div class="mini-cart-item__info">
               <strong>${escapeHtml(product.name)}</strong>
@@ -141,7 +156,9 @@
             <div class="mini-cart-item__line">${money(product.price_cents * quantity)}</div>
             <button class="mini-cart-item__remove" type="button" data-remove-product="${product.id}" aria-label="移除">×</button>
           </div>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
       <div class="cart-summary-total">
         <span>合计</span><strong>${money(subtotal)}</strong>
@@ -153,19 +170,41 @@
     const list = $("productList");
     $("productCount").textContent = state.products.length;
     if (!state.products.length) {
-      list.innerHTML = '<div class="empty-block">当前没有在售商品，请稍后再来看看。</div>';
+      list.innerHTML =
+        '<div class="empty-block">当前没有在售商品，请稍后再来看看。</div>';
       return;
     }
 
-    list.innerHTML = state.products.map((product) => {
-      const soldOut = product.stock_quantity <= 0;
-      const coverSrc = coverImageSrc(product.cover_image);
-      return `
+    const query = $("productSearch").value.trim().toLowerCase();
+    const products = state.products.filter((p) =>
+      `${p.name} ${p.description} ${p.unit_label}`
+        .toLowerCase()
+        .includes(query),
+    );
+    const sort = $("productSort").value;
+    if (sort === "price-asc")
+      products.sort((a, b) => a.price_cents - b.price_cents);
+    if (sort === "price-desc")
+      products.sort((a, b) => b.price_cents - a.price_cents);
+    if (sort === "stock")
+      products.sort((a, b) => b.stock_quantity - a.stock_quantity);
+    if (!products.length) {
+      list.innerHTML =
+        '<div class="empty-block">没有找到匹配商品，试试其他关键词。</div>';
+      return;
+    }
+    list.innerHTML = products
+      .map((product) => {
+        const soldOut = product.stock_quantity <= 0;
+        const coverSrc = coverImageSrc(product.cover_image);
+        return `
         <article class="product-card">
           <div class="product-card__image ${coverSrc ? "" : "product-card__image--placeholder"}">
-            ${coverSrc
-              ? `<img loading="lazy" src="${escapeHtml(coverSrc)}" alt="${escapeHtml(product.name)}" />`
-              : '<span class="product-card__placeholder-mark">橙</span>'}
+            ${
+              coverSrc
+                ? `<img loading="lazy" src="${escapeHtml(coverSrc)}" alt="${escapeHtml(product.name)}" />`
+                : '<span class="product-card__placeholder-mark">橙</span>'
+            }
           </div>
           <div>
             <h3 class="product-card__name">${escapeHtml(product.name)}</h3>
@@ -180,28 +219,36 @@
           </div>
         </article>
       `;
-    }).join("");
+      })
+      .join("");
   }
 
   function renderOrders(orders) {
     const list = $("ordersList");
     if (!orders.length) {
-      list.innerHTML = state.session ? '<div class="empty-block">还没有订单。</div>' : "";
+      list.innerHTML = state.session
+        ? '<div class="empty-block">还没有订单。</div>'
+        : "";
       return;
     }
-    list.innerHTML = orders.map((order) => {
-      const items = (Array.isArray(order.items) ? order.items : []).map((item) => {
-        const lineTotal = item.line_total_cents ?? item.unit_price_cents * item.quantity;
-        return `
+    list.innerHTML = orders
+      .map((order) => {
+        const items = (Array.isArray(order.items) ? order.items : [])
+          .map((item) => {
+            const lineTotal =
+              item.line_total_cents ?? item.unit_price_cents * item.quantity;
+            return `
           <li class="order-item">
             <span class="order-item__name">${escapeHtml(item.product_name)}${item.unit_label ? `（${escapeHtml(item.unit_label)}）` : ""}</span>
             <span class="order-item__qty">× ${item.quantity}</span>
             <span class="order-item__price">${money(lineTotal)}</span>
           </li>
         `;
-      }).join("");
-      const statusText = statusLabels[order.status] || escapeHtml(order.status);
-      return `
+          })
+          .join("");
+        const statusText =
+          statusLabels[order.status] || escapeHtml(order.status);
+        return `
         <article class="order-card">
           <div class="order-card__top">
             <strong>${escapeHtml(order.order_no)}</strong>
@@ -217,7 +264,8 @@
           </details>
         </article>
       `;
-    }).join("");
+      })
+      .join("");
   }
 
   async function loadOrders() {
@@ -238,7 +286,9 @@
       pruneCart();
       renderProducts();
       renderCartSummary();
-      $("storeMessage").textContent = state.products.length ? "选择商品加入购物车，再到购物车页结算。" : "当前没有在售商品。";
+      $("storeMessage").textContent = state.products.length
+        ? "选择商品加入购物车，再到购物车页结算。"
+        : "当前没有在售商品。";
     } catch (error) {
       $("storeMessage").textContent = error.message;
       showToast(error.message, true);
@@ -271,6 +321,12 @@
   }
 
   function bindEvents() {
+    $("searchForm").addEventListener("submit", (event) => {
+      event.preventDefault();
+      renderProducts();
+    });
+    $("productSearch").addEventListener("input", renderProducts);
+    $("productSort").addEventListener("change", renderProducts);
     $("refreshButton").addEventListener("click", loadProducts);
     $("refreshOrdersButton").addEventListener("click", loadOrders);
     $("logoutButton").addEventListener("click", logout);
@@ -285,9 +341,14 @@
         showToast("该商品暂时售罄", true);
         return;
       }
-      const input = document.querySelector(`input[data-product-id="${button.dataset.addProduct}"]`);
+      const input = document.querySelector(
+        `input[data-product-id="${button.dataset.addProduct}"]`,
+      );
       const raw = Number(input?.value || 1);
-      const quantity = Math.min(Math.max(1, Number.isFinite(raw) ? raw : 1), stock);
+      const quantity = Math.min(
+        Math.max(1, Number.isFinite(raw) ? raw : 1),
+        stock,
+      );
       const current = state.cart[productId] || 0;
       setCartQuantity(productId, Math.min(stock, current + quantity));
       showToast(`已加入 ${quantity} 件 ${product.name}，去购物车结算`);
