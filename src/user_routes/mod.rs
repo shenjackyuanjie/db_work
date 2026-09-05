@@ -12,6 +12,7 @@ mod dto;
 mod registration;
 mod session;
 mod store;
+mod store_workspace;
 
 pub(crate) use auth::{
     ensure_admin, ensure_authenticated, extract_auth_token, now_secs, parse_requested_role,
@@ -26,6 +27,19 @@ pub(crate) use session::{login_handler, logout_handler, me_handler, validate_tok
 
 pub fn router(state: AppState) -> Router<AppState> {
     Router::new()
+        .route(
+            "/store/support",
+            axum::routing::get(store_workspace::customer_messages)
+                .post(store_workspace::customer_send),
+        )
+        .route(
+            "/admin/store/support",
+            axum::routing::get(store_workspace::admin_messages).post(store_workspace::admin_send),
+        )
+        .route(
+            "/admin/store/analytics",
+            axum::routing::get(store_workspace::analytics),
+        )
         .route("/login", post(login_handler))
         .route("/register", post(register_handler))
         .route("/logout", post(logout_handler))

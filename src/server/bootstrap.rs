@@ -4,6 +4,15 @@ use super::shared::now_millis;
 
 pub(super) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow::Result<()> {
     let ddl = [
+        r#"CREATE TABLE IF NOT EXISTS store_support_messages (
+            id BIGSERIAL PRIMARY KEY,
+            username TEXT NOT NULL,
+            is_staff BOOLEAN NOT NULL DEFAULT FALSE,
+            actor TEXT NOT NULL,
+            content TEXT NOT NULL CHECK (char_length(content) BETWEEN 1 AND 2000),
+            created_at BIGINT NOT NULL
+        )"#,
+        r#"CREATE INDEX IF NOT EXISTS idx_store_support_user_id ON store_support_messages(username, id DESC)"#,
         r#"CREATE TABLE IF NOT EXISTS app_users (
             username TEXT PRIMARY KEY,
             password_hash TEXT NOT NULL,
