@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>橙管家</title>
+    <link rel="stylesheet" href="/app-shell.css" />
+    <script src="/app-shell.js" defer></script>
+  </head>
+  <body>
+    <header class="shell-header">
+      <a class="shell-brand" href="/store" data-route>
+        <span class="shell-mark">橙</span>
+        <span>橙管家<small>果园与商城一体化工作台</small></span>
+      </a>
+      <nav class="shell-nav" aria-label="应用功能">
+        <a href="/store" data-route>鲜果商城</a>
+        <a href="/cart" data-route>购物车</a>
+        <a href="/analyze" data-route>病害识别</a>
+        <a href="/orchard-3d" data-route>果园沙盘</a>
+        <a href="/admin" data-route data-admin hidden>果园管理</a>
+        <a href="/admin?mode=store" data-route data-admin hidden>商城管理</a>
+      </nav>
+      <div class="shell-account">
+        <span id="shellUsername"></span>
+        <a href="/" data-route id="shellLogin">登录 / 注册</a>
+        <button id="shellLogout" type="button" hidden>退出登录</button>
+      </div>
+    </header>
+    <div class="shell-context">
+      <span id="shellPageTitle">橙管家</span>
+      <span id="shellStatus" role="status" aria-live="polite"></span>
+    </div>
+    <main class="shell-main" id="shellMain" aria-busy="true">
+      <iframe id="shellContent" title="应用内容" src="about:blank"></iframe>
+      <div id="shellLoading" class="shell-loading">正在加载...</div>
+    </main>
+  </body>
+</html>
