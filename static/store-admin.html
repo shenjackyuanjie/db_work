@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>商城后台 | 橙管家</title>
+    <link rel="stylesheet" href="/store-admin.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/store-admin">橙管家<span>商家工作台</span></a>
+      <nav aria-label="商城后台">
+        <button data-view="dashboard" class="active">经营概览</button
+        ><button data-view="products">商品与库存</button
+        ><button data-view="orders">订单管理</button
+        ><button data-view="support">客服消息</button>
+      </nav>
+      <div class="switch">
+        <a href="/admin">切换果园管理后台</a><a href="/store">进入买家商城</a>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <div>
+          <span class="eyebrow">MERCHANT CENTER</span>
+          <h1 id="viewTitle">经营概览</h1>
+        </div>
+        <div>
+          <span id="account"></span> <button id="refresh">刷新数据</button>
+        </div>
+      </header>
+      <p id="notice" role="status">正在验证管理员身份...</p>
+      <div id="workspace" hidden>
+        <section data-panel="dashboard">
+          <div class="toolbar">
+            <div>
+              <h2>店铺经营，一目了然</h2>
+              <p>
+                按北京时间统计下单日期；成交金额仅计当前已付款、已发货和已完成订单。
+              </p>
+            </div>
+            <select id="period" aria-label="统计时间">
+              <option value="7">近 7 天</option>
+              <option value="30">近 30 天</option>
+              <option value="90">近 90 天</option>
+            </select>
+          </div>
+          <div class="kpis" id="kpis"></div>
+          <div class="charts">
+            <article>
+              <h2>成交趋势</h2>
+              <div id="trend" class="trend"></div>
+            </article>
+            <article>
+              <h2>订单状态分布</h2>
+              <div id="statuses"></div>
+            </article>
+          </div>
+          <article>
+            <h2>热销商品</h2>
+            <div id="ranking"></div>
+          </article>
+        </section>
+        <section data-panel="products" hidden>
+          <article>
+            <h2 id="productFormTitle">发布商品</h2>
+            <form id="productForm" class="product-form">
+              <label
+                >商品名称<input name="name" required maxlength="120" /></label
+              ><label
+                >商品 SKU<input name="sku" required maxlength="80" /></label
+              ><label
+                >规格<input
+                  name="unit_label"
+                  required
+                  maxlength="80"
+                  placeholder="如：5 斤 / 箱" /></label
+              ><label
+                >价格（元）<input
+                  name="price"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  required /></label
+              ><label
+                >库存<input
+                  name="stock_quantity"
+                  type="number"
+                  min="0"
+                  max="2147483647"
+                  step="1"
+                  required /></label
+              ><label
+                >封面地址<input
+                  name="cover_image"
+                  placeholder="上传封面后会自动保存" /></label
+              ><label class="wide"
+                >商品介绍<textarea
+                  name="description"
+                  rows="2"
+                  maxlength="4000"
+                ></textarea>
+              </label>
+              <div>
+                <button class="primary" type="submit">保存商品</button>
+                <button id="cancelEdit" type="button">取消编辑</button>
+              </div>
+            </form>
+          </article>
+          <article>
+            <h2>商品列表</h2>
+            <div id="products" class="table-wrap"></div>
+            <input
+              id="coverFile"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+            />
+          </article>
+        </section>
+        <section data-panel="orders" hidden>
+          <article>
+            <div class="toolbar">
+              <h2>订单处理</h2>
+              <input
+                id="orderSearch"
+                type="search"
+                placeholder="搜索订单号 / 买家"
+                aria-label="搜索订单"
+              />
+            </div>
+            <div id="orders" class="table-wrap"></div>
+          </article>
+        </section>
+        <section data-panel="support" hidden>
+          <div class="support-grid">
+            <article>
+              <h2>买家会话</h2>
+              <p>标记「待回复」表示最新消息来自买家。</p>
+              <div id="conversations"></div>
+            </article>
+            <article>
+              <h2 id="conversationTitle">选择会话开始接待</h2>
+              <div
+                id="messages"
+                class="messages"
+                role="log"
+                aria-label="客服会话"
+              ></div>
+              <form id="replyForm">
+                <label for="reply">回复内容</label
+                ><textarea
+                  id="reply"
+                  required
+                  maxlength="2000"
+                  rows="3"
+                  disabled
+                ></textarea>
+                <div class="toolbar">
+                  <select id="quickReply" aria-label="快捷回复">
+                    <option value="">选择快捷回复</option>
+                    <option>您好，请提供订单号，我来帮您查询。</option>
+                    <option>
+                      您好，请描述商品问题和收货情况，我们会协助处理售后。
+                    </option>
+                    <option>
+                      感谢您的咨询，如有其他问题欢迎继续留言。
+                    </option></select
+                  ><button class="primary" id="replyButton" disabled>
+                    发送回复
+                  </button>
+                </div>
+              </form>
+              <p>展示最近 200 条消息，页面每 10 秒更新。</p>
+            </article>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script src="/store-admin.js"></script>
+  </body>
+</html>

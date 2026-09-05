@@ -88,6 +88,10 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
         )
         .route("/admin", get(handlers_core::admin_page_handler))
         .route(
+            "/store-admin",
+            get(|| async { axum::response::Html(include_str!("../static/store-admin.html")) }),
+        )
+        .route(
             "/admin.html",
             get(|| async { axum::response::Redirect::permanent("/admin") }),
         )

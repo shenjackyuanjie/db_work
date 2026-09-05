@@ -1,392 +1,680 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>管理后台 | 柑橘果园智能管理</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/admin.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>管理后台 | 柑橘果园智能管理</title>
-  <link rel="stylesheet" href="/styles.css" />
-  <link rel="stylesheet" href="/admin.css" />
-</head>
+  <body>
+    <header class="app-header">
+      <a class="app-brand" href="/admin">
+        <span class="app-brand__mark" aria-hidden="true">柑</span>
+        <span class="app-brand__copy">
+          <span class="app-brand__name">柑橘果园智能管理</span>
+          <span class="app-brand__page">管理后台</span>
+        </span>
+      </a>
+      <nav class="app-nav" aria-label="主导航">
+        <a class="app-nav__link" href="/store">普通购买</a>
+        <a class="app-nav__link" href="/analyze">病害识别</a>
+        <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
+        <a class="app-nav__link" href="/admin" aria-current="page">管理后台</a>
+        <span class="app-nav__divider" aria-hidden="true"></span>
+        <button
+          class="app-nav__button app-nav__button--danger"
+          type="button"
+          onclick="logout()"
+        >
+          退出登录
+        </button>
+      </nav>
+    </header>
 
-<body>
-  <header class="app-header">
-    <a class="app-brand" href="/admin">
-      <span class="app-brand__mark" aria-hidden="true">柑</span>
-      <span class="app-brand__copy">
-        <span class="app-brand__name">柑橘果园智能管理</span>
-        <span class="app-brand__page">管理后台</span>
-      </span>
-    </a>
-    <nav class="app-nav" aria-label="主导航">
-      <a class="app-nav__link" href="/store">普通购买</a>
-      <a class="app-nav__link" href="/analyze">病害识别</a>
-      <a class="app-nav__link" href="/orchard-3d">3D 沙盘</a>
-      <a class="app-nav__link" href="/admin" aria-current="page">管理后台</a>
-      <span class="app-nav__divider" aria-hidden="true"></span>
-      <button class="app-nav__button app-nav__button--danger" type="button" onclick="logout()">退出登录</button>
-    </nav>
-  </header>
+    <main class="layout-grid">
+      <nav class="admin-section-nav" aria-label="后台功能分区">
+        <div class="admin-section-nav__eyebrow">运营工作台</div>
+        <a href="/admin?section=orchard" data-admin-section="orchard"
+          >果园监测<span>园区状态与 3D 入口</span></a
+        >
+        <a href="/admin?section=access" data-admin-section="access"
+          >用户与访问<span>审核、用户与邀请码</span></a
+        >
+        <a href="/store-admin"
+          >切换商城后台<span>经营数据、商品订单与客服</span></a
+        >
+        <a href="/admin?section=overview" data-admin-section="overview"
+          >数据总览<span>识别与环境指标</span></a
+        >
+        <a href="/admin?section=audit" data-admin-section="audit"
+          >审计日志<span>操作与预警记录</span></a
+        >
+        <a href="/admin?section=settings" data-admin-section="settings"
+          >系统设置<span>注册、阈值与日志策略</span></a
+        >
+      </nav>
 
-  <main class="layout-grid">
-    <nav class="admin-section-nav" aria-label="后台功能分区">
-      <div class="admin-section-nav__eyebrow">运营工作台</div>
-      <a href="/admin?section=orchard" data-admin-section="orchard">果园监测<span>园区状态与 3D 入口</span></a>
-      <a href="/admin?section=access" data-admin-section="access">用户与访问<span>审核、用户与邀请码</span></a>
-      <a href="/admin?section=store" data-admin-section="store">商城管理<span>普通购买商品、库存与订单</span></a>
-      <a href="/admin?section=overview" data-admin-section="overview">数据总览<span>识别与环境指标</span></a>
-      <a href="/admin?section=audit" data-admin-section="audit">审计日志<span>操作与预警记录</span></a>
-      <a href="/admin?section=settings" data-admin-section="settings">系统设置<span>注册、阈值与日志策略</span></a>
-    </nav>
-
-    <section class="admin-page" data-admin-page="orchard" aria-labelledby="orchardSection">
-    <div class="section-title admin-section-marker" id="orchardSection">果园监测</div>
-
-    <!-- 顶部全宽卡片：果园总览热力图 -->
-    <div class="card" style="grid-column: 1 / -1;">
-      <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-        <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-          <h2>园区监测大屏</h2>
-          <a class="app-nav__link admin-scene-link" href="/orchard-3d">进入 3D 沙盘</a>
+      <section
+        class="admin-page"
+        data-admin-page="orchard"
+        aria-labelledby="orchardSection"
+      >
+        <div class="section-title admin-section-marker" id="orchardSection">
+          果园监测
         </div>
-        <div id="orchardLegend" style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end; font-size: 13px; color: var(--muted);"></div>
-      </div>
-      <div class="card-body" style="padding: 0;">
-        <div class="orchard-map-shell">
-          <canvas id="orchardMap" width="1150" height="480" style="width: 100%; height: 480px; background: #0f172a; display: block;"></canvas>
-          <div id="orchardTooltip" class="orchard-tooltip" aria-hidden="true"></div>
-        </div>
-      </div>
-    </div>
-    </section>
 
-    <section class="admin-page" data-admin-page="access" aria-labelledby="accessSection">
-    <div class="section-title admin-section-marker" id="accessSection">用户与访问</div>
-
-    <!-- 左侧：操作区 -->
-    <div class="left-panel">
-      <div class="card">
-        <div class="card-header">
-          <h2>生成邀请码</h2>
-        </div>
-        <div class="card-body">
-          <label>设置有效期</label>
-          <select id="ttlSelect" style="margin-bottom: 16px;">
-            <option value="3600">1 小时</option>
-            <option value="86400" selected>1 天 (24小时)</option>
-            <option value="604800">7 天</option>
-            <option value="2592000">30 天</option>
-            <option value="0">永久有效</option>
-          </select>
-          <button class="primary" id="btnCreateInvite">立即生成</button>
-
-          <div class="result-box" id="inviteResult">
-            <div style="font-size: 12px; color: var(--muted);">邀请码生成成功：</div>
-            <div class="code-display" id="generatedCode"></div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-              <span style="font-size: 12px; color: var(--muted);" id="generatedExpire"></span>
-              <button class="ghost" onclick="copyInviteCode()">复制代码</button>
+        <!-- 顶部全宽卡片：果园总览热力图 -->
+        <div class="card" style="grid-column: 1 / -1">
+          <div
+            class="card-header"
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            "
+          >
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                flex-wrap: wrap;
+              "
+            >
+              <h2>园区监测大屏</h2>
+              <a class="app-nav__link admin-scene-link" href="/orchard-3d"
+                >进入 3D 沙盘</a
+              >
+            </div>
+            <div
+              id="orchardLegend"
+              style="
+                display: flex;
+                gap: 16px;
+                flex-wrap: wrap;
+                justify-content: flex-end;
+                font-size: 13px;
+                color: var(--muted);
+              "
+            ></div>
+          </div>
+          <div class="card-body" style="padding: 0">
+            <div class="orchard-map-shell">
+              <canvas
+                id="orchardMap"
+                width="1150"
+                height="480"
+                style="
+                  width: 100%;
+                  height: 480px;
+                  background: #0f172a;
+                  display: block;
+                "
+              ></canvas>
+              <div
+                id="orchardTooltip"
+                class="orchard-tooltip"
+                aria-hidden="true"
+              ></div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- 右侧：数据展示与管理区 -->
-    <div class="right-panel grid">
-
-      <!-- 待审批列表 -->
-      <div class="card">
-        <div class="card-header">
-          <h2>待审批申请</h2>
-          <button class="ghost" id="btnListPending">刷新</button>
+      <section
+        class="admin-page"
+        data-admin-page="access"
+        aria-labelledby="accessSection"
+      >
+        <div class="section-title admin-section-marker" id="accessSection">
+          用户与访问
         </div>
-        <div class="card-body" style="padding: 0;">
-          <div class="table-responsive" id="pendingWrap"></div>
-        </div>
-      </div>
 
-      <!-- 用户管理 -->
-      <div class="card">
-        <div class="card-header">
-          <h2>用户管理</h2>
-          <button class="ghost" id="btnListUsers">刷新</button>
-        </div>
-        <div class="card-body" style="padding: 0;">
-          <div class="table-responsive" id="usersWrap"></div>
-        </div>
-      </div>
-
-      <!-- 邀请码列表 -->
-      <div class="card">
-        <div class="card-header">
-          <h2>历史邀请码</h2>
-          <button class="ghost" id="btnListInvites">刷新</button>
-        </div>
-        <div class="card-body" style="padding: 0;">
-          <div class="table-responsive" id="invitesWrap"></div>
-        </div>
-      </div>
-
-    </div>
-    </section>
-
-
-    <!-- ====== 商城管理（普通购买） ====== -->
-    <section class="admin-page" data-admin-page="store" aria-labelledby="storeSection">
-    <div class="section-title admin-section-marker" id="storeSection">商城管理</div>
-
-    <div class="store-admin-overview full-width-section" id="storeOverview">
-      <div class="store-admin-kpi"><span>在售商品</span><strong id="storeProductCount">--</strong></div>
-      <div class="store-admin-kpi"><span>订单总数</span><strong id="storeOrderCount">--</strong></div>
-      <div class="store-admin-kpi"><span>交易金额</span><strong id="storeGrossAmount">--</strong></div>
-      <div class="store-admin-kpi"><span>待处理</span><strong id="storePendingOrders">--</strong></div>
-    </div>
-
-    <div class="store-admin-form-grid full-width-section">
-      <div class="card store-admin-card">
-        <div class="card-header"><h2 id="storeProductFormTitle">新增商品</h2></div>
-        <div class="card-body">
-          <form id="storeProductForm" class="store-form">
-            <label>商品名称<input id="storeProductName" placeholder="家庭箱 10 斤" required maxlength="80" /></label>
-            <label>SKU<input id="storeProductSku" placeholder="FAMILY-10KG" required maxlength="40" /></label>
-            <label>规格说明<input id="storeProductUnit" placeholder="约 10 斤 / 箱" required maxlength="80" /></label>
-            <div class="store-form-row">
-              <label>售价（元）<input id="storeProductPrice" type="number" min="0.01" step="0.01" required /></label>
-              <label>库存（件）<input id="storeProductStock" type="number" min="0" step="1" value="0" required /></label>
+        <!-- 左侧：操作区 -->
+        <div class="left-panel">
+          <div class="card">
+            <div class="card-header">
+              <h2>生成邀请码</h2>
             </div>
-            <label>商品介绍<textarea id="storeProductDescription" rows="2" maxlength="500"></textarea></label>
-            <label>封面图地址<small class="store-form-hint">可选，留空则使用占位图；可先保存后再上传封面。</small><input id="storeProductCover" placeholder="https://... 或 /store-images/xxx.jpg" maxlength="300" /></label>
-            <div class="store-form-actions">
-              <button class="primary" id="storeProductSubmit" type="submit">创建商品</button>
-              <button class="ghost" id="storeProductCancel" type="button" hidden>取消编辑</button>
-            </div>
-          </form>
-          <input id="storeCoverFile" type="file" accept="image/jpeg,image/png,image/webp" hidden />
-        </div>
-      </div>
+            <div class="card-body">
+              <label>设置有效期</label>
+              <select id="ttlSelect" style="margin-bottom: 16px">
+                <option value="3600">1 小时</option>
+                <option value="86400" selected>1 天 (24小时)</option>
+                <option value="604800">7 天</option>
+                <option value="2592000">30 天</option>
+                <option value="0">永久有效</option>
+              </select>
+              <button class="primary" id="btnCreateInvite">立即生成</button>
 
-      <div class="card store-admin-card">
-        <div class="card-header"><h2>在售商品</h2><button class="ghost" id="btnRefreshStoreProducts">刷新</button></div>
-        <div class="card-body" style="padding: 0;"><div class="table-responsive" id="storeProductsWrap"></div></div>
-      </div>
-    </div>
-
-    <div class="card full-width-section store-admin-card">
-      <div class="card-header"><h2>订单与履约</h2><button class="ghost" id="btnRefreshStoreOrders">刷新订单</button></div>
-      <div class="card-body" style="padding: 0;"><div class="table-responsive" id="storeOrdersWrap"></div></div>
-    </div>
-    </section>
-
-    <section class="admin-page" data-admin-page="overview" aria-labelledby="overviewSection">
-    <div class="section-title admin-section-marker" id="overviewSection">数据总览</div>
-
-    <!-- 统计数字卡片 -->
-    <div class="card full-width-section">
-      <div class="card-header">
-        <h2>业务数据统计</h2>
-        <button class="ghost" id="btnRefreshStats">刷新</button>
-      </div>
-      <div class="stats-row" id="statsRow">
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(59,130,246,0.15); color: #3b82f6;">🔬</div>
-          <div class="stat-value" id="statDetections">--</div>
-          <div class="stat-label">总检测次数</div>
-          <div class="stat-trend neutral" id="statDetectionsTrend">加载中...</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">🌿</div>
-          <div class="stat-value" id="statHealthy">--</div>
-          <div class="stat-label">健康检出率</div>
-          <div class="stat-trend neutral" id="statHealthyTrend">加载中...</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(239,68,68,0.15); color: #ef4444;">⚠️</div>
-          <div class="stat-value" id="statDiseased">--</div>
-          <div class="stat-label">病害预警数</div>
-          <div class="stat-trend neutral" id="statDiseasedTrend">加载中...</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">👥</div>
-          <div class="stat-value" id="statUsers">--</div>
-          <div class="stat-label">注册用户数</div>
-          <div class="stat-trend neutral" id="statUsersTrend">加载中...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 近期检测趋势 + 环境数据 -->
-    <div class="card" style="grid-column: 1 / span 1;">
-      <div class="card-header">
-        <h2>近7日检测趋势</h2>
-      </div>
-      <div class="card-body">
-        <div class="mini-bar-chart" id="detectionChart" style="height: 120px;"></div>
-        <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11px; color:var(--muted);">
-          <span id="chartLabelStart">--</span>
-          <span id="chartLabelEnd">今天</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="grid-column: 2 / -1;">
-      <div class="card-header">
-        <h2>环境监测数据</h2>
-        <button class="ghost" id="btnRefreshEnv">刷新</button>
-      </div>
-      <div class="card-body">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="envGauges">
-          <div class="env-gauge">
-            <div class="gauge-ring" style="background: rgba(59,130,246,0.15); color: #3b82f6;" id="envTempRing">--</div>
-            <div class="gauge-info">
-              <div class="gauge-label">当前温度</div>
-              <div class="gauge-value" id="envTemp">-- °C</div>
-            </div>
-          </div>
-          <div class="env-gauge">
-            <div class="gauge-ring" style="background: rgba(14,165,233,0.15); color: #0ea5e9;" id="envHumRing">--</div>
-            <div class="gauge-info">
-              <div class="gauge-label">当前湿度</div>
-              <div class="gauge-value" id="envHumidity">-- %</div>
-            </div>
-          </div>
-          <div class="env-gauge">
-            <div class="gauge-ring" style="background: rgba(16,185,129,0.15); color: #10b981;" id="envHealthRing">--</div>
-            <div class="gauge-info">
-              <div class="gauge-label">果树健康度</div>
-              <div class="gauge-value" id="envHealth">-- 分</div>
-            </div>
-          </div>
-          <div class="env-gauge">
-            <div class="gauge-ring" style="background: rgba(245,158,11,0.15); color: #f59e0b;" id="envAlertRing">⚡</div>
-            <div class="gauge-info">
-              <div class="gauge-label">活跃预警</div>
-              <div class="gauge-value" id="envAlerts">-- 条</div>
+              <div class="result-box" id="inviteResult">
+                <div style="font-size: 12px; color: var(--muted)">
+                  邀请码生成成功：
+                </div>
+                <div class="code-display" id="generatedCode"></div>
+                <div
+                  style="
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-top: 12px;
+                  "
+                >
+                  <span
+                    style="font-size: 12px; color: var(--muted)"
+                    id="generatedExpire"
+                  ></span>
+                  <button class="ghost" onclick="copyInviteCode()">
+                    复制代码
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-    </section>
 
-    <!-- ====== 审计日志 ====== -->
-    <section class="admin-page" data-admin-page="audit" aria-labelledby="auditSection">
-    <div class="section-title admin-section-marker" id="auditSection">审计与日志</div>
+        <!-- 右侧：数据展示与管理区 -->
+        <div class="right-panel grid">
+          <!-- 待审批列表 -->
+          <div class="card">
+            <div class="card-header">
+              <h2>待审批申请</h2>
+              <button class="ghost" id="btnListPending">刷新</button>
+            </div>
+            <div class="card-body" style="padding: 0">
+              <div class="table-responsive" id="pendingWrap"></div>
+            </div>
+          </div>
 
-    <div class="card full-width-section">
-      <div class="card-header">
-        <h2>操作日志</h2>
-        <div style="display: flex; gap: 8px;">
-          <select id="logFilter" style="width: auto; padding: 5px 10px; font-size: 12px;">
-            <option value="all">全部类型</option>
-            <option value="detect">识别记录</option>
-            <option value="action">管理操作</option>
-            <option value="warning">预警事件</option>
-          </select>
-          <button class="ghost" id="btnRefreshLogs">刷新</button>
-        </div>
-      </div>
-      <div class="card-body" style="padding: 0;">
-        <div class="log-list" id="logList">
-          <div class="empty-state">加载中...</div>
-        </div>
-      </div>
-    </div>
-    </section>
+          <!-- 用户管理 -->
+          <div class="card">
+            <div class="card-header">
+              <h2>用户管理</h2>
+              <button class="ghost" id="btnListUsers">刷新</button>
+            </div>
+            <div class="card-body" style="padding: 0">
+              <div class="table-responsive" id="usersWrap"></div>
+            </div>
+          </div>
 
-    <!-- ====== 系统设置 ====== -->
-    <section class="admin-page" data-admin-page="settings" aria-labelledby="settingsSection">
-    <div class="section-title admin-section-marker" id="settingsSection">系统设置</div>
-
-    <div class="card" style="grid-column: 1 / span 1;">
-      <div class="card-header">
-        <h2>注册与访问控制</h2>
-      </div>
-      <div class="settings-group">
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-title">开放注册</div>
-            <div class="setting-desc">关闭后，新用户无法注册或提交申请</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="settingOpenReg" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-title">免审核注册 (邀请码)</div>
-            <div class="setting-desc">持有正确邀请码的用户免去管理员审核</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="settingInviteBypass" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-title">维护模式</div>
-            <div class="setting-desc">开启后普通用户无法登录，仅管理员可访问</div>
-          </div>
-          <label class="toggle">
-            <input type="checkbox" id="settingMaintenance">
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" style="grid-column: 2 / -1;">
-      <div class="card-header">
-        <h2>默认参数配置</h2>
-      </div>
-      <div class="settings-group">
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-title">默认邀请码有效期</div>
-            <div class="setting-desc">新创建邀请码的默认过期时长</div>
-          </div>
-          <select id="settingDefaultTTL" style="width: 160px;">
-            <option value="3600">1 小时</option>
-            <option value="86400" selected>1 天</option>
-            <option value="604800">7 天</option>
-            <option value="2592000">30 天</option>
-          </select>
-        </div>
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-title">识别置信度阈值</div>
-            <div class="setting-desc">低于此值的识别结果将标记为"不确定"</div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px; min-width: 180px;">
-            <input type="range" id="settingThreshold" min="0.3" max="0.99" step="0.01" value="0.75"
-              style="width: 120px; padding: 0;">
-            <span id="settingThresholdVal" style="font-size: 14px; font-weight: 600; min-width: 40px; text-align: right;">75%</span>
+          <!-- 邀请码列表 -->
+          <div class="card">
+            <div class="card-header">
+              <h2>历史邀请码</h2>
+              <button class="ghost" id="btnListInvites">刷新</button>
+            </div>
+            <div class="card-body" style="padding: 0">
+              <div class="table-responsive" id="invitesWrap"></div>
+            </div>
           </div>
         </div>
-        <div class="setting-item">
-          <div class="setting-info">
-            <div class="setting-title">最大日志保留天数</div>
-            <div class="setting-desc">超过此天数的操作日志将被自动清理</div>
-          </div>
-          <select id="settingLogRetention" style="width: 160px;">
-            <option value="7">7 天</option>
-            <option value="30" selected>30 天</option>
-            <option value="90">90 天</option>
-            <option value="365">1 年</option>
-          </select>
+      </section>
+
+      <!-- ====== 商城管理（普通购买） ====== -->
+      <section
+        class="admin-page"
+        data-admin-page="store"
+        aria-labelledby="storeSection"
+      >
+        <div class="section-title admin-section-marker" id="storeSection">
+          商城管理
         </div>
-      </div>
-      <div style="padding: 0 20px 20px; text-align: right;">
-        <button class="primary" id="btnSaveSettings" style="width: auto; padding: 10px 28px;">保存设置</button>
-      </div>
-    </div>
-    </section>
-  </main>
 
-  <div id="toast-container"></div>
+        <div class="store-admin-overview full-width-section" id="storeOverview">
+          <div class="store-admin-kpi">
+            <span>在售商品</span><strong id="storeProductCount">--</strong>
+          </div>
+          <div class="store-admin-kpi">
+            <span>订单总数</span><strong id="storeOrderCount">--</strong>
+          </div>
+          <div class="store-admin-kpi">
+            <span>交易金额</span><strong id="storeGrossAmount">--</strong>
+          </div>
+          <div class="store-admin-kpi">
+            <span>待处理</span><strong id="storePendingOrders">--</strong>
+          </div>
+        </div>
 
-  <script src="/admin.js"></script>
-</body>
+        <div class="store-admin-form-grid full-width-section">
+          <div class="card store-admin-card">
+            <div class="card-header">
+              <h2 id="storeProductFormTitle">新增商品</h2>
+            </div>
+            <div class="card-body">
+              <form id="storeProductForm" class="store-form">
+                <label
+                  >商品名称<input
+                    id="storeProductName"
+                    placeholder="家庭箱 10 斤"
+                    required
+                    maxlength="80"
+                /></label>
+                <label
+                  >SKU<input
+                    id="storeProductSku"
+                    placeholder="FAMILY-10KG"
+                    required
+                    maxlength="40"
+                /></label>
+                <label
+                  >规格说明<input
+                    id="storeProductUnit"
+                    placeholder="约 10 斤 / 箱"
+                    required
+                    maxlength="80"
+                /></label>
+                <div class="store-form-row">
+                  <label
+                    >售价（元）<input
+                      id="storeProductPrice"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      required
+                  /></label>
+                  <label
+                    >库存（件）<input
+                      id="storeProductStock"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value="0"
+                      required
+                  /></label>
+                </div>
+                <label
+                  >商品介绍<textarea
+                    id="storeProductDescription"
+                    rows="2"
+                    maxlength="500"
+                  ></textarea>
+                </label>
+                <label
+                  >封面图地址<small class="store-form-hint"
+                    >可选，留空则使用占位图；可先保存后再上传封面。</small
+                  ><input
+                    id="storeProductCover"
+                    placeholder="https://... 或 /store-images/xxx.jpg"
+                    maxlength="300"
+                /></label>
+                <div class="store-form-actions">
+                  <button class="primary" id="storeProductSubmit" type="submit">
+                    创建商品
+                  </button>
+                  <button
+                    class="ghost"
+                    id="storeProductCancel"
+                    type="button"
+                    hidden
+                  >
+                    取消编辑
+                  </button>
+                </div>
+              </form>
+              <input
+                id="storeCoverFile"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                hidden
+              />
+            </div>
+          </div>
 
+          <div class="card store-admin-card">
+            <div class="card-header">
+              <h2>在售商品</h2>
+              <button class="ghost" id="btnRefreshStoreProducts">刷新</button>
+            </div>
+            <div class="card-body" style="padding: 0">
+              <div class="table-responsive" id="storeProductsWrap"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card full-width-section store-admin-card">
+          <div class="card-header">
+            <h2>订单与履约</h2>
+            <button class="ghost" id="btnRefreshStoreOrders">刷新订单</button>
+          </div>
+          <div class="card-body" style="padding: 0">
+            <div class="table-responsive" id="storeOrdersWrap"></div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="admin-page"
+        data-admin-page="overview"
+        aria-labelledby="overviewSection"
+      >
+        <div class="section-title admin-section-marker" id="overviewSection">
+          数据总览
+        </div>
+
+        <!-- 统计数字卡片 -->
+        <div class="card full-width-section">
+          <div class="card-header">
+            <h2>业务数据统计</h2>
+            <button class="ghost" id="btnRefreshStats">刷新</button>
+          </div>
+          <div class="stats-row" id="statsRow">
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(59, 130, 246, 0.15); color: #3b82f6"
+              >
+                🔬
+              </div>
+              <div class="stat-value" id="statDetections">--</div>
+              <div class="stat-label">总检测次数</div>
+              <div class="stat-trend neutral" id="statDetectionsTrend">
+                加载中...
+              </div>
+            </div>
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(16, 185, 129, 0.15); color: #10b981"
+              >
+                🌿
+              </div>
+              <div class="stat-value" id="statHealthy">--</div>
+              <div class="stat-label">健康检出率</div>
+              <div class="stat-trend neutral" id="statHealthyTrend">
+                加载中...
+              </div>
+            </div>
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(239, 68, 68, 0.15); color: #ef4444"
+              >
+                ⚠️
+              </div>
+              <div class="stat-value" id="statDiseased">--</div>
+              <div class="stat-label">病害预警数</div>
+              <div class="stat-trend neutral" id="statDiseasedTrend">
+                加载中...
+              </div>
+            </div>
+            <div class="stat-card">
+              <div
+                class="stat-icon"
+                style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6"
+              >
+                👥
+              </div>
+              <div class="stat-value" id="statUsers">--</div>
+              <div class="stat-label">注册用户数</div>
+              <div class="stat-trend neutral" id="statUsersTrend">
+                加载中...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 近期检测趋势 + 环境数据 -->
+        <div class="card" style="grid-column: 1 / span 1">
+          <div class="card-header">
+            <h2>近7日检测趋势</h2>
+          </div>
+          <div class="card-body">
+            <div
+              class="mini-bar-chart"
+              id="detectionChart"
+              style="height: 120px"
+            ></div>
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 8px;
+                font-size: 11px;
+                color: var(--muted);
+              "
+            >
+              <span id="chartLabelStart">--</span>
+              <span id="chartLabelEnd">今天</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column: 2 / -1">
+          <div class="card-header">
+            <h2>环境监测数据</h2>
+            <button class="ghost" id="btnRefreshEnv">刷新</button>
+          </div>
+          <div class="card-body">
+            <div
+              style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"
+              id="envGauges"
+            >
+              <div class="env-gauge">
+                <div
+                  class="gauge-ring"
+                  style="background: rgba(59, 130, 246, 0.15); color: #3b82f6"
+                  id="envTempRing"
+                >
+                  --
+                </div>
+                <div class="gauge-info">
+                  <div class="gauge-label">当前温度</div>
+                  <div class="gauge-value" id="envTemp">-- °C</div>
+                </div>
+              </div>
+              <div class="env-gauge">
+                <div
+                  class="gauge-ring"
+                  style="background: rgba(14, 165, 233, 0.15); color: #0ea5e9"
+                  id="envHumRing"
+                >
+                  --
+                </div>
+                <div class="gauge-info">
+                  <div class="gauge-label">当前湿度</div>
+                  <div class="gauge-value" id="envHumidity">-- %</div>
+                </div>
+              </div>
+              <div class="env-gauge">
+                <div
+                  class="gauge-ring"
+                  style="background: rgba(16, 185, 129, 0.15); color: #10b981"
+                  id="envHealthRing"
+                >
+                  --
+                </div>
+                <div class="gauge-info">
+                  <div class="gauge-label">果树健康度</div>
+                  <div class="gauge-value" id="envHealth">-- 分</div>
+                </div>
+              </div>
+              <div class="env-gauge">
+                <div
+                  class="gauge-ring"
+                  style="background: rgba(245, 158, 11, 0.15); color: #f59e0b"
+                  id="envAlertRing"
+                >
+                  ⚡
+                </div>
+                <div class="gauge-info">
+                  <div class="gauge-label">活跃预警</div>
+                  <div class="gauge-value" id="envAlerts">-- 条</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== 审计日志 ====== -->
+      <section
+        class="admin-page"
+        data-admin-page="audit"
+        aria-labelledby="auditSection"
+      >
+        <div class="section-title admin-section-marker" id="auditSection">
+          审计与日志
+        </div>
+
+        <div class="card full-width-section">
+          <div class="card-header">
+            <h2>操作日志</h2>
+            <div style="display: flex; gap: 8px">
+              <select
+                id="logFilter"
+                style="width: auto; padding: 5px 10px; font-size: 12px"
+              >
+                <option value="all">全部类型</option>
+                <option value="detect">识别记录</option>
+                <option value="action">管理操作</option>
+                <option value="warning">预警事件</option>
+              </select>
+              <button class="ghost" id="btnRefreshLogs">刷新</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding: 0">
+            <div class="log-list" id="logList">
+              <div class="empty-state">加载中...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====== 系统设置 ====== -->
+      <section
+        class="admin-page"
+        data-admin-page="settings"
+        aria-labelledby="settingsSection"
+      >
+        <div class="section-title admin-section-marker" id="settingsSection">
+          系统设置
+        </div>
+
+        <div class="card" style="grid-column: 1 / span 1">
+          <div class="card-header">
+            <h2>注册与访问控制</h2>
+          </div>
+          <div class="settings-group">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">开放注册</div>
+                <div class="setting-desc">关闭后，新用户无法注册或提交申请</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="settingOpenReg" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">免审核注册 (邀请码)</div>
+                <div class="setting-desc">
+                  持有正确邀请码的用户免去管理员审核
+                </div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="settingInviteBypass" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">维护模式</div>
+                <div class="setting-desc">
+                  开启后普通用户无法登录，仅管理员可访问
+                </div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="settingMaintenance" />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column: 2 / -1">
+          <div class="card-header">
+            <h2>默认参数配置</h2>
+          </div>
+          <div class="settings-group">
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">默认邀请码有效期</div>
+                <div class="setting-desc">新创建邀请码的默认过期时长</div>
+              </div>
+              <select id="settingDefaultTTL" style="width: 160px">
+                <option value="3600">1 小时</option>
+                <option value="86400" selected>1 天</option>
+                <option value="604800">7 天</option>
+                <option value="2592000">30 天</option>
+              </select>
+            </div>
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">识别置信度阈值</div>
+                <div class="setting-desc">
+                  低于此值的识别结果将标记为"不确定"
+                </div>
+              </div>
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 10px;
+                  min-width: 180px;
+                "
+              >
+                <input
+                  type="range"
+                  id="settingThreshold"
+                  min="0.3"
+                  max="0.99"
+                  step="0.01"
+                  value="0.75"
+                  style="width: 120px; padding: 0"
+                />
+                <span
+                  id="settingThresholdVal"
+                  style="
+                    font-size: 14px;
+                    font-weight: 600;
+                    min-width: 40px;
+                    text-align: right;
+                  "
+                  >75%</span
+                >
+              </div>
+            </div>
+            <div class="setting-item">
+              <div class="setting-info">
+                <div class="setting-title">最大日志保留天数</div>
+                <div class="setting-desc">超过此天数的操作日志将被自动清理</div>
+              </div>
+              <select id="settingLogRetention" style="width: 160px">
+                <option value="7">7 天</option>
+                <option value="30" selected>30 天</option>
+                <option value="90">90 天</option>
+                <option value="365">1 年</option>
+              </select>
+            </div>
+          </div>
+          <div style="padding: 0 20px 20px; text-align: right">
+            <button
+              class="primary"
+              id="btnSaveSettings"
+              style="width: auto; padding: 10px 28px"
+            >
+              保存设置
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div id="toast-container"></div>
+
+    <script src="/admin.js"></script>
+  </body>
 </html>
