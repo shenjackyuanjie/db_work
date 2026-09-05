@@ -58,7 +58,23 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
 
     Ok(Router::new()
         .route("/health", get(handlers_core::health_handler))
-        .route("/", get(handlers_core::index_page_handler))
+        .route("/", get(handlers_core::app_shell_handler))
+        .route("/app-content/home", get(handlers_core::index_page_handler))
+        .route("/app-content/store", get(handlers_core::store_page_handler))
+        .route("/app-content/cart", get(handlers_core::cart_page_handler))
+        .route("/app-content/admin", get(handlers_core::admin_page_handler))
+        .route(
+            "/app-content/analyze",
+            get(handlers_core::analyze_page_handler),
+        )
+        .route(
+            "/app-content/orchard-3d",
+            get(handlers_core::orchard_3d_page_handler),
+        )
+        .route(
+            "/app-content/store-admin",
+            get(handlers_core::store_admin_page_handler),
+        )
         .route(
             "/index.html",
             get(|| async { axum::response::Redirect::permanent("/") }),
@@ -86,16 +102,14 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
             get(handlers_core::temperature_humidity_api_handler)
                 .post(handlers_core::post_temperature_humidity_handler),
         )
-        .route("/admin", get(handlers_core::admin_page_handler))
-        .route(
-            "/store-admin",
-            get(|| async { axum::response::Html(include_str!("../static/store-admin.html")) }),
-        )
+        .route("/admin", get(handlers_core::app_shell_handler))
+        .route("/store-admin", get(handlers_core::app_shell_handler))
+        .route("/store-admin.html", get(handlers_core::app_shell_handler))
         .route(
             "/admin.html",
             get(|| async { axum::response::Redirect::permanent("/admin") }),
         )
-        .route("/analyze", get(handlers_core::analyze_page_handler))
+        .route("/analyze", get(handlers_core::app_shell_handler))
         .route(
             "/analyze.html",
             get(|| async { axum::response::Redirect::permanent("/analyze") }),
@@ -109,17 +123,17 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
             "/commerce.html",
             get(|| async { axum::response::Redirect::permanent("/store") }),
         )
-        .route("/store", get(handlers_core::store_page_handler))
+        .route("/store", get(handlers_core::app_shell_handler))
         .route(
             "/store.html",
             get(|| async { axum::response::Redirect::permanent("/store") }),
         )
-        .route("/cart", get(handlers_core::cart_page_handler))
+        .route("/cart", get(handlers_core::app_shell_handler))
         .route(
             "/cart.html",
             get(|| async { axum::response::Redirect::permanent("/cart") }),
         )
-        .route("/orchard-3d", get(handlers_core::orchard_3d_page_handler))
+        .route("/orchard-3d", get(handlers_core::app_shell_handler))
         .route(
             "/orchard-3d.html",
             get(|| async { axum::response::Redirect::permanent("/orchard-3d") }),

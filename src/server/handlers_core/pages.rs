@@ -38,12 +38,31 @@ pub(crate) async fn cart_page_handler() -> Response {
 
 async fn read_static_page(filename: &str, page_name: &str) -> Response {
     match tokio::fs::read_to_string(format!("static/{filename}")).await {
-        Ok(content) => Html(content).into_response(),
+        Ok(content) => Html(content.replace(
+            "</head>",
+            "<script src=\"/app-bridge.js\" defer></script></head>",
+        ))
+        .into_response(),
         Err(err) => {
             tracing::error!(page = page_name, %err, "读取静态页面失败");
             (StatusCode::INTERNAL_SERVER_ERROR, "failed to load page").into_response()
         }
     }
+}
+
+pub(crate) async fn app_shell_handler() -> Response {
+    read_static_page("app-shell.html", "统一工作台").await
+}
+
+pub(crate) async fn store_admin_page_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> Response {
+    if !has_admin_session(&state, &headers).await {
+        return Redirect::temporary("/").into_response();
+    }
+
+    read_static_page("store-admin.html", "商城管理").await
 }
 
 async fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
