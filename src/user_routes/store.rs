@@ -338,7 +338,11 @@ pub(crate) async fn upload_store_cover_handler(
     loop {
         match multipart.next_field().await {
             Ok(Some(field)) => {
-                if field.name().map(|name| name == "image").unwrap_or(false) {
+                if field
+                    .name()
+                    .map(|name| matches!(name, "image" | "file"))
+                    .unwrap_or(false)
+                {
                     let mime_type = field
                         .content_type()
                         .map(|value| value.to_string())
@@ -405,7 +409,7 @@ pub(crate) async fn upload_store_cover_handler(
     }
     let cover_image = match cover_image {
         Some(path) => path,
-        None => return error_response(StatusCode::BAD_REQUEST, 400, "缺少 image 字段"),
+        None => return error_response(StatusCode::BAD_REQUEST, 400, "缺少封面图片字段"),
     };
 
     let now = now_millis() as i64;

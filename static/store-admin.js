@@ -21,6 +21,13 @@
       cancelled: "已取消",
       refunded: "已退款",
     };
+
+  function coverImageSrc(value) {
+    const src = String(value ?? "").trim();
+    if (/^(https?:\/\/|\/store-images\/)/.test(src)) return src;
+    return "";
+  }
+
   let view = "dashboard",
     products = [],
     orders = [],
@@ -106,7 +113,43 @@
     const d = await request("/user/admin/store/products");
     products = d.products || [];
     $("products").innerHTML = products.length
-      ? `<table><thead><tr><th>商品 / 规格</th><th>单价</th><th>库存</th><th>状态</th><th>操作</th></tr></thead><tbody>${products.map((p) => `<tr><td>${escape(p.name)}<small>${escape(p.sku)} · ${escape(p.unit_label)}</small></td><td>${money(p.price_cents)}</td><td>${p.stock_quantity}</td><td>${p.is_active ? "在售" : "已下架"}</td><td><button data-edit="${p.id}">编辑</button><button data-toggle="${p.id}">${p.is_active ? "下架" : "上架"}</button><button data-cover="${p.id}">上传封面</button></td></tr>`).join("")}</tbody></table>`
+      ? `<table>
+          <thead>
+            <tr>
+              <th>封面</th>
+              <th>商品 / 规格</th>
+              <th>单价</th>
+              <th>库存</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${products
+              .map((p) => {
+                const coverSrc = coverImageSrc(p.cover_image);
+                return `<tr>
+                  <td>
+                    <div class="store-product-cover ${coverSrc ? "has-image" : "no-image"}">
+                      ${coverSrc
+                        ? `<img class="store-product-cover__img" src="${escape(coverSrc)}" alt="${escape(p.name)}" />`
+                        : '<span class="store-product-cover__placeholder">暂无封面</span>'}
+                    </div>
+                  </td>
+                  <td>${escape(p.name)}<small>${escape(p.sku)} · ${escape(p.unit_label)}</small></td>
+                  <td>${money(p.price_cents)}</td>
+                  <td>${p.stock_quantity}</td>
+                  <td>${p.is_active ? "在售" : "已下架"}</td>
+                  <td>
+                    <button data-edit="${p.id}">编辑</button>
+                    <button data-toggle="${p.id}">${p.is_active ? "下架" : "上架"}</button>
+                    <button data-cover="${p.id}">上传封面</button>
+                  </td>
+                </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>`
       : empty;
   }
   function renderOrders() {
@@ -280,7 +323,7 @@
     try {
       if (file.size > 8 * 1024 * 1024) throw Error("封面不能超过 8 MB");
       const form = new FormData();
-      form.append("file", file);
+      form.append("image", file);
       const r = await fetch("/user/admin/store/products/" + id + "/cover", {
         method: "POST",
         credentials: "same-origin",
