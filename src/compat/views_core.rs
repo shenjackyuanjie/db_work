@@ -18,6 +18,13 @@
 //! 4. **`DecimalField` 才是字符串**；本域的数值列全是 `FloatField`/`IntegerField`，
 //!    一律输出 JSON 数字，不要套 `ser::dec`。
 //! 5. **列表截断照抄蓝本**：温湿度 `[:10]`、识别记录 `[:20]`、任务按 `-created_at`。
+//! 6. **平局排序要比 UUID 的文本形态**：PG 的 `uuid` 是 16 字节比较，`-`(0x2D) 排在
+//!    数字(0x30-)之后；Django 在 SQLite 里存的是文本。种子任务 `created_at` 三项相同，
+//!    平局先后就靠这一位定，所以写 `id::text`。
+//!
+//! 回放现状：42 条里 36 pass / 2 expected_deviation，另有 4 条差异全部是
+//! **夹具/工具问题**（捕获值未在回放期重建、seed 与夹具时间戳精度不一致），
+//! 证据与主线待办见仓库根的 `W1A_DELIVERY.md`。
 
 use axum::{
     Router,
