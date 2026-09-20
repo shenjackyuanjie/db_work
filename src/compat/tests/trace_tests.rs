@@ -128,7 +128,9 @@ const GOLDEN_EVENTS: &[GoldenEvent] = &[
 
 /// `Z` 形态 → Python `isoformat()` 的 `+00:00` 形态。
 fn iso_of(value: &str) -> DateTime<Utc> {
-    value.parse::<DateTime<Utc>>().expect("夹具时间是合法 RFC3339")
+    value
+        .parse::<DateTime<Utc>>()
+        .expect("夹具时间是合法 RFC3339")
 }
 
 #[test]
@@ -381,7 +383,10 @@ async fn appended_events_form_a_verifiable_chain() {
     // 批次详情的 integrity 只有 chainValid/eventCount（`latestHash` 只在 traces 视图里）
     assert!(detail["data"]["integrity"].get("latestHash").is_none());
     assert_eq!(detail["data"]["traceEvents"][0]["previous_hash"], "");
-    assert_eq!(detail["data"]["traceEvents"][1]["previous_hash"], first_hash);
+    assert_eq!(
+        detail["data"]["traceEvents"][1]["previous_hash"],
+        first_hash
+    );
     // 事件按 Meta.ordering = ['occurred_at', 'recorded_at', 'id'] 升序
     assert_eq!(
         detail["data"]["traceEvents"][0]["occurred_at"],
@@ -502,5 +507,8 @@ async fn unknown_orchard_returns_success_envelope_with_404() {
     assert_eq!(body["code"], 404);
     assert_eq!(body["message"], "果园不存在或尚未通过认证");
     assert_eq!(body["data"], Value::Null);
-    assert!(body["timestamp"].is_i64(), "视图层 4xx 带 timestamp：{body}");
+    assert!(
+        body["timestamp"].is_i64(),
+        "视图层 4xx 带 timestamp：{body}"
+    );
 }

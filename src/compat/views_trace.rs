@@ -321,7 +321,10 @@ async fn supply_batch_detail_handler(
     render(supply_batch_detail_impl(&state.db, id).await)
 }
 
-async fn trace_lookup_handler(State(state): State<AppState>, Path(trace_code): Path<String>) -> Response {
+async fn trace_lookup_handler(
+    State(state): State<AppState>,
+    Path(trace_code): Path<String>,
+) -> Response {
     render(trace_lookup_impl(&state.db, &trace_code).await)
 }
 
@@ -568,7 +571,12 @@ pub(crate) type TraceResult = Result<Response, Response>;
 
 /// 视图层 4xx：蓝本 `api_response(None, message, status)` → **成功体形状**（带 `timestamp`）。
 fn view_error(status: StatusCode, message: &str) -> Response {
-    api_response(status, status.as_u16(), Value::String(message.to_string()), Value::Null)
+    api_response(
+        status,
+        status.as_u16(),
+        Value::String(message.to_string()),
+        Value::Null,
+    )
 }
 
 /// DRF 异常体（鉴权/权限/405）。
@@ -820,11 +828,12 @@ async fn orchard_public_json(pool: &PgPool, orchard: &OrchardRow) -> Result<Valu
     .await
     .map_err(internal_error)?;
 
-    let tree_count: i64 = sqlx::query_scalar("SELECT count(*) FROM fruit_tree_archive WHERE orchard_id = $1")
-        .bind(orchard.id)
-        .fetch_one(pool)
-        .await
-        .map_err(internal_error)?;
+    let tree_count: i64 =
+        sqlx::query_scalar("SELECT count(*) FROM fruit_tree_archive WHERE orchard_id = $1")
+            .bind(orchard.id)
+            .fetch_one(pool)
+            .await
+            .map_err(internal_error)?;
 
     // `values_list('sku_type', flat=True).distinct()`：Django 把 Meta.ordering 的列也塞进
     // SELECT，所以 DISTINCT 拦不住「同一 sku_type 出现两次」（夹具里就有 4 条含重复标签）。
@@ -928,13 +937,19 @@ impl BatchRow {
             sold_quantity: row.try_get("sold_quantity").map_err(internal_error)?,
             open_at: row.try_get("open_at").map_err(internal_error)?,
             close_at: row.try_get("close_at").map_err(internal_error)?,
-            expected_harvest_start: row.try_get("expected_harvest_start").map_err(internal_error)?,
-            expected_harvest_end: row.try_get("expected_harvest_end").map_err(internal_error)?,
+            expected_harvest_start: row
+                .try_get("expected_harvest_start")
+                .map_err(internal_error)?,
+            expected_harvest_end: row
+                .try_get("expected_harvest_end")
+                .map_err(internal_error)?,
             expected_ship_start: row.try_get("expected_ship_start").map_err(internal_error)?,
             expected_ship_end: row.try_get("expected_ship_end").map_err(internal_error)?,
             maturity_standard: row.try_get("maturity_standard").map_err(internal_error)?,
             quality_commitment: row.try_get("quality_commitment").map_err(internal_error)?,
-            natural_variation_note: row.try_get("natural_variation_note").map_err(internal_error)?,
+            natural_variation_note: row
+                .try_get("natural_variation_note")
+                .map_err(internal_error)?,
             aftersale_policy: row.try_get("aftersale_policy").map_err(internal_error)?,
             cover_image_url: row.try_get("cover_image_url").map_err(internal_error)?,
             live_image_urls: json_col(row, "live_image_urls")?,
@@ -1074,7 +1089,9 @@ impl ProductRow {
             shipping_note: row.try_get("shipping_note").map_err(internal_error)?,
             cover_image_url: row.try_get("cover_image_url").map_err(internal_error)?,
             purchase_limit: row.try_get("purchase_limit").map_err(internal_error)?,
-            minimum_order_quantity: row.try_get("minimum_order_quantity").map_err(internal_error)?,
+            minimum_order_quantity: row
+                .try_get("minimum_order_quantity")
+                .map_err(internal_error)?,
             status: row.try_get("status").map_err(internal_error)?,
             seller_name: opt_text_col(row, "seller_name")?,
         })
@@ -1119,7 +1136,10 @@ async fn product_json(pool: &PgPool, product: &ProductRow) -> Result<Value, Resp
             Some(batch) => {
                 let summary = batch_summary_json(pool, &batch).await?;
                 let open = batch.is_open(Utc::now());
-                (Value::Object(summary.as_object().cloned().unwrap_or_default()), open)
+                (
+                    Value::Object(summary.as_object().cloned().unwrap_or_default()),
+                    open,
+                )
             }
             None => (Value::Null, true),
         },
@@ -1392,7 +1412,9 @@ impl SampleRow {
             sample_size: row.try_get("sample_size").map_err(internal_error)?,
             sweetness_brix: row.try_get("sweetness_brix").map_err(internal_error)?,
             acidity: row.try_get("acidity").map_err(internal_error)?,
-            average_weight_grams: row.try_get("average_weight_grams").map_err(internal_error)?,
+            average_weight_grams: row
+                .try_get("average_weight_grams")
+                .map_err(internal_error)?,
             diameter_mm: row.try_get("diameter_mm").map_err(internal_error)?,
             grade: row.try_get("grade").map_err(internal_error)?,
             result: row.try_get("result").map_err(internal_error)?,
@@ -1655,11 +1677,20 @@ fn canonical_payload(batch_code: &str, input: &HashInput<'_>) -> String {
     map.insert("actor".into(), Value::String(input.actor.to_string()));
     map.insert("batch".into(), Value::String(batch_code.to_string()));
     map.insert("data".into(), input.data.clone());
-    map.insert("description".into(), Value::String(input.description.to_string()));
-    map.insert("eventType".into(), Value::String(input.event_type.to_string()));
+    map.insert(
+        "description".into(),
+        Value::String(input.description.to_string()),
+    );
+    map.insert(
+        "eventType".into(),
+        Value::String(input.event_type.to_string()),
+    );
     map.insert("imageUrls".into(), input.image_urls.clone());
     map.insert("location".into(), Value::String(input.location.to_string()));
-    map.insert("occurredAt".into(), Value::String(ser::dt_offset(input.occurred_at)));
+    map.insert(
+        "occurredAt".into(),
+        Value::String(ser::dt_offset(input.occurred_at)),
+    );
     map.insert(
         "previousHash".into(),
         Value::String(input.previous_hash.to_string()),
@@ -1668,7 +1699,10 @@ fn canonical_payload(batch_code: &str, input: &HashInput<'_>) -> String {
         "sourceReference".into(),
         Value::String(input.source_reference.to_string()),
     );
-    map.insert("sourceType".into(), Value::String(input.source_type.to_string()));
+    map.insert(
+        "sourceType".into(),
+        Value::String(input.source_type.to_string()),
+    );
     map.insert("title".into(), Value::String(input.title.to_string()));
 
     Value::Object(map).to_string()
@@ -1838,7 +1872,11 @@ pub(crate) async fn orchard_detail_impl(
         product_query = product_query.bind(sku_type);
     }
     let mut products = Vec::new();
-    for row in product_query.fetch_all(pool).await.map_err(internal_error)? {
+    for row in product_query
+        .fetch_all(pool)
+        .await
+        .map_err(internal_error)?
+    {
         products.push(product_json(pool, &ProductRow::from_row(&row)?).await?);
     }
 
@@ -1941,11 +1979,12 @@ pub(crate) async fn supply_batch_detail_impl(pool: &PgPool, batch_id: Uuid) -> T
         .iter()
         .map(EventRow::to_json)
         .collect::<Vec<_>>();
-    let event_count = sqlx::query_scalar::<_, i64>("SELECT count(*) FROM trace_event WHERE batch_id = $1")
-        .bind(batch_id)
-        .fetch_one(pool)
-        .await
-        .map_err(internal_error)?;
+    let event_count =
+        sqlx::query_scalar::<_, i64>("SELECT count(*) FROM trace_event WHERE batch_id = $1")
+            .bind(batch_id)
+            .fetch_one(pool)
+            .await
+            .map_err(internal_error)?;
 
     if let Some(object) = payload.as_object_mut() {
         object.insert("products".into(), Value::Array(products));
@@ -1983,11 +2022,12 @@ pub(crate) async fn trace_lookup_impl(pool: &PgPool, trace_code: &str) -> TraceR
 
     if let Some(row) = tree_row {
         let tree = TreeRow::from_row(&row)?;
-        let orchard_id: Uuid = sqlx::query_scalar("SELECT orchard_id FROM fruit_tree_archive WHERE id = $1")
-            .bind(tree.id)
-            .fetch_one(pool)
-            .await
-            .map_err(internal_error)?;
+        let orchard_id: Uuid =
+            sqlx::query_scalar("SELECT orchard_id FROM fruit_tree_archive WHERE id = $1")
+                .bind(tree.id)
+                .fetch_one(pool)
+                .await
+                .map_err(internal_error)?;
 
         let batch_id: Option<Uuid> = sqlx::query_scalar(
             r#"SELECT b.id FROM sales_batch b
@@ -2167,7 +2207,11 @@ pub(crate) async fn farmer_trees_impl(
     Ok(api_ok(Value::Array(trees)))
 }
 
-async fn own_orchard(pool: &PgPool, user: &AuthUser, orchard_id: Uuid) -> Result<OrchardRow, Response> {
+async fn own_orchard(
+    pool: &PgPool,
+    user: &AuthUser,
+    orchard_id: Uuid,
+) -> Result<OrchardRow, Response> {
     let row = sqlx::query(&format!(
         "SELECT {ORCHARD_COLUMNS} FROM orchard o WHERE o.id = $1 AND o.owner_id = $2"
     ))
@@ -2270,7 +2314,10 @@ pub(crate) async fn farmer_tree_create_impl(
     .await
     .map_err(internal_error)?;
 
-    Ok(api_ok_message(MSG_TREE_CREATED, TreeRow::from_row(&row)?.to_json()))
+    Ok(api_ok_message(
+        MSG_TREE_CREATED,
+        TreeRow::from_row(&row)?.to_json(),
+    ))
 }
 
 /// `GET /api/v1/farmer/batches`。
@@ -2307,7 +2354,12 @@ pub(crate) async fn farmer_batch_create_impl(
         .and_then(|raw| Uuid::parse_str(raw).ok());
     let orchard = match orchard_id {
         Some(id) => own_orchard(pool, user, id).await?,
-        None => return Err(view_error(StatusCode::NOT_FOUND, ERR_ORCHARD_NOT_FOUND_OR_FORBIDDEN)),
+        None => {
+            return Err(view_error(
+                StatusCode::NOT_FOUND,
+                ERR_ORCHARD_NOT_FOUND_OR_FORBIDDEN,
+            ));
+        }
     };
 
     let mut errors = FieldErrors::default();
@@ -2327,7 +2379,10 @@ pub(crate) async fn farmer_batch_create_impl(
     let natural_variation_note = optional_text(&map, "natural_variation_note").unwrap_or_default();
     let aftersale_policy = optional_text(&map, "aftersale_policy").unwrap_or_default();
     let cover_image_url = optional_text(&map, "cover_image_url").unwrap_or_default();
-    let environment_summary = map.get("environment_summary").cloned().unwrap_or_else(|| json!({}));
+    let environment_summary = map
+        .get("environment_summary")
+        .cloned()
+        .unwrap_or_else(|| json!({}));
     let payment_mode = optional_text(&map, "payment_mode").unwrap_or_else(|| "full".into());
     let deposit_ratio = optional_decimal(&map, "deposit_ratio").unwrap_or(Decimal::ZERO);
 
@@ -2608,15 +2663,22 @@ pub(crate) async fn farmer_product_update_impl(
     body: &Value,
 ) -> TraceResult {
     let Some(existing) = load_product(pool, product_id).await? else {
-        return Err(view_error(StatusCode::NOT_FOUND, ERR_PRODUCT_NOT_FOUND_OR_FORBIDDEN));
+        return Err(view_error(
+            StatusCode::NOT_FOUND,
+            ERR_PRODUCT_NOT_FOUND_OR_FORBIDDEN,
+        ));
     };
-    let seller: Option<Uuid> = sqlx::query_scalar("SELECT seller_id FROM citrus_product WHERE id = $1")
-        .bind(product_id)
-        .fetch_one(pool)
-        .await
-        .map_err(internal_error)?;
+    let seller: Option<Uuid> =
+        sqlx::query_scalar("SELECT seller_id FROM citrus_product WHERE id = $1")
+            .bind(product_id)
+            .fetch_one(pool)
+            .await
+            .map_err(internal_error)?;
     if seller != Some(user.id) {
-        return Err(view_error(StatusCode::NOT_FOUND, ERR_PRODUCT_NOT_FOUND_OR_FORBIDDEN));
+        return Err(view_error(
+            StatusCode::NOT_FOUND,
+            ERR_PRODUCT_NOT_FOUND_OR_FORBIDDEN,
+        ));
     }
 
     let map = body.as_object().cloned().unwrap_or_default();
@@ -2637,9 +2699,7 @@ pub(crate) async fn farmer_product_update_impl(
 
     let new_batch_id = match map.get("sales_batch") {
         Some(Value::Null) | None => existing.sales_batch_id,
-        Some(value) => value
-            .as_str()
-            .and_then(|raw| Uuid::parse_str(raw).ok()),
+        Some(value) => value.as_str().and_then(|raw| Uuid::parse_str(raw).ok()),
     };
     if let Some(batch_id) = map
         .get("sales_batch")
@@ -2678,8 +2738,8 @@ pub(crate) async fn farmer_product_update_impl(
     let cover_image_url =
         optional_text(&map, "cover_image_url").unwrap_or(existing.cover_image_url);
     let purchase_limit = optional_int(&map, "purchase_limit").unwrap_or(existing.purchase_limit);
-    let minimum_order_quantity = optional_int(&map, "minimum_order_quantity")
-        .unwrap_or(existing.minimum_order_quantity);
+    let minimum_order_quantity =
+        optional_int(&map, "minimum_order_quantity").unwrap_or(existing.minimum_order_quantity);
     let status = optional_text(&map, "status").unwrap_or(existing.status);
 
     sqlx::query(
@@ -2799,10 +2859,7 @@ pub(crate) async fn farmer_harvest_create_impl(
         match orchard_id {
             None => {
                 let mut errors = FieldErrors::default();
-                errors.push(
-                    "tree",
-                    &format!("无效主键 “{tree_id}” － 对象不存在。"),
-                );
+                errors.push("tree", &format!("无效主键 “{tree_id}” － 对象不存在。"));
                 return Ok(errors.into_response(StatusCode::BAD_REQUEST));
             }
             Some(orchard_id) if orchard_id != batch.orchard_id => {
@@ -2831,12 +2888,14 @@ pub(crate) async fn farmer_harvest_create_impl(
         .await?
         .ok_or_else(|| view_error(StatusCode::NOT_FOUND, ERR_ORCHARD_NOT_PUBLIC))?;
     let tree_number = match tree_id {
-        Some(tree_id) => sqlx::query_scalar::<_, String>("SELECT tree_number FROM fruit_tree_archive WHERE id = $1")
-            .bind(tree_id)
-            .fetch_optional(pool)
-            .await
-            .map_err(internal_error)?
-            .unwrap_or_default(),
+        Some(tree_id) => sqlx::query_scalar::<_, String>(
+            "SELECT tree_number FROM fruit_tree_archive WHERE id = $1",
+        )
+        .bind(tree_id)
+        .fetch_optional(pool)
+        .await
+        .map_err(internal_error)?
+        .unwrap_or_default(),
         None => String::new(),
     };
 
@@ -3089,7 +3148,12 @@ pub(crate) async fn farmer_quality_create_impl(
             let row = load_product(pool, id).await?;
             match row {
                 Some(row) if row.sales_batch_id == Some(batch.id) => Some(row),
-                Some(_) => return Err(view_error(StatusCode::BAD_REQUEST, ERR_SAMPLE_PRODUCT_MISMATCH)),
+                Some(_) => {
+                    return Err(view_error(
+                        StatusCode::BAD_REQUEST,
+                        ERR_SAMPLE_PRODUCT_MISMATCH,
+                    ));
+                }
                 None => {
                     let mut errors = FieldErrors::default();
                     errors.push("product", "无效主键 － 对象不存在。");
@@ -3113,14 +3177,19 @@ pub(crate) async fn farmer_quality_create_impl(
                     .await
                     .map_err(internal_error)?;
             match batch_id_of_archive {
-                Some(found) if found == batch.id => {
-                    sqlx::query_scalar::<_, String>("SELECT harvest_code FROM harvest_archive WHERE id = $1")
-                        .bind(id)
-                        .fetch_one(pool)
-                        .await
-                        .map_err(internal_error)?
+                Some(found) if found == batch.id => sqlx::query_scalar::<_, String>(
+                    "SELECT harvest_code FROM harvest_archive WHERE id = $1",
+                )
+                .bind(id)
+                .fetch_one(pool)
+                .await
+                .map_err(internal_error)?,
+                Some(_) => {
+                    return Err(view_error(
+                        StatusCode::BAD_REQUEST,
+                        ERR_SAMPLE_ARCHIVE_MISMATCH,
+                    ));
                 }
-                Some(_) => return Err(view_error(StatusCode::BAD_REQUEST, ERR_SAMPLE_ARCHIVE_MISMATCH)),
                 None => {
                     let mut errors = FieldErrors::default();
                     errors.push("harvest_archive", "无效主键 － 对象不存在。");
@@ -3201,7 +3270,11 @@ pub(crate) async fn farmer_quality_create_impl(
         product_name.clone()
     };
     let event_title = format!("{target_name}健康检查");
-    let event_description = if note.is_empty() { result.clone() } else { note.clone() };
+    let event_description = if note.is_empty() {
+        result.clone()
+    } else {
+        note.clone()
+    };
     let actor = if inspector.is_empty() {
         user.username.clone()
     } else {
@@ -3274,7 +3347,11 @@ fn field_error<T>(errors: &mut FieldErrors, field: &str, message: &str) -> Optio
     None
 }
 
-fn required_text(map: &Map<String, Value>, field: &str, errors: &mut FieldErrors) -> Option<String> {
+fn required_text(
+    map: &Map<String, Value>,
+    field: &str,
+    errors: &mut FieldErrors,
+) -> Option<String> {
     match map.get(field) {
         None => field_error(errors, field, ERR_REQUIRED),
         Some(Value::Null) => field_error(errors, field, ERR_NULL),
@@ -3434,6 +3511,10 @@ mod tests {
     fn random_code_uses_expected_prefix_and_length() {
         let tree = random_code("CGJ-TREE-", 10);
         assert_eq!(tree.len(), "CGJ-TREE-".len() + 10);
-        assert!(tree.trim_start_matches("CGJ-TREE-").chars().all(|c| c.is_ascii_hexdigit()));
+        assert!(
+            tree.trim_start_matches("CGJ-TREE-")
+                .chars()
+                .all(|c| c.is_ascii_hexdigit())
+        );
     }
 }
