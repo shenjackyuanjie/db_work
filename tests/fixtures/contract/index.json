@@ -1,6 +1,6 @@
 {
-  "captured_at": "2026-09-20T14:20:34+00:00",
-  "seed_signature": "sha256:7244af9d80d7dec4e96ca5f8bbcafec22cf1ce8330c3ef149db90ff5ab3a1c8c",
+  "captured_at": "2026-09-20T15:57:04+00:00",
+  "seed_signature": "sha256:132dd937d0663088674d5c6ab897f160fba737b5a458da0a68790427dc9b0cff",
   "environment": {
     "django_version": "5.0.14",
     "drf_version": "3.15.2",
@@ -14,7 +14,7 @@
     "model_available": false,
     "recognition_mode": "mock",
     "random_seed": 20260913,
-    "real_db_sha256": "bfb0b1f0239b0fee85ce3225dedccc5d78fba1f503ee72293840d308f9c7b3d5",
+    "real_db_sha256": "6fda81ceeaef5d7d5ed9ef19df96fcc30d3c746dd9f4690928150ce9b9a80317",
     "test_db": "file:memorydb_default?mode=memory&cache=shared"
   },
   "path_count": 79,
@@ -64,32 +64,32 @@
       "username": "<seed username>",
       "password": "<seed password>"
     },
-    "orchard_id": "5242b4fd-1163-4366-93eb-5ae589a231f8",
-    "batch_id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-    "product_id": "04d854b4-aa5b-4d63-8f3c-f40819927ec6",
-    "product_enterprise_id": "8e31b734-be41-4568-9f97-97fd70e86ce2",
-    "product_ay_enterprise_id": "8098d1e1-8ea5-4dcd-baef-37ce8a45dd99",
-    "product_ay_family_id": "2db9e0d7-4289-49fa-b185-4b8b75eba217",
-    "order_completed_id": "353ef930-8477-4648-82ea-332ad00b3888",
-    "order_pending_id": "3a0e20d0-5e51-4553-b0ec-7280321b4e5a",
-    "address_id": "e49860c6-6817-4bdf-b8e0-c3298cb6aa8d",
-    "address_secondary_id": "e334dd6f-2a3e-433f-ac4f-5edf5ff606dd",
-    "item_id": "22b203eb-9770-485d-96fe-7747cff23807",
-    "item_id_b3": "2f2757d4-3e6d-4298-a0a5-9b032913c299",
+    "orchard_id": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
+    "batch_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+    "product_id": "b1cef48a-4436-4232-8c03-bead1de8e521",
+    "product_enterprise_id": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
+    "product_ay_enterprise_id": "912e866f-18df-44bc-aced-848c60f3523c",
+    "product_ay_family_id": "753bf92d-301c-494f-8b5d-715b57294f28",
+    "order_completed_id": "4c4bea1f-04d1-4cda-af30-ed678352528b",
+    "order_pending_id": "fa6eaac3-bf7a-48af-8f66-1c95974ed138",
+    "address_id": "33d80eda-f2d7-4eb0-9648-5d6e092ebb7a",
+    "address_secondary_id": "4b8be63a-8257-44a1-92b7-809f2f4e6781",
+    "item_id": "661b6bee-21f4-426e-836e-0962e7aa139a",
+    "item_id_b3": "8a9bf572-54c2-43ba-8fb6-b095572c7941",
     "item_ids": [
-      "22b203eb-9770-485d-96fe-7747cff23807",
-      "2f2757d4-3e6d-4298-a0a5-9b032913c299"
+      "8a9bf572-54c2-43ba-8fb6-b095572c7941",
+      "661b6bee-21f4-426e-836e-0962e7aa139a"
     ],
     "trace_code": "CGJ-BATCH-XF2026",
     "tree_number": "信丰-01-001",
-    "tree_id": "1418c558-5663-4fc8-b008-f76f973bd633",
-    "tree_trace_code": "CGJ-TREE-46E6D7C4F3",
-    "package_id": "80825162-a8b6-443b-9212-3d12b936aba9",
-    "package_trace_code": "CGJ-147E753ED3BE",
+    "tree_id": "fcdeb973-56bf-4de1-90be-609f9c66795e",
+    "tree_trace_code": "CGJ-TREE-5A17D5DCC9",
+    "package_id": "d0f6c2e5-1671-4bdc-99dd-51fbe9dd6590",
+    "package_trace_code": "CGJ-B32C2CD80C76",
     "batch_ids": {
-      "CGJ-2026-AY-002": "a6347a0b-f024-4743-a074-f03c39f810d6",
-      "CGJ-2026-XW-003": "18578e5c-8424-470a-bb16-d90f18be4e2c",
-      "CGJ-2026-XF-001": "dffb44ac-c6e7-41f4-a375-b1334894b670"
+      "CGJ-2026-AY-002": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+      "CGJ-2026-XW-003": "89197bf2-7798-40c4-8b06-2414773a9444",
+      "CGJ-2026-XF-001": "6109a446-b1ed-467c-982f-87f0c8a70bb0"
     },
     "batch_trace_codes": {
       "CGJ-2026-AY-002": "CGJ-BATCH-AY2026",
@@ -97,18 +97,18 @@
       "CGJ-2026-XF-001": "CGJ-BATCH-XF2026"
     },
     "product_ids": {
-      "红肉脐橙家庭装": "2db9e0d7-4289-49fa-b185-4b8b75eba217",
-      "红肉脐橙企业装": "8098d1e1-8ea5-4dcd-baef-37ce8a45dd99",
-      "朋娜脐橙精品尝鲜装": "24fd12a0-58b9-42a9-841c-187e999af11b",
-      "朋娜脐橙礼赠装": "a3a2ab95-a40c-43e7-9659-4315d88d9a8f",
-      "纽荷尔企业装": "8e31b734-be41-4568-9f97-97fd70e86ce2",
-      "纽荷尔试吃装": "c393d8e4-260e-4ee2-8645-c3e9e9d66e63",
-      "赣南纽荷尔家庭装": "04d854b4-aa5b-4d63-8f3c-f40819927ec6"
+      "红肉脐橙家庭装": "753bf92d-301c-494f-8b5d-715b57294f28",
+      "红肉脐橙企业装": "912e866f-18df-44bc-aced-848c60f3523c",
+      "朋娜脐橙精品尝鲜装": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
+      "朋娜脐橙礼赠装": "2ee35bbd-7459-4fd4-9b07-611925cd7937",
+      "纽荷尔企业装": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
+      "纽荷尔试吃装": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
+      "赣南纽荷尔家庭装": "b1cef48a-4436-4232-8c03-bead1de8e521"
     },
     "order_ids": {
-      "ORD-DEMO-1003": "3a0e20d0-5e51-4553-b0ec-7280321b4e5a",
-      "ORD-DEMO-1002": "ad0ddd68-eb4c-4fea-b946-dd3787081e13",
-      "ORD-DEMO-1001": "353ef930-8477-4648-82ea-332ad00b3888"
+      "ORD-DEMO-1003": "fa6eaac3-bf7a-48af-8f66-1c95974ed138",
+      "ORD-DEMO-1002": "3630e61b-bd24-4a96-abb2-20aae54e2ae8",
+      "ORD-DEMO-1001": "4c4bea1f-04d1-4cda-af30-ed678352528b"
     },
     "_codes": {
       "orchard": "GY-XF-DEMO-01",
@@ -120,17 +120,57 @@
     }
   },
   "captured_values": {
-    "task_id": "9e401969-9f8b-42e7-b301-225c0cb7b3f8",
-    "cart_item_b1": "5abc504a-d2a9-478f-b278-532421ff5106",
-    "cart_item_b1_2": "5abc504a-d2a9-478f-b278-532421ff5106",
-    "order_new": "197546f4-4e8c-4cec-8d3a-a8059992bd26",
-    "order_paid": "197546f4-4e8c-4cec-8d3a-a8059992bd26",
-    "order_new_v1": "4820a7a2-c2a1-4dd7-ad13-1593e7eee013",
-    "batch_new": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-    "harvest_archive_id": "a4934b05-ffd2-4620-8323-c6834a94d014",
-    "approval_new": "9c3773a0-6933-4b58-92c6-2cd5354d58d3"
+    "task_id": "cf0a26c6-3abc-44a0-9d72-2f6ce912857b",
+    "cart_item_b1": "c422d62a-98d3-4399-bc0f-b3323ea6cab7",
+    "cart_item_b1_2": "c422d62a-98d3-4399-bc0f-b3323ea6cab7",
+    "order_new": "22d79ab9-6548-4d9d-a9b3-5e42acc3e926",
+    "order_paid": "22d79ab9-6548-4d9d-a9b3-5e42acc3e926",
+    "order_new_v1": "c26ba805-de7c-4585-8e25-6efd6190d23c",
+    "batch_new": "641607af-3467-4f28-9e61-da013bc0ca8d",
+    "harvest_archive_id": "21bb3ba0-4db9-40be-bbde-8afc70ede913",
+    "approval_new": "54154a77-843a-45ea-8c3e-821ab0b4a144"
   },
-  "seed_approval_id": "a5fcae19-8740-48d0-b7b4-f818a0f20598",
+  "seed_approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457",
+  "capture_plan": {
+    "task_id": "$.data.id",
+    "cart_item_b1": "$.data.id",
+    "cart_item_b1_2": "$.data.id",
+    "order_new": "$.data.id",
+    "order_paid": "$.data.id",
+    "order_new_v1": "$.data.id",
+    "batch_new": "$.data.id",
+    "harvest_archive_id": "$.data.id",
+    "approval_new": "$.data.id"
+  },
+  "capture_generators": {
+    "task_id": [
+      "tasks_add_ok"
+    ],
+    "cart_item_b1": [
+      "cart_add_ok"
+    ],
+    "cart_item_b1_2": [
+      "cart_add_b1_family_ok"
+    ],
+    "order_new": [
+      "orders_create_ok"
+    ],
+    "order_paid": [
+      "order_pay_ok"
+    ],
+    "order_new_v1": [
+      "orders_create_v1_ok"
+    ],
+    "batch_new": [
+      "farmer_batch_create_shape_only"
+    ],
+    "harvest_archive_id": [
+      "farmer_harvest_archive_create_ok"
+    ],
+    "approval_new": [
+      "agent_approval_create_ok"
+    ]
+  },
   "seed_row_counts": {
     "api.user": 4,
     "api.temperaturehumiditydata": 30,
@@ -253,7 +293,7 @@
       "domain": "commerce",
       "case": "cart_item_delete_b3_ok",
       "method": "DELETE",
-      "path": "/api/cart/2f2757d4-3e6d-4298-a0a5-9b032913c299",
+      "path": "/api/cart/8a9bf572-54c2-43ba-8fb6-b095572c7941",
       "note": "删掉 b3 的 seed 条目（拿到只剩 b1 的车）"
     },
     {
@@ -261,7 +301,7 @@
       "domain": "commerce",
       "case": "cart_item_delete_b1_ok",
       "method": "DELETE",
-      "path": "/api/v1/cart/22b203eb-9770-485d-96fe-7747cff23807",
+      "path": "/api/v1/cart/661b6bee-21f4-426e-836e-0962e7aa139a",
       "note": "删掉 b1 的 seed 条目（v1 别名 DELETE）-> 空车"
     },
     {
@@ -277,7 +317,7 @@
       "domain": "commerce",
       "case": "cart_item_patch_ok",
       "method": "PATCH",
-      "path": "/api/cart/5abc504a-d2a9-478f-b278-532421ff5106",
+      "path": "/api/cart/c422d62a-98d3-4399-bc0f-b3323ea6cab7",
       "note": ""
     },
     {
@@ -293,7 +333,7 @@
       "domain": "commerce",
       "case": "cart_item_delete_b1_family_ok",
       "method": "DELETE",
-      "path": "/api/cart/5abc504a-d2a9-478f-b278-532421ff5106",
+      "path": "/api/cart/c422d62a-98d3-4399-bc0f-b3323ea6cab7",
       "note": "再清空一次购物车"
     },
     {
@@ -309,7 +349,7 @@
       "domain": "commerce",
       "case": "address_detail_patch_ok",
       "method": "PATCH",
-      "path": "/api/addresses/e334dd6f-2a3e-433f-ac4f-5edf5ff606dd",
+      "path": "/api/addresses/4b8be63a-8257-44a1-92b7-809f2f4e6781",
       "note": ""
     },
     {
@@ -333,7 +373,7 @@
       "domain": "commerce",
       "case": "order_pay_ok",
       "method": "POST",
-      "path": "/api/orders/197546f4-4e8c-4cec-8d3a-a8059992bd26/pay",
+      "path": "/api/orders/22d79ab9-6548-4d9d-a9b3-5e42acc3e926/pay",
       "note": ""
     },
     {
@@ -341,7 +381,7 @@
       "domain": "commerce",
       "case": "order_cancel_paid_400",
       "method": "POST",
-      "path": "/api/orders/197546f4-4e8c-4cec-8d3a-a8059992bd26/cancel",
+      "path": "/api/orders/22d79ab9-6548-4d9d-a9b3-5e42acc3e926/cancel",
       "note": "已支付订单不可取消：当前订单状态不能取消"
     },
     {
@@ -349,7 +389,7 @@
       "domain": "commerce",
       "case": "order_cancel_pending_ok",
       "method": "POST",
-      "path": "/api/orders/3a0e20d0-5e51-4553-b0ec-7280321b4e5a/cancel",
+      "path": "/api/orders/fa6eaac3-bf7a-48af-8f66-1c95974ed138/cancel",
       "note": ""
     },
     {
@@ -381,7 +421,7 @@
       "domain": "commerce",
       "case": "order_pay_v1_ok",
       "method": "POST",
-      "path": "/api/v1/orders/4820a7a2-c2a1-4dd7-ad13-1593e7eee013/pay",
+      "path": "/api/v1/orders/c26ba805-de7c-4585-8e25-6efd6190d23c/pay",
       "note": ""
     },
     {
@@ -389,7 +429,7 @@
       "domain": "commerce",
       "case": "order_cancel_v1_paid_400",
       "method": "POST",
-      "path": "/api/v1/orders/4820a7a2-c2a1-4dd7-ad13-1593e7eee013/cancel",
+      "path": "/api/v1/orders/c26ba805-de7c-4585-8e25-6efd6190d23c/cancel",
       "note": "别名 cancel 在已支付状态 -> 400"
     },
     {
@@ -413,7 +453,7 @@
       "domain": "orchard_trace",
       "case": "farmer_trees_create_ok",
       "method": "POST",
-      "path": "/api/v1/farmer/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8/trees",
+      "path": "/api/v1/farmer/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b/trees",
       "note": ""
     },
     {
@@ -421,7 +461,7 @@
       "domain": "orchard_trace",
       "case": "farmer_trees_create_duplicate_500",
       "method": "POST",
-      "path": "/api/v1/farmer/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8/trees",
+      "path": "/api/v1/farmer/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b/trees",
       "note": "同果园 tree_number 唯一约束在 DB 层 -> IntegrityError 冒泡 -> 500（DRF 异常体形状，无 timestamp）"
     },
     {
@@ -469,7 +509,7 @@
       "domain": "orchard_trace",
       "case": "farmer_product_patch_ok",
       "method": "PATCH",
-      "path": "/api/v1/farmer/products/04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+      "path": "/api/v1/farmer/products/b1cef48a-4436-4232-8c03-bead1de8e521",
       "note": ""
     },
     {
@@ -477,7 +517,7 @@
       "domain": "orchard_trace",
       "case": "farmer_harvest_archive_create_ok",
       "method": "POST",
-      "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/harvest-archives",
+      "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/harvest-archives",
       "note": ""
     },
     {
@@ -485,7 +525,7 @@
       "domain": "orchard_trace",
       "case": "farmer_trace_event_create_ok",
       "method": "POST",
-      "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/trace-events",
+      "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/trace-events",
       "note": "哈希链：previous_hash/evidence_hash 依赖上一条事件"
     },
     {
@@ -493,7 +533,7 @@
       "domain": "orchard_trace",
       "case": "farmer_quality_sample_create_shape_only",
       "method": "POST",
-      "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/quality-samples",
+      "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/quality-samples",
       "note": "shape_only：写入同时追加 TraceEvent（哈希链依赖时间序列）"
     },
     {
@@ -501,7 +541,7 @@
       "domain": "orchard_trace",
       "case": "farmer_health_records_create_ok",
       "method": "POST",
-      "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/health-records",
+      "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/health-records",
       "note": "同 quality-samples 实现"
     },
     {
@@ -549,7 +589,7 @@
       "domain": "agent",
       "case": "agent_approval_decision_approve_ok",
       "method": "POST",
-      "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
       "note": "seed 审批单 payload.action 非 create_task -> exec_note 为空"
     },
     {
@@ -557,7 +597,7 @@
       "domain": "agent",
       "case": "agent_approval_decision_repeat_500",
       "method": "POST",
-      "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
       "note": "已批准不能重复处理（应为 400）实际 500"
     },
     {
@@ -565,7 +605,7 @@
       "domain": "agent",
       "case": "agent_approval_decision_reject_ok",
       "method": "POST",
-      "path": "/api/agent/approvals/9c3773a0-6933-4b58-92c6-2cd5354d58d3/decision",
+      "path": "/api/agent/approvals/54154a77-843a-45ea-8c3e-821ab0b4a144/decision",
       "note": ""
     }
   ],
@@ -595,6 +635,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -635,6 +688,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -645,7 +711,7 @@
           "$.data.integrity.checkedAt"
         ],
         "diff": [
-          ".data.integrity.checkedAt: '2026-09-20T14:20:40.960219+00:00' != '2026-09-20T14:20:41.038768+00:00'"
+          ".data.integrity.checkedAt: '2026-09-20T15:57:11.801582+00:00' != '2026-09-20T15:57:11.918583+00:00'"
         ],
         "note": "存在差异，见 diff"
       }
@@ -673,6 +739,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -706,6 +785,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -739,6 +831,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -779,6 +884,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -792,10 +910,10 @@
       },
       {
         "domain": "commerce",
-        "alias_path": "/api/v1/products/04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+        "alias_path": "/api/v1/products/b1cef48a-4436-4232-8c03-bead1de8e521",
         "alias_case": "product_detail_v1_ok",
         "alias_status": 200,
-        "primary_path": "/api/products/04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+        "primary_path": "/api/products/b1cef48a-4436-4232-8c03-bead1de8e521",
         "primary_case": "product_detail_ok",
         "primary_status": 200,
         "method": "GET",
@@ -812,6 +930,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -825,10 +956,10 @@
       },
       {
         "domain": "commerce",
-        "alias_path": "/api/v1/products/04d854b4-aa5b-4d63-8f3c-f40819927ec6/health-archive",
+        "alias_path": "/api/v1/products/b1cef48a-4436-4232-8c03-bead1de8e521/health-archive",
         "alias_case": "product_health_archive_v1_ok",
         "alias_status": 200,
-        "primary_path": "/api/products/04d854b4-aa5b-4d63-8f3c-f40819927ec6/health-archive",
+        "primary_path": "/api/products/b1cef48a-4436-4232-8c03-bead1de8e521/health-archive",
         "primary_case": "product_health_archive_ok",
         "primary_status": 200,
         "method": "GET",
@@ -845,6 +976,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -881,6 +1025,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -914,6 +1071,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -947,6 +1117,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -960,10 +1143,10 @@
       },
       {
         "domain": "commerce",
-        "alias_path": "/api/v1/orders/353ef930-8477-4648-82ea-332ad00b3888",
+        "alias_path": "/api/v1/orders/4c4bea1f-04d1-4cda-af30-ed678352528b",
         "alias_case": "order_detail_v1_ok",
         "alias_status": 200,
-        "primary_path": "/api/orders/353ef930-8477-4648-82ea-332ad00b3888",
+        "primary_path": "/api/orders/4c4bea1f-04d1-4cda-af30-ed678352528b",
         "primary_case": "order_detail_ok",
         "primary_status": 200,
         "method": "GET",
@@ -980,6 +1163,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -994,10 +1190,10 @@
       },
       {
         "domain": "commerce",
-        "alias_path": "/api/v1/orders/353ef930-8477-4648-82ea-332ad00b3888/pay",
+        "alias_path": "/api/v1/orders/4c4bea1f-04d1-4cda-af30-ed678352528b/pay",
         "alias_case": "v1_order_pay_alias_read_405",
         "alias_status": 405,
-        "primary_path": "/api/orders/353ef930-8477-4648-82ea-332ad00b3888/pay",
+        "primary_path": "/api/orders/4c4bea1f-04d1-4cda-af30-ed678352528b/pay",
         "primary_case": "order_pay_method_not_allowed_405",
         "primary_status": 405,
         "method": "GET",
@@ -1014,6 +1210,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1026,10 +1235,10 @@
       },
       {
         "domain": "commerce",
-        "alias_path": "/api/v1/orders/353ef930-8477-4648-82ea-332ad00b3888/cancel",
+        "alias_path": "/api/v1/orders/4c4bea1f-04d1-4cda-af30-ed678352528b/cancel",
         "alias_case": "v1_order_cancel_alias_read_405",
         "alias_status": 405,
-        "primary_path": "/api/orders/353ef930-8477-4648-82ea-332ad00b3888/cancel",
+        "primary_path": "/api/orders/4c4bea1f-04d1-4cda-af30-ed678352528b/cancel",
         "primary_case": "order_cancel_method_not_allowed_405",
         "primary_status": 405,
         "method": "GET",
@@ -1046,6 +1255,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1078,6 +1300,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1111,6 +1346,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1124,10 +1372,10 @@
       },
       {
         "domain": "orchard_trace",
-        "alias_path": "/api/v1/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8",
+        "alias_path": "/api/v1/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
         "alias_case": "orchard_detail_v1_ok",
         "alias_status": 200,
-        "primary_path": "/api/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8",
+        "primary_path": "/api/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
         "primary_case": "orchard_detail_ok",
         "primary_status": 200,
         "method": "GET",
@@ -1144,6 +1392,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1177,6 +1438,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1190,10 +1464,10 @@
       },
       {
         "domain": "orchard_trace",
-        "alias_path": "/api/v1/supply-batches/dffb44ac-c6e7-41f4-a375-b1334894b670",
+        "alias_path": "/api/v1/supply-batches/6109a446-b1ed-467c-982f-87f0c8a70bb0",
         "alias_case": "supply_batch_detail_v1_ok",
         "alias_status": 200,
-        "primary_path": "/api/supply-batches/dffb44ac-c6e7-41f4-a375-b1334894b670",
+        "primary_path": "/api/supply-batches/6109a446-b1ed-467c-982f-87f0c8a70bb0",
         "primary_case": "supply_batch_detail_ok",
         "primary_status": 200,
         "method": "GET",
@@ -1210,6 +1484,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1243,6 +1530,19 @@
           "$..token",
           "$..expiresAt",
           "$..expires_at",
+          "$..paid_at",
+          "$..cancelled_at",
+          "$..decided_at",
+          "$..completed_at",
+          "$..payment_number",
+          "$..trace_code",
+          "$..harvest_code",
+          "$..order_number",
+          "$..code",
+          "$..open_at",
+          "$..close_at",
+          "$..record_time",
+          "$..batch_code",
           "$..tree",
           "$..harvest_archive",
           "$..product",
@@ -1253,7 +1553,7 @@
           "$.data.integrity.checkedAt"
         ],
         "diff": [
-          ".data.integrity.checkedAt: '2026-09-20T14:20:40.960219+00:00' != '2026-09-20T14:20:41.038768+00:00'"
+          ".data.integrity.checkedAt: '2026-09-20T15:57:11.801582+00:00' != '2026-09-20T15:57:11.918583+00:00'"
         ],
         "note": "存在差异，见 diff"
       }
@@ -2135,7 +2435,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "item_id": "5abc504a-d2a9-478f-b278-532421ff5106"
+        "item_id": "c422d62a-98d3-4399-bc0f-b3323ea6cab7"
       },
       "mutation_cases": [
         {
@@ -2143,7 +2443,7 @@
           "domain": "commerce",
           "case": "cart_item_delete_b3_ok",
           "method": "DELETE",
-          "path": "/api/cart/2f2757d4-3e6d-4298-a0a5-9b032913c299",
+          "path": "/api/cart/8a9bf572-54c2-43ba-8fb6-b095572c7941",
           "note": "删掉 b3 的 seed 条目（拿到只剩 b1 的车）"
         },
         {
@@ -2151,7 +2451,7 @@
           "domain": "commerce",
           "case": "cart_item_patch_ok",
           "method": "PATCH",
-          "path": "/api/cart/5abc504a-d2a9-478f-b278-532421ff5106",
+          "path": "/api/cart/c422d62a-98d3-4399-bc0f-b3323ea6cab7",
           "note": ""
         },
         {
@@ -2159,7 +2459,7 @@
           "domain": "commerce",
           "case": "cart_item_delete_b1_family_ok",
           "method": "DELETE",
-          "path": "/api/cart/5abc504a-d2a9-478f-b278-532421ff5106",
+          "path": "/api/cart/c422d62a-98d3-4399-bc0f-b3323ea6cab7",
           "note": "再清空一次购物车"
         }
       ]
@@ -2278,7 +2578,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "address_id": "e334dd6f-2a3e-433f-ac4f-5edf5ff606dd"
+        "address_id": "4b8be63a-8257-44a1-92b7-809f2f4e6781"
       },
       "mutation_cases": [
         {
@@ -2286,7 +2586,7 @@
           "domain": "commerce",
           "case": "address_detail_patch_ok",
           "method": "PATCH",
-          "path": "/api/addresses/e334dd6f-2a3e-433f-ac4f-5edf5ff606dd",
+          "path": "/api/addresses/4b8be63a-8257-44a1-92b7-809f2f4e6781",
           "note": ""
         }
       ]
@@ -2391,7 +2691,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "address_id": "e49860c6-6817-4bdf-b8e0-c3298cb6aa8d"
+        "address_id": "33d80eda-f2d7-4eb0-9648-5d6e092ebb7a"
       },
       "mutation_cases": []
     },
@@ -2559,7 +2859,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "order_id": "197546f4-4e8c-4cec-8d3a-a8059992bd26"
+        "order_id": "22d79ab9-6548-4d9d-a9b3-5e42acc3e926"
       },
       "mutation_cases": [
         {
@@ -2567,7 +2867,7 @@
           "domain": "commerce",
           "case": "order_pay_ok",
           "method": "POST",
-          "path": "/api/orders/197546f4-4e8c-4cec-8d3a-a8059992bd26/pay",
+          "path": "/api/orders/22d79ab9-6548-4d9d-a9b3-5e42acc3e926/pay",
           "note": ""
         }
       ]
@@ -2615,7 +2915,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "order_id": "3a0e20d0-5e51-4553-b0ec-7280321b4e5a"
+        "order_id": "fa6eaac3-bf7a-48af-8f66-1c95974ed138"
       },
       "mutation_cases": [
         {
@@ -2623,7 +2923,7 @@
           "domain": "commerce",
           "case": "order_cancel_paid_400",
           "method": "POST",
-          "path": "/api/orders/197546f4-4e8c-4cec-8d3a-a8059992bd26/cancel",
+          "path": "/api/orders/22d79ab9-6548-4d9d-a9b3-5e42acc3e926/cancel",
           "note": "已支付订单不可取消：当前订单状态不能取消"
         },
         {
@@ -2631,7 +2931,7 @@
           "domain": "commerce",
           "case": "order_cancel_pending_ok",
           "method": "POST",
-          "path": "/api/orders/3a0e20d0-5e51-4553-b0ec-7280321b4e5a/cancel",
+          "path": "/api/orders/fa6eaac3-bf7a-48af-8f66-1c95974ed138/cancel",
           "note": ""
         }
       ]
@@ -2777,7 +3077,7 @@
       "server_error_cases": [],
       "alias_of": "/api/supply-batches/<uuid:batch_id>",
       "path_params_used": {
-        "batch_id": "dffb44ac-c6e7-41f4-a375-b1334894b670"
+        "batch_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0"
       },
       "mutation_cases": []
     },
@@ -2895,7 +3195,7 @@
       "server_error_cases": [],
       "alias_of": "/api/orchards/<uuid:orchard_id>",
       "path_params_used": {
-        "orchard_id": "5242b4fd-1163-4366-93eb-5ae589a231f8"
+        "orchard_id": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b"
       },
       "mutation_cases": []
     },
@@ -2973,7 +3273,7 @@
       "server_error_cases": [],
       "alias_of": "/api/products/<uuid:product_id>",
       "path_params_used": {
-        "product_id": "04d854b4-aa5b-4d63-8f3c-f40819927ec6"
+        "product_id": "b1cef48a-4436-4232-8c03-bead1de8e521"
       },
       "mutation_cases": []
     },
@@ -3013,7 +3313,7 @@
       "server_error_cases": [],
       "alias_of": "/api/products/<uuid:product_id>/health-archive",
       "path_params_used": {
-        "product_id": "04d854b4-aa5b-4d63-8f3c-f40819927ec6"
+        "product_id": "b1cef48a-4436-4232-8c03-bead1de8e521"
       },
       "mutation_cases": []
     },
@@ -3138,7 +3438,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "item_id": "22b203eb-9770-485d-96fe-7747cff23807"
+        "item_id": "661b6bee-21f4-426e-836e-0962e7aa139a"
       },
       "mutation_cases": [
         {
@@ -3146,7 +3446,7 @@
           "domain": "commerce",
           "case": "cart_item_delete_b1_ok",
           "method": "DELETE",
-          "path": "/api/v1/cart/22b203eb-9770-485d-96fe-7747cff23807",
+          "path": "/api/v1/cart/661b6bee-21f4-426e-836e-0962e7aa139a",
           "note": "删掉 b1 的 seed 条目（v1 别名 DELETE）-> 空车"
         }
       ]
@@ -3249,7 +3549,7 @@
       "server_error_cases": [],
       "alias_of": "/api/orders/<uuid:order_id>",
       "path_params_used": {
-        "order_id": "353ef930-8477-4648-82ea-332ad00b3888"
+        "order_id": "4c4bea1f-04d1-4cda-af30-ed678352528b"
       },
       "mutation_cases": []
     },
@@ -3295,7 +3595,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "order_id": "4820a7a2-c2a1-4dd7-ad13-1593e7eee013"
+        "order_id": "c26ba805-de7c-4585-8e25-6efd6190d23c"
       },
       "mutation_cases": [
         {
@@ -3303,7 +3603,7 @@
           "domain": "commerce",
           "case": "order_pay_v1_ok",
           "method": "POST",
-          "path": "/api/v1/orders/4820a7a2-c2a1-4dd7-ad13-1593e7eee013/pay",
+          "path": "/api/v1/orders/c26ba805-de7c-4585-8e25-6efd6190d23c/pay",
           "note": ""
         }
       ]
@@ -3347,7 +3647,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "order_id": "4820a7a2-c2a1-4dd7-ad13-1593e7eee013"
+        "order_id": "c26ba805-de7c-4585-8e25-6efd6190d23c"
       },
       "mutation_cases": [
         {
@@ -3355,7 +3655,7 @@
           "domain": "commerce",
           "case": "order_cancel_v1_paid_400",
           "method": "POST",
-          "path": "/api/v1/orders/4820a7a2-c2a1-4dd7-ad13-1593e7eee013/cancel",
+          "path": "/api/v1/orders/c26ba805-de7c-4585-8e25-6efd6190d23c/cancel",
           "note": "别名 cancel 在已支付状态 -> 400"
         }
       ]
@@ -3526,7 +3826,7 @@
       ],
       "alias_of": null,
       "path_params_used": {
-        "orchard_id": "5242b4fd-1163-4366-93eb-5ae589a231f8"
+        "orchard_id": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b"
       },
       "mutation_cases": [
         {
@@ -3534,7 +3834,7 @@
           "domain": "orchard_trace",
           "case": "farmer_trees_create_ok",
           "method": "POST",
-          "path": "/api/v1/farmer/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8/trees",
+          "path": "/api/v1/farmer/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b/trees",
           "note": ""
         },
         {
@@ -3542,7 +3842,7 @@
           "domain": "orchard_trace",
           "case": "farmer_trees_create_duplicate_500",
           "method": "POST",
-          "path": "/api/v1/farmer/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8/trees",
+          "path": "/api/v1/farmer/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b/trees",
           "note": "同果园 tree_number 唯一约束在 DB 层 -> IntegrityError 冒泡 -> 500（DRF 异常体形状，无 timestamp）"
         }
       ]
@@ -4326,7 +4626,7 @@
       ],
       "alias_of": null,
       "path_params_used": {
-        "approval_id": "9c3773a0-6933-4b58-92c6-2cd5354d58d3"
+        "approval_id": "54154a77-843a-45ea-8c3e-821ab0b4a144"
       },
       "mutation_cases": [
         {
@@ -4334,7 +4634,7 @@
           "domain": "agent",
           "case": "agent_approval_decision_approve_ok",
           "method": "POST",
-          "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+          "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
           "note": "seed 审批单 payload.action 非 create_task -> exec_note 为空"
         },
         {
@@ -4342,7 +4642,7 @@
           "domain": "agent",
           "case": "agent_approval_decision_repeat_500",
           "method": "POST",
-          "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+          "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
           "note": "已批准不能重复处理（应为 400）实际 500"
         },
         {
@@ -4350,7 +4650,7 @@
           "domain": "agent",
           "case": "agent_approval_decision_reject_ok",
           "method": "POST",
-          "path": "/api/agent/approvals/9c3773a0-6933-4b58-92c6-2cd5354d58d3/decision",
+          "path": "/api/agent/approvals/54154a77-843a-45ea-8c3e-821ab0b4a144/decision",
           "note": ""
         }
       ]
@@ -4410,7 +4710,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "product_id": "04d854b4-aa5b-4d63-8f3c-f40819927ec6"
+        "product_id": "b1cef48a-4436-4232-8c03-bead1de8e521"
       },
       "mutation_cases": [
         {
@@ -4418,7 +4718,7 @@
           "domain": "orchard_trace",
           "case": "farmer_product_patch_ok",
           "method": "PATCH",
-          "path": "/api/v1/farmer/products/04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+          "path": "/api/v1/farmer/products/b1cef48a-4436-4232-8c03-bead1de8e521",
           "note": ""
         }
       ]
@@ -4476,7 +4776,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "batch_id": "dffb44ac-c6e7-41f4-a375-b1334894b670"
+        "batch_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0"
       },
       "mutation_cases": [
         {
@@ -4484,7 +4784,7 @@
           "domain": "orchard_trace",
           "case": "farmer_harvest_archive_create_ok",
           "method": "POST",
-          "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/harvest-archives",
+          "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/harvest-archives",
           "note": ""
         }
       ]
@@ -4531,7 +4831,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "batch_id": "dffb44ac-c6e7-41f4-a375-b1334894b670"
+        "batch_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0"
       },
       "mutation_cases": [
         {
@@ -4539,7 +4839,7 @@
           "domain": "orchard_trace",
           "case": "farmer_trace_event_create_ok",
           "method": "POST",
-          "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/trace-events",
+          "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/trace-events",
           "note": "哈希链：previous_hash/evidence_hash 依赖上一条事件"
         }
       ]
@@ -4599,7 +4899,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "batch_id": "dffb44ac-c6e7-41f4-a375-b1334894b670"
+        "batch_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0"
       },
       "mutation_cases": [
         {
@@ -4607,7 +4907,7 @@
           "domain": "orchard_trace",
           "case": "farmer_quality_sample_create_shape_only",
           "method": "POST",
-          "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/quality-samples",
+          "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/quality-samples",
           "note": "shape_only：写入同时追加 TraceEvent（哈希链依赖时间序列）"
         }
       ]
@@ -4665,7 +4965,7 @@
       "server_error_cases": [],
       "alias_of": null,
       "path_params_used": {
-        "batch_id": "dffb44ac-c6e7-41f4-a375-b1334894b670"
+        "batch_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0"
       },
       "mutation_cases": [
         {
@@ -4673,7 +4973,7 @@
           "domain": "orchard_trace",
           "case": "farmer_health_records_create_ok",
           "method": "POST",
-          "path": "/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/health-records",
+          "path": "/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/health-records",
           "note": "同 quality-samples 实现"
         }
       ]

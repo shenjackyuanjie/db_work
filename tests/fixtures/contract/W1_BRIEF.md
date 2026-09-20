@@ -24,6 +24,8 @@ git -C D:\githubs\db_work\wt-w1<域> commit -m "feat(compat): <域>域契约实�
 
 - **`sccache` 在本机沙箱里起不来**：每个新 shell 里跑 cargo 之前先设
   `$env:CARGO_BUILD_RUSTC_WRAPPER=''`，否则报 "Timed out waiting for server startup"。
+- **`cargo test` 必须加 `--test-threads=1`**（见 §6）：`bootstrap::init_database` 的
+  `CREATE INDEX IF NOT EXISTS` 在 PG 上并发执行会撞 `pg_class_relname_nsp_index`。
 - **格式化只格式化你自己的文件**，不要跑 `cargo +nightly fmt`（它会重写其他域正在写的文件）：
 
   ```powershell
@@ -79,25 +81,35 @@ git -C D:\githubs\db_work\wt-w1<域> commit -m "feat(compat): <域>域契约实�
 
 ## 6. 验证（交付门槛）
 
+> **权威跑法（全序列）与完整复现命令见 `VERIFICATION.md §1`。**
+> 单域回放测不准：夹具的读类期望值里含**前置域 mutation 的效果**（commerce 的写类副作用
+> 体现在 orchard_trace 的读类里，agent 域依赖前面各域），所以「单域 + fresh seed」必然有假失败。
+> 权威跑法是**在同一个 schema 上、按域顺序 `auth → core → commerce → orchard_trace → agent`、
+> 加载一次纯种子态、跑完全部 251 条**（`replay_diff.py` 不给 `--domain` 就是全序列）。
+
 ```powershell
-$env:CARGO_BUILD_RUSTC_WRAPPER=''
+$env:CARGO_BUILD_RUSTC_WRAPPER=''      # sccache 在本机起不来
 $env:COMPAT_TEST_SCHEMA='compat_w1<域>'
 
 # 1) 建 scratch schema
 scripts\pg_env.ps1 -Reset compat_w1<域>
+scripts\pg_env.ps1 -Apply compat_w1<域>
 
-# 2) 单测
-cargo test -- compat
+# 2) 单测（**必须 --test-threads=1**：bootstrap::init_database 的
+#    CREATE INDEX IF NOT EXISTS 在 PG 上并发会撞 pg_class_relname_nsp_index）
+cargo test -- --test-threads=1 compat
 
 # 3) 端到端回放（必须用你自己的端口，避免四域抢 11000）
 scripts\pg_env.ps1 -Serve compat_w1<域> -Build -Port 1110<x>
 python scripts\load_seed.py --schema compat_w1<域>
-python scripts\replay_diff.py --base-url http://127.0.0.1:1110<x>/compat --domain <域>
+python scripts\replay_diff.py --base-url http://127.0.0.1:1110<x>/compat --schema compat_w1<域>
 scripts\pg_env.ps1 -Serve compat_w1<域> -Stop
 ```
 
 - 先用 `--help` 确认 `pg_env.ps1` 与 `replay_diff.py` 的实际参数。
-- 目标：你的域**全部 pass**（`expected_deviation` 不计失败）。
+- 目标：**全序列**里你的域**全部 pass**（`expected_deviation` 不计失败）。
+- **重跑前必须 `-Reset` + `-Apply` + `load_seed.py` 三连**：回放会写库（下单/支付/审批/建批次…），
+  在已被上一次回放改过的库里再跑必然大面积假失败。
 - 对不上的逐条查清是「实现问题」还是「夹具/工具问题」。**不要改夹具或 `scripts/` 来绕过**——
   工具若确有 bug，报给主线，由主线修（其他域也在用）。
 - 注意请求前缀：夹具里是 Django 的 `/api/...`，打你的服务时要加 `/compat`（比对器已处理）。

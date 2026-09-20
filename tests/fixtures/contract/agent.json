@@ -1,7 +1,7 @@
 {
   "domain": "agent",
-  "captured_at": "2026-09-20T14:20:34+00:00",
-  "seed_signature": "sha256:7244af9d80d7dec4e96ca5f8bbcafec22cf1ce8330c3ef149db90ff5ab3a1c8c",
+  "captured_at": "2026-09-20T15:57:04+00:00",
+  "seed_signature": "sha256:132dd937d0663088674d5c6ab897f160fba737b5a458da0a68790427dc9b0cff",
   "environment": {
     "django_version": "5.0.14",
     "drf_version": "3.15.2",
@@ -15,7 +15,7 @@
     "model_available": false,
     "recognition_mode": "mock",
     "random_seed": 20260913,
-    "real_db_sha256": "bfb0b1f0239b0fee85ce3225dedccc5d78fba1f503ee72293840d308f9c7b3d5",
+    "real_db_sha256": "6fda81ceeaef5d7d5ed9ef19df96fcc30d3c746dd9f4690928150ce9b9a80317",
     "test_db": "file:memorydb_default?mode=memory&cache=shared"
   },
   "case_count": 36,
@@ -43,12 +43,12 @@
         "data": {
           "role": "farmer",
           "user": {
-            "id": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
+            "id": "686de717-1bcd-4990-928d-8058ff5054f1",
             "username": "farmer_xinfeng"
           },
           "orchards": [
             {
-              "id": "5242b4fd-1163-4366-93eb-5ae589a231f8",
+              "id": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
               "code": "GY-XF-DEMO-01",
               "name": "信丰县橙管家合作示范园",
               "status": "verified",
@@ -60,7 +60,7 @@
           ],
           "batches": [
             {
-              "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -75,9 +75,9 @@
               "expected_ship_end": "2026-09-29"
             },
             {
-              "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-              "code": "CGJ-XF-DEMO-01-C030B3",
-              "trace_code": "CGJ-F5F972930CCC",
+              "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+              "code": "CGJ-XF-DEMO-01-72929E",
+              "trace_code": "CGJ-56665ABFB890",
               "title": "契约基准批次（第二次）",
               "status": "draft",
               "status_display": "筹备中",
@@ -90,9 +90,9 @@
               "expected_ship_end": ""
             },
             {
-              "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-              "code": "CGJ-XF-DEMO-01-8C406B",
-              "trace_code": "CGJ-DCD3C97AD309",
+              "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+              "code": "CGJ-XF-DEMO-01-CFAD6B",
+              "trace_code": "CGJ-9B778A646596",
               "title": "契约基准批次",
               "status": "draft",
               "status_display": "筹备中",
@@ -107,7 +107,7 @@
           ],
           "products": [
             {
-              "id": "42f57dbb-de6a-4c46-8f47-4007e1e90a5a",
+              "id": "276f1ee6-9f7e-4b4b-8454-a51a315935f9",
               "name": "契约基准商品",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -120,7 +120,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "8e31b734-be41-4568-9f97-97fd70e86ce2",
+              "id": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
               "name": "纽荷尔企业装",
               "sku_type": "enterprise",
               "sku_type_display": "企业装",
@@ -133,7 +133,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "c393d8e4-260e-4ee2-8645-c3e9e9d66e63",
+              "id": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
               "name": "纽荷尔试吃装",
               "sku_type": "trial",
               "sku_type_display": "试吃装",
@@ -146,7 +146,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+              "id": "b1cef48a-4436-4232-8c03-bead1de8e521",
               "name": "赣南纽荷尔家庭装",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -161,36 +161,36 @@
           ],
           "tasks": [
             {
-              "id": "ee35ec6d-5495-416e-b34e-28d1c400d0ae",
+              "id": "e0cd317e-3112-4d46-a026-5f69fbb67cc0",
               "title": "环境监测-高风险",
               "risk_level": "高风险",
               "task_type": "温湿度监测",
               "is_completed": false,
-              "created_at": "2026-09-20T14:20:40.219290+00:00"
+              "created_at": "2026-09-20T15:57:10.679490+00:00"
             },
             {
-              "id": "1c4cce71-a229-466f-b949-7d999b2dcf88",
+              "id": "0dfeb245-3d11-43ca-a9b3-4ee4eab7ee37",
               "title": "溃疡病治理",
               "risk_level": "高风险",
               "task_type": "疾病识别",
               "is_completed": false,
-              "created_at": "2026-09-20T14:20:40.210290+00:00"
+              "created_at": "2026-09-20T15:57:10.663490+00:00"
             },
             {
-              "id": "056a4ca4-2f48-40ab-b1c0-c8a244163e3a",
+              "id": "a217e613-abd3-4afe-86ba-2e104569349e",
               "title": "B区坡地黄龙病复核",
               "risk_level": "高风险",
               "task_type": "病虫害防治",
               "is_completed": false,
-              "created_at": "2026-09-20T14:20:37.936176+00:00"
+              "created_at": "2026-09-20T15:57:07.985960+00:00"
             },
             {
-              "id": "8e8dcf2d-0356-40c5-8982-7a083c77d01d",
+              "id": "0380f90c-ec38-4df3-8336-17d2f30bb59a",
               "title": "采摘期前糖度抽检",
               "risk_level": "中风险",
               "task_type": "品质抽检",
               "is_completed": false,
-              "created_at": "2026-09-20T14:20:37.936176+00:00"
+              "created_at": "2026-09-20T15:57:07.985960+00:00"
             }
           ],
           "risk_events": [
@@ -202,9 +202,9 @@
             }
           ]
         },
-        "timestamp": 1789914041271
+        "timestamp": 1789919832265
       },
-      "raw_body_sha256": "b25c9dda5e48f82433b6aa125ba303e14664ef7c49a7889cfcb8117f654deceb",
+      "raw_body_sha256": "5dd5b39d1425b6e985a66cfa2bde4407d42e2b98da9e245202a2bc67c564b171",
       "raw_body_bytes": 3696,
       "normalize": [
         "$.timestamp",
@@ -216,6 +216,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -225,9 +238,11 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "created_at",
         "id",
-        "timestamp"
+        "timestamp",
+        "trace_code"
       ],
       "shape_only": false,
       "shape": null,
@@ -259,13 +274,13 @@
         "data": {
           "role": "buyer",
           "user": {
-            "id": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
+            "id": "9b964798-568a-4ebb-ad50-c81ea292d768",
             "username": "buyer_zhang"
           },
           "orchards": [],
           "batches": [
             {
-              "id": "a6347a0b-f024-4743-a074-f03c39f810d6",
+              "id": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
               "code": "CGJ-2026-AY-002",
               "trace_code": "CGJ-BATCH-AY2026",
               "title": "安远山地·红肉脐橙鲜果批次",
@@ -280,7 +295,7 @@
               "expected_ship_end": "2026-10-03"
             },
             {
-              "id": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+              "id": "89197bf2-7798-40c4-8b06-2414773a9444",
               "code": "CGJ-2026-XW-003",
               "trace_code": "CGJ-BATCH-XW2026",
               "title": "寻乌家庭农场·朋娜鲜果批次",
@@ -295,7 +310,7 @@
               "expected_ship_end": "2026-10-01"
             },
             {
-              "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -312,7 +327,7 @@
           ],
           "products": [
             {
-              "id": "42f57dbb-de6a-4c46-8f47-4007e1e90a5a",
+              "id": "276f1ee6-9f7e-4b4b-8454-a51a315935f9",
               "name": "契约基准商品",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -325,7 +340,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "2db9e0d7-4289-49fa-b185-4b8b75eba217",
+              "id": "753bf92d-301c-494f-8b5d-715b57294f28",
               "name": "红肉脐橙家庭装",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -338,7 +353,7 @@
               "sales_batch_code": "CGJ-2026-AY-002"
             },
             {
-              "id": "8098d1e1-8ea5-4dcd-baef-37ce8a45dd99",
+              "id": "912e866f-18df-44bc-aced-848c60f3523c",
               "name": "红肉脐橙企业装",
               "sku_type": "enterprise",
               "sku_type_display": "企业装",
@@ -351,7 +366,7 @@
               "sales_batch_code": "CGJ-2026-AY-002"
             },
             {
-              "id": "24fd12a0-58b9-42a9-841c-187e999af11b",
+              "id": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
               "name": "朋娜脐橙精品尝鲜装",
               "sku_type": "specialty",
               "sku_type_display": "特色果品",
@@ -364,7 +379,7 @@
               "sales_batch_code": "CGJ-2026-XW-003"
             },
             {
-              "id": "a3a2ab95-a40c-43e7-9659-4315d88d9a8f",
+              "id": "2ee35bbd-7459-4fd4-9b07-611925cd7937",
               "name": "朋娜脐橙礼赠装",
               "sku_type": "gift",
               "sku_type_display": "礼赠装",
@@ -377,7 +392,7 @@
               "sales_batch_code": "CGJ-2026-XW-003"
             },
             {
-              "id": "8e31b734-be41-4568-9f97-97fd70e86ce2",
+              "id": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
               "name": "纽荷尔企业装",
               "sku_type": "enterprise",
               "sku_type_display": "企业装",
@@ -390,7 +405,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "c393d8e4-260e-4ee2-8645-c3e9e9d66e63",
+              "id": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
               "name": "纽荷尔试吃装",
               "sku_type": "trial",
               "sku_type_display": "试吃装",
@@ -403,7 +418,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+              "id": "b1cef48a-4436-4232-8c03-bead1de8e521",
               "name": "赣南纽荷尔家庭装",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -419,9 +434,9 @@
           "tasks": [],
           "risk_events": []
         },
-        "timestamp": 1789914041277
+        "timestamp": 1789919832273
       },
-      "raw_body_sha256": "033cb6fb1eca6378d157a0775720beafb8b6d47289672cf85ded497971d7d2c6",
+      "raw_body_sha256": "ef7b95ba63dafd5aee11838f55058e48dbc39bf4fc9597e5a87a56ac6102dab4",
       "raw_body_bytes": 3742,
       "normalize": [
         "$.timestamp",
@@ -433,6 +448,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -442,8 +470,10 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "id",
-        "timestamp"
+        "timestamp",
+        "trace_code"
       ],
       "shape_only": false,
       "shape": null,
@@ -486,6 +516,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -493,7 +536,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -524,7 +569,7 @@
         "data": {
           "role": "farmer",
           "report": {
-            "generated_at": "2026-09-20T14:20:41.279645+00:00",
+            "generated_at": "2026-09-20T15:57:12.276582+00:00",
             "overview": {
               "orchard_count": 1,
               "batch_count": 3,
@@ -543,7 +588,7 @@
                 "expected_ship_start": "2026-09-24"
               },
               {
-                "code": "CGJ-XF-DEMO-01-C030B3",
+                "code": "CGJ-XF-DEMO-01-72929E",
                 "title": "契约基准批次（第二次）",
                 "status_display": "筹备中",
                 "available_quantity": 20,
@@ -551,7 +596,7 @@
                 "expected_ship_start": ""
               },
               {
-                "code": "CGJ-XF-DEMO-01-8C406B",
+                "code": "CGJ-XF-DEMO-01-CFAD6B",
                 "title": "契约基准批次",
                 "status_display": "筹备中",
                 "available_quantity": 100,
@@ -571,9 +616,9 @@
             ]
           }
         },
-        "timestamp": 1789914041285
+        "timestamp": 1789919832283
       },
-      "raw_body_sha256": "3a636c148b21e30db68f94406222d6ab915cfd6eb2f6f3df39819e5c0ec485b5",
+      "raw_body_sha256": "362fc54c8d4cb431a7ee2c066f7fc778110e755712972f30cde6944220280d2a",
       "raw_body_bytes": 1211,
       "normalize": [
         "$.timestamp",
@@ -585,6 +630,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -595,6 +653,7 @@
         "$.data.report.generated_at"
       ],
       "normalize_hits": [
+        "code",
         "timestamp"
       ],
       "shape_only": false,
@@ -629,9 +688,9 @@
           "message": "经营日报面向果农/经营者，当前角色不可用",
           "report": null
         },
-        "timestamp": 1789914041286
+        "timestamp": 1789919832285
       },
-      "raw_body_sha256": "d53085dcdb3b47647d42aafc80049fb1c24a75790ebe824cf9c3f9a877eef128",
+      "raw_body_sha256": "098c147fd434d1c438c1e3325c422ae5c237ef47794f07aa6c7f888ca7f3a597",
       "raw_body_bytes": 167,
       "normalize": [
         "$.timestamp",
@@ -643,6 +702,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -651,6 +723,7 @@
         "$..ref_id"
       ],
       "normalize_hits": [
+        "code",
         "timestamp"
       ],
       "shape_only": false,
@@ -694,6 +767,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -701,7 +787,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -743,6 +831,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -750,7 +851,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -791,7 +894,7 @@
           "recommendations": [
             {
               "product": {
-                "id": "04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+                "id": "b1cef48a-4436-4232-8c03-bead1de8e521",
                 "name": "赣南纽荷尔家庭装",
                 "sku_type": "family",
                 "sku_type_display": "家庭装",
@@ -813,7 +916,7 @@
             },
             {
               "product": {
-                "id": "42f57dbb-de6a-4c46-8f47-4007e1e90a5a",
+                "id": "276f1ee6-9f7e-4b4b-8454-a51a315935f9",
                 "name": "契约基准商品",
                 "sku_type": "family",
                 "sku_type_display": "家庭装",
@@ -834,7 +937,7 @@
             },
             {
               "product": {
-                "id": "2db9e0d7-4289-49fa-b185-4b8b75eba217",
+                "id": "753bf92d-301c-494f-8b5d-715b57294f28",
                 "name": "红肉脐橙家庭装",
                 "sku_type": "family",
                 "sku_type_display": "家庭装",
@@ -855,7 +958,7 @@
             },
             {
               "product": {
-                "id": "24fd12a0-58b9-42a9-841c-187e999af11b",
+                "id": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
                 "name": "朋娜脐橙精品尝鲜装",
                 "sku_type": "specialty",
                 "sku_type_display": "特色果品",
@@ -875,7 +978,7 @@
             },
             {
               "product": {
-                "id": "c393d8e4-260e-4ee2-8645-c3e9e9d66e63",
+                "id": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
                 "name": "纽荷尔试吃装",
                 "sku_type": "trial",
                 "sku_type_display": "试吃装",
@@ -894,9 +997,9 @@
             }
           ]
         },
-        "timestamp": 1789914041297
+        "timestamp": 1789919832303
       },
-      "raw_body_sha256": "b6d0f8d1acbb8b4fb6c645f8119040328c09ce12fb72461fbb2731da44146c12",
+      "raw_body_sha256": "7adb8aa73a5712585ccbbf4d0876ac7c8f4ecb72a717122772ce6c8696b2fde6",
       "raw_body_bytes": 2033,
       "normalize": [
         "$.timestamp",
@@ -908,6 +1011,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -916,6 +1032,7 @@
         "$..ref_id"
       ],
       "normalize_hits": [
+        "code",
         "product",
         "timestamp"
       ],
@@ -960,6 +1077,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -967,7 +1097,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1010,6 +1142,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1017,7 +1162,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1051,9 +1198,9 @@
           "suggestions": [],
           "avoid_note": "复购提醒基于你的授权历史与购买周期；未到周期或商品已下架时不打扰。"
         },
-        "timestamp": 1789914041306
+        "timestamp": 1789919832317
       },
-      "raw_body_sha256": "4f9ed99760db504fa7c3c61d6fed2b49902d368c8e6475ed594a245a814956d5",
+      "raw_body_sha256": "1076d2f290223af539bd96fade254d8ed7bb192ed022c6c8d051364494934003",
       "raw_body_bytes": 236,
       "normalize": [
         "$.timestamp",
@@ -1065,6 +1212,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1073,6 +1233,7 @@
         "$..ref_id"
       ],
       "normalize_hits": [
+        "code",
         "timestamp"
       ],
       "shape_only": false,
@@ -1107,9 +1268,9 @@
           "should_remind": false,
           "reason": "复购提醒仅面向购买者"
         },
-        "timestamp": 1789914041307
+        "timestamp": 1789919832319
       },
-      "raw_body_sha256": "c101dad843d1eadb349c3178fde64e7c3866ffcc8ae34fa1c22709790dee3297",
+      "raw_body_sha256": "9f02e0f79348b09b74b6e84d54af65956a536115ac7a55cd92fecb12bbec2e23",
       "raw_body_bytes": 147,
       "normalize": [
         "$.timestamp",
@@ -1121,6 +1282,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1129,6 +1303,7 @@
         "$..ref_id"
       ],
       "normalize_hits": [
+        "code",
         "timestamp"
       ],
       "shape_only": false,
@@ -1172,6 +1347,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1179,7 +1367,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1221,6 +1411,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1228,7 +1431,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1271,6 +1476,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1278,7 +1496,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1308,7 +1528,7 @@
         "message": "success",
         "data": [
           {
-            "id": "d303fe76-b79a-4e6c-8cd5-31598a08a48d",
+            "id": "88b14763-36c5-4608-9a8f-f9525457e1d2",
             "product_name": "赣南纽荷尔家庭装",
             "batch_code": "CGJ-2026-XF-001",
             "rating": 5,
@@ -1316,10 +1536,10 @@
             "taste": "很甜，果大，水分足",
             "package": "包装完好",
             "note": "很满意，会回购",
-            "created_at": "2026-09-20T14:20:37.954176+00:00"
+            "created_at": "2026-09-20T15:57:08.008573+00:00"
           },
           {
-            "id": "4e6c8188-d890-46bf-9bcc-ab03254e72d5",
+            "id": "2ad253be-95b2-4afd-b7c1-be50f9b6934f",
             "product_name": "朋娜脐橙精品尝鲜装",
             "batch_code": "CGJ-2026-XW-003",
             "rating": 4,
@@ -1327,12 +1547,12 @@
             "taste": "甜度不错",
             "package": "完好",
             "note": "",
-            "created_at": "2026-09-20T14:20:37.954176+00:00"
+            "created_at": "2026-09-20T15:57:08.008573+00:00"
           }
         ],
-        "timestamp": 1789914041316
+        "timestamp": 1789919832337
       },
-      "raw_body_sha256": "47be5b63bb08f229f353580f5c2f2e451685026ab9b8f555d09c1704afbbc42a",
+      "raw_body_sha256": "d4dfe93e7f045a189818f6a660e4a82c2a526d4350e7fa734b9f1b7e29a7f886",
       "raw_body_bytes": 621,
       "normalize": [
         "$.timestamp",
@@ -1344,6 +1564,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1353,6 +1586,8 @@
         "$..id"
       ],
       "normalize_hits": [
+        "batch_code",
+        "code",
         "created_at",
         "id",
         "package",
@@ -1399,6 +1634,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1406,7 +1654,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1448,6 +1698,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1455,7 +1718,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1500,6 +1765,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1507,7 +1785,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1550,6 +1830,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1557,7 +1850,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1600,6 +1895,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1607,7 +1915,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1636,9 +1946,9 @@
         "code": 200,
         "message": "success",
         "data": [],
-        "timestamp": 1789914041338
+        "timestamp": 1789919832369
       },
-      "raw_body_sha256": "c53f4955ff20e815dff5c851b3d831a4dc9b87ba38e52b81fb929fe1030e1fbb",
+      "raw_body_sha256": "8706e5b9e25e55436998cdf7bc0251ab233f6713e26d17960db05d7547fe7087",
       "raw_body_bytes": 68,
       "normalize": [
         "$.timestamp",
@@ -1650,6 +1960,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1659,6 +1982,7 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "timestamp"
       ],
       "shape_only": false,
@@ -1692,7 +2016,7 @@
         "message": "success",
         "data": [
           {
-            "id": "a5fcae19-8740-48d0-b7b4-f818a0f20598",
+            "id": "6705f1de-4921-46d8-a2ec-0ef4be787457",
             "ticket_type": "other",
             "ticket_type_display": "其他",
             "title": "契约基准：待决策审批单",
@@ -1707,13 +2031,13 @@
             "created_by": "",
             "decided_by": "",
             "note": "",
-            "created_at": "2026-09-20T14:20:38.649291+00:00",
+            "created_at": "2026-09-20T15:57:08.842231+00:00",
             "decided_at": ""
           }
         ],
-        "timestamp": 1789914041340
+        "timestamp": 1789919832371
       },
-      "raw_body_sha256": "6588c0fdb64b428986aad75f3958c437ae024e491ed4c786cabd5f06cf8c6eef",
+      "raw_body_sha256": "48e67d29124c49b1f671861d983d8da0f99676664ac235db920308cf5ce08433",
       "raw_body_bytes": 443,
       "normalize": [
         "$.timestamp",
@@ -1725,6 +2049,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1734,7 +2071,9 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "created_at",
+        "decided_at",
         "id",
         "ref_id",
         "timestamp"
@@ -1780,6 +2119,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1787,7 +2139,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1833,6 +2187,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1840,7 +2207,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1853,7 +2222,7 @@
       "name": "agent_approval_decision_bad_value_500",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
       "method": "POST",
       "kind": "validation",
       "headers": {
@@ -1866,7 +2235,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "a5fcae19-8740-48d0-b7b4-f818a0f20598"
+        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
       },
       "expected_status": 500,
       "expected_content_type": "application/json",
@@ -1887,6 +2256,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1894,7 +2276,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1907,7 +2291,7 @@
       "name": "agent_approval_decision_no_token_401",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
       "method": "POST",
       "kind": "auth",
       "headers": {
@@ -1920,7 +2304,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "a5fcae19-8740-48d0-b7b4-f818a0f20598"
+        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
       },
       "expected_status": 401,
       "expected_content_type": "application/json",
@@ -1941,6 +2325,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -1948,7 +2345,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -1977,9 +2376,9 @@
         "code": 200,
         "message": "success",
         "data": [],
-        "timestamp": 1789914041355
+        "timestamp": 1789919832393
       },
-      "raw_body_sha256": "f71ad58f965adcb49c77f0553d68e48434fc1c40616c4604adac1da0b3f0412b",
+      "raw_body_sha256": "df8a8d36b6285f7bea793f5b34da5c14b2fa01d32fd56be17369147467dbdc10",
       "raw_body_bytes": 68,
       "normalize": [
         "$.timestamp",
@@ -1991,6 +2390,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -2000,6 +2412,7 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "timestamp"
       ],
       "shape_only": false,
@@ -2040,7 +2453,7 @@
           "hard_constraints_failed": [],
           "primary": {
             "batch": {
-              "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2077,7 +2490,7 @@
           "alternatives": [
             {
               "batch": {
-                "id": "a6347a0b-f024-4743-a074-f03c39f810d6",
+                "id": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
                 "code": "CGJ-2026-AY-002",
                 "trace_code": "CGJ-BATCH-AY2026",
                 "title": "安远山地·红肉脐橙鲜果批次",
@@ -2111,7 +2524,7 @@
             },
             {
               "batch": {
-                "id": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+                "id": "89197bf2-7798-40c4-8b06-2414773a9444",
                 "code": "CGJ-2026-XW-003",
                 "trace_code": "CGJ-BATCH-XW2026",
                 "title": "寻乌家庭农场·朋娜鲜果批次",
@@ -2149,17 +2562,17 @@
             "正式报价、合同与锁货走业务流程，智能体不直接执行"
           ],
           "approval": {
-            "id": "d04944d8-f3c9-4b7a-b4ca-173dfac78600",
+            "id": "e14659b4-d035-4df7-9594-f1622cfb8062",
             "ticket_type": "quote",
             "ticket_type_display": "报价单",
             "title": "询价：CGJ-2026-XF-001",
             "ref_type": "sales_batch",
-            "ref_id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+            "ref_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
             "payload": {
               "query": "采购100箱，5斤装，2027-01-01 前到货",
               "primary": {
                 "batch": {
-                  "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2196,7 +2609,7 @@
               "alternatives": [
                 {
                   "batch": {
-                    "id": "a6347a0b-f024-4743-a074-f03c39f810d6",
+                    "id": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
                     "code": "CGJ-2026-AY-002",
                     "trace_code": "CGJ-BATCH-AY2026",
                     "title": "安远山地·红肉脐橙鲜果批次",
@@ -2230,7 +2643,7 @@
                 },
                 {
                   "batch": {
-                    "id": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+                    "id": "89197bf2-7798-40c4-8b06-2414773a9444",
                     "code": "CGJ-2026-XW-003",
                     "trace_code": "CGJ-BATCH-XW2026",
                     "title": "寻乌家庭农场·朋娜鲜果批次",
@@ -2269,13 +2682,13 @@
             "created_by": "",
             "decided_by": "",
             "note": "",
-            "created_at": "2026-09-20T14:20:41.366645+00:00",
+            "created_at": "2026-09-20T15:57:12.409584+00:00",
             "decided_at": ""
           }
         },
-        "timestamp": 1789914041367
+        "timestamp": 1789919832409
       },
-      "raw_body_sha256": "0cd7211ec521696b768654791b983c9d2327dab470618211bb5c3bf567948f9e",
+      "raw_body_sha256": "1858fc8e1af0307e04bc5ce3061589df83d8f06398256e02b358ad843877773e",
       "raw_body_bytes": 5214,
       "normalize": [
         "$.timestamp",
@@ -2287,6 +2700,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -2297,10 +2723,14 @@
         "$.data.approval.created_at"
       ],
       "normalize_hits": [
+        "batch_code",
+        "code",
         "created_at",
+        "decided_at",
         "id",
         "ref_id",
-        "timestamp"
+        "timestamp",
+        "trace_code"
       ],
       "shape_only": false,
       "shape": null,
@@ -2340,7 +2770,7 @@
               },
               "affected_batches": [
                 {
-                  "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2355,9 +2785,9 @@
                   "expected_ship_end": "2026-09-29"
                 },
                 {
-                  "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                  "code": "CGJ-XF-DEMO-01-C030B3",
-                  "trace_code": "CGJ-F5F972930CCC",
+                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                  "code": "CGJ-XF-DEMO-01-72929E",
+                  "trace_code": "CGJ-56665ABFB890",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2370,9 +2800,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                  "code": "CGJ-XF-DEMO-01-8C406B",
-                  "trace_code": "CGJ-DCD3C97AD309",
+                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                  "code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "trace_code": "CGJ-9B778A646596",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2387,12 +2817,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920142040DCE241",
+                  "order_number": "NO20260920155711D84665",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO20260920142040777B40",
+                  "order_number": "NO2026092015571107272C",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -2410,7 +2840,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                  "batch_code": "CGJ-XF-DEMO-01-72929E",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -2422,7 +2852,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -2452,7 +2882,7 @@
               },
               "affected_batches": [
                 {
-                  "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2467,9 +2897,9 @@
                   "expected_ship_end": "2026-09-29"
                 },
                 {
-                  "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                  "code": "CGJ-XF-DEMO-01-C030B3",
-                  "trace_code": "CGJ-F5F972930CCC",
+                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                  "code": "CGJ-XF-DEMO-01-72929E",
+                  "trace_code": "CGJ-56665ABFB890",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2482,9 +2912,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                  "code": "CGJ-XF-DEMO-01-8C406B",
-                  "trace_code": "CGJ-DCD3C97AD309",
+                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                  "code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "trace_code": "CGJ-9B778A646596",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2499,12 +2929,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920142040DCE241",
+                  "order_number": "NO20260920155711D84665",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO20260920142040777B40",
+                  "order_number": "NO2026092015571107272C",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -2522,7 +2952,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                  "batch_code": "CGJ-XF-DEMO-01-72929E",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -2534,7 +2964,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -2562,7 +2992,7 @@
               },
               "affected_batches": [
                 {
-                  "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2577,9 +3007,9 @@
                   "expected_ship_end": "2026-09-29"
                 },
                 {
-                  "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                  "code": "CGJ-XF-DEMO-01-C030B3",
-                  "trace_code": "CGJ-F5F972930CCC",
+                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                  "code": "CGJ-XF-DEMO-01-72929E",
+                  "trace_code": "CGJ-56665ABFB890",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2592,9 +3022,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                  "code": "CGJ-XF-DEMO-01-8C406B",
-                  "trace_code": "CGJ-DCD3C97AD309",
+                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                  "code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "trace_code": "CGJ-9B778A646596",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2609,12 +3039,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920142040DCE241",
+                  "order_number": "NO20260920155711D84665",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO20260920142040777B40",
+                  "order_number": "NO2026092015571107272C",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -2632,7 +3062,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                  "batch_code": "CGJ-XF-DEMO-01-72929E",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -2644,7 +3074,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -2672,7 +3102,7 @@
               },
               "affected_batches": [
                 {
-                  "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2687,9 +3117,9 @@
                   "expected_ship_end": "2026-09-29"
                 },
                 {
-                  "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                  "code": "CGJ-XF-DEMO-01-C030B3",
-                  "trace_code": "CGJ-F5F972930CCC",
+                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                  "code": "CGJ-XF-DEMO-01-72929E",
+                  "trace_code": "CGJ-56665ABFB890",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2702,9 +3132,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                  "code": "CGJ-XF-DEMO-01-8C406B",
-                  "trace_code": "CGJ-DCD3C97AD309",
+                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                  "code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "trace_code": "CGJ-9B778A646596",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2719,12 +3149,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920142040DCE241",
+                  "order_number": "NO20260920155711D84665",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO20260920142040777B40",
+                  "order_number": "NO2026092015571107272C",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -2742,7 +3172,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                  "batch_code": "CGJ-XF-DEMO-01-72929E",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -2754,7 +3184,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -2782,7 +3212,7 @@
               },
               "affected_batches": [
                 {
-                  "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2797,9 +3227,9 @@
                   "expected_ship_end": "2026-09-29"
                 },
                 {
-                  "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                  "code": "CGJ-XF-DEMO-01-C030B3",
-                  "trace_code": "CGJ-F5F972930CCC",
+                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                  "code": "CGJ-XF-DEMO-01-72929E",
+                  "trace_code": "CGJ-56665ABFB890",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2812,9 +3242,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                  "code": "CGJ-XF-DEMO-01-8C406B",
-                  "trace_code": "CGJ-DCD3C97AD309",
+                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                  "code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "trace_code": "CGJ-9B778A646596",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2829,12 +3259,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920142040DCE241",
+                  "order_number": "NO20260920155711D84665",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO20260920142040777B40",
+                  "order_number": "NO2026092015571107272C",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -2852,7 +3282,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                  "batch_code": "CGJ-XF-DEMO-01-72929E",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -2864,7 +3294,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -2886,7 +3316,7 @@
           ],
           "affected_batches": [
             {
-              "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2901,9 +3331,9 @@
               "expected_ship_end": "2026-09-29"
             },
             {
-              "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-              "code": "CGJ-XF-DEMO-01-C030B3",
-              "trace_code": "CGJ-F5F972930CCC",
+              "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+              "code": "CGJ-XF-DEMO-01-72929E",
+              "trace_code": "CGJ-56665ABFB890",
               "title": "契约基准批次（第二次）",
               "status": "draft",
               "status_display": "筹备中",
@@ -2916,9 +3346,9 @@
               "expected_ship_end": ""
             },
             {
-              "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-              "code": "CGJ-XF-DEMO-01-8C406B",
-              "trace_code": "CGJ-DCD3C97AD309",
+              "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+              "code": "CGJ-XF-DEMO-01-CFAD6B",
+              "trace_code": "CGJ-9B778A646596",
               "title": "契约基准批次",
               "status": "draft",
               "status_display": "筹备中",
@@ -2944,7 +3374,7 @@
               "prediction": "预计履约风险「低」(20 分)"
             },
             {
-              "batch_code": "CGJ-XF-DEMO-01-C030B3",
+              "batch_code": "CGJ-XF-DEMO-01-72929E",
               "score": 40,
               "level": "中",
               "probability": 0.4,
@@ -2956,7 +3386,7 @@
               "prediction": "预计履约风险「中」(40 分)"
             },
             {
-              "batch_code": "CGJ-XF-DEMO-01-8C406B",
+              "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
               "score": 30,
               "level": "低",
               "probability": 0.3,
@@ -2968,7 +3398,7 @@
             }
           ],
           "approval": {
-            "id": "d346f3db-33e7-4aab-8038-41752b3f41c5",
+            "id": "a28ecb5e-58a5-4659-a64e-5ac22e073175",
             "ticket_type": "risk_action",
             "ticket_type_display": "风险处置",
             "title": "生产风险处置确认（5 项）",
@@ -2984,7 +3414,7 @@
                   },
                   "affected_batches": [
                     {
-                      "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2999,9 +3429,9 @@
                       "expected_ship_end": "2026-09-29"
                     },
                     {
-                      "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                      "code": "CGJ-XF-DEMO-01-C030B3",
-                      "trace_code": "CGJ-F5F972930CCC",
+                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                      "code": "CGJ-XF-DEMO-01-72929E",
+                      "trace_code": "CGJ-56665ABFB890",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3014,9 +3444,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                      "code": "CGJ-XF-DEMO-01-8C406B",
-                      "trace_code": "CGJ-DCD3C97AD309",
+                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                      "code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "trace_code": "CGJ-9B778A646596",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3031,12 +3461,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920142040DCE241",
+                      "order_number": "NO20260920155711D84665",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO20260920142040777B40",
+                      "order_number": "NO2026092015571107272C",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3054,7 +3484,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                      "batch_code": "CGJ-XF-DEMO-01-72929E",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3066,7 +3496,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3096,7 +3526,7 @@
                   },
                   "affected_batches": [
                     {
-                      "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3111,9 +3541,9 @@
                       "expected_ship_end": "2026-09-29"
                     },
                     {
-                      "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                      "code": "CGJ-XF-DEMO-01-C030B3",
-                      "trace_code": "CGJ-F5F972930CCC",
+                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                      "code": "CGJ-XF-DEMO-01-72929E",
+                      "trace_code": "CGJ-56665ABFB890",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3126,9 +3556,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                      "code": "CGJ-XF-DEMO-01-8C406B",
-                      "trace_code": "CGJ-DCD3C97AD309",
+                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                      "code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "trace_code": "CGJ-9B778A646596",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3143,12 +3573,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920142040DCE241",
+                      "order_number": "NO20260920155711D84665",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO20260920142040777B40",
+                      "order_number": "NO2026092015571107272C",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3166,7 +3596,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                      "batch_code": "CGJ-XF-DEMO-01-72929E",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3178,7 +3608,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3206,7 +3636,7 @@
                   },
                   "affected_batches": [
                     {
-                      "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3221,9 +3651,9 @@
                       "expected_ship_end": "2026-09-29"
                     },
                     {
-                      "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                      "code": "CGJ-XF-DEMO-01-C030B3",
-                      "trace_code": "CGJ-F5F972930CCC",
+                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                      "code": "CGJ-XF-DEMO-01-72929E",
+                      "trace_code": "CGJ-56665ABFB890",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3236,9 +3666,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                      "code": "CGJ-XF-DEMO-01-8C406B",
-                      "trace_code": "CGJ-DCD3C97AD309",
+                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                      "code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "trace_code": "CGJ-9B778A646596",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3253,12 +3683,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920142040DCE241",
+                      "order_number": "NO20260920155711D84665",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO20260920142040777B40",
+                      "order_number": "NO2026092015571107272C",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3276,7 +3706,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                      "batch_code": "CGJ-XF-DEMO-01-72929E",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3288,7 +3718,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3316,7 +3746,7 @@
                   },
                   "affected_batches": [
                     {
-                      "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3331,9 +3761,9 @@
                       "expected_ship_end": "2026-09-29"
                     },
                     {
-                      "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                      "code": "CGJ-XF-DEMO-01-C030B3",
-                      "trace_code": "CGJ-F5F972930CCC",
+                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                      "code": "CGJ-XF-DEMO-01-72929E",
+                      "trace_code": "CGJ-56665ABFB890",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3346,9 +3776,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                      "code": "CGJ-XF-DEMO-01-8C406B",
-                      "trace_code": "CGJ-DCD3C97AD309",
+                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                      "code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "trace_code": "CGJ-9B778A646596",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3363,12 +3793,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920142040DCE241",
+                      "order_number": "NO20260920155711D84665",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO20260920142040777B40",
+                      "order_number": "NO2026092015571107272C",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3386,7 +3816,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                      "batch_code": "CGJ-XF-DEMO-01-72929E",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3398,7 +3828,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3426,7 +3856,7 @@
                   },
                   "affected_batches": [
                     {
-                      "id": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3441,9 +3871,9 @@
                       "expected_ship_end": "2026-09-29"
                     },
                     {
-                      "id": "153615a4-203c-4cd4-859d-4bb9bd9a80dc",
-                      "code": "CGJ-XF-DEMO-01-C030B3",
-                      "trace_code": "CGJ-F5F972930CCC",
+                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
+                      "code": "CGJ-XF-DEMO-01-72929E",
+                      "trace_code": "CGJ-56665ABFB890",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3456,9 +3886,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "72ea02e6-3b6e-4a4a-992d-c151c19f4204",
-                      "code": "CGJ-XF-DEMO-01-8C406B",
-                      "trace_code": "CGJ-DCD3C97AD309",
+                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
+                      "code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "trace_code": "CGJ-9B778A646596",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3473,12 +3903,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920142040DCE241",
+                      "order_number": "NO20260920155711D84665",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO20260920142040777B40",
+                      "order_number": "NO2026092015571107272C",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3496,7 +3926,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-C030B3",
+                      "batch_code": "CGJ-XF-DEMO-01-72929E",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3508,7 +3938,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-8C406B",
+                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3535,13 +3965,13 @@
             "created_by": "farmer_xinfeng",
             "decided_by": "",
             "note": "",
-            "created_at": "2026-09-20T14:20:41.379645+00:00",
+            "created_at": "2026-09-20T15:57:12.427582+00:00",
             "decided_at": ""
           }
         },
-        "timestamp": 1789914041379
+        "timestamp": 1789919832427
       },
-      "raw_body_sha256": "01009b11023c57aac618b7db38b731fa11929567b7957954f7e7557d2d7602a2",
+      "raw_body_sha256": "9a8dad0b4129ad56e4666b65d33f1e925c301e595c5cc985283f6337cbb817f9",
       "raw_body_bytes": 27762,
       "normalize": [
         "$.timestamp",
@@ -3553,6 +3983,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -3563,10 +4006,15 @@
         "$.data.approval.created_at"
       ],
       "normalize_hits": [
+        "batch_code",
+        "code",
         "created_at",
+        "decided_at",
         "id",
+        "order_number",
         "ref_id",
-        "timestamp"
+        "timestamp",
+        "trace_code"
       ],
       "shape_only": false,
       "shape": null,
@@ -3602,7 +4050,7 @@
           "data": {
             "role": "farmer",
             "report": {
-              "generated_at": "2026-09-20T14:20:41.386649+00:00",
+              "generated_at": "2026-09-20T15:57:12.438582+00:00",
               "overview": {
                 "orchard_count": 1,
                 "batch_count": 3,
@@ -3621,7 +4069,7 @@
                   "expected_ship_start": "2026-09-24"
                 },
                 {
-                  "code": "CGJ-XF-DEMO-01-C030B3",
+                  "code": "CGJ-XF-DEMO-01-72929E",
                   "title": "契约基准批次（第二次）",
                   "status_display": "筹备中",
                   "available_quantity": 20,
@@ -3629,7 +4077,7 @@
                   "expected_ship_start": ""
                 },
                 {
-                  "code": "CGJ-XF-DEMO-01-8C406B",
+                  "code": "CGJ-XF-DEMO-01-CFAD6B",
                   "title": "契约基准批次",
                   "status_display": "筹备中",
                   "available_quantity": 100,
@@ -3653,9 +4101,9 @@
           "llm": false,
           "escalated": false
         },
-        "timestamp": 1789914041391
+        "timestamp": 1789919832446
       },
-      "raw_body_sha256": "867bcd2fee3cfc4fa816700afc73c66af8759859bac7aae215f3f35936d471b0",
+      "raw_body_sha256": "2ef09e84d9a64a6a4c4df46728e6d72aced37faa846d667099cb0ca270b7ab9c",
       "raw_body_bytes": 1565,
       "normalize": [
         "$.timestamp",
@@ -3667,6 +4115,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -3677,6 +4138,7 @@
         "$.data.data.report.generated_at"
       ],
       "normalize_hits": [
+        "code",
         "timestamp"
       ],
       "shape_only": false,
@@ -3714,7 +4176,7 @@
         "code": 200,
         "message": "感谢反馈，已记入偏好与品质反馈",
         "data": {
-          "id": "f6ad9006-95a7-4d65-87b6-4300a2f92075",
+          "id": "74cbc945-e3e6-46a7-b966-1b80f044b7db",
           "product_name": "赣南纽荷尔家庭装",
           "batch_code": "CGJ-2026-XF-001",
           "rating": 5,
@@ -3722,11 +4184,11 @@
           "taste": "很甜",
           "package": "完好",
           "note": "契约基准反馈",
-          "created_at": "2026-09-20T14:20:41.395645+00:00"
+          "created_at": "2026-09-20T15:57:12.451582+00:00"
         },
-        "timestamp": 1789914041395
+        "timestamp": 1789919832451
       },
-      "raw_body_sha256": "ff86b0c93c5558dafcaa1da9a5eadce05647dfdab3c49b20ddd5028cddc370c8",
+      "raw_body_sha256": "c561e1bce4f86b07f5b2231f6240a906256a1fb1803202a21fae85e8cea471b2",
       "raw_body_bytes": 371,
       "normalize": [
         "$.timestamp",
@@ -3738,6 +4200,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -3747,6 +4222,8 @@
         "$..id"
       ],
       "normalize_hits": [
+        "batch_code",
+        "code",
         "created_at",
         "id",
         "package",
@@ -3788,7 +4265,7 @@
         "code": 200,
         "message": "审批单已创建，等待人工确认",
         "data": {
-          "id": "9c3773a0-6933-4b58-92c6-2cd5354d58d3",
+          "id": "54154a77-843a-45ea-8c3e-821ab0b4a144",
           "ticket_type": "restock",
           "ticket_type_display": "品质抽检",
           "title": "契约基准审批单",
@@ -3802,12 +4279,12 @@
           "created_by": "farmer_xinfeng",
           "decided_by": "",
           "note": "",
-          "created_at": "2026-09-20T14:20:41.399282+00:00",
+          "created_at": "2026-09-20T15:57:12.457584+00:00",
           "decided_at": ""
         },
-        "timestamp": 1789914041399
+        "timestamp": 1789919832457
       },
-      "raw_body_sha256": "1b3611d60932870bb1ae39ef5159d77f998f17c051d9bb2db9830f0fdbe409a8",
+      "raw_body_sha256": "71fd16a0fad66edc2c5fcd28ebcba638b6b15f4bcd3fdb3893404505b76499bc",
       "raw_body_bytes": 463,
       "normalize": [
         "$.timestamp",
@@ -3819,6 +4296,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -3828,7 +4318,9 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "created_at",
+        "decided_at",
         "id",
         "ref_id",
         "timestamp"
@@ -3844,7 +4336,7 @@
       "name": "agent_approval_decision_approve_ok",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
       "method": "POST",
       "kind": "mutation",
       "headers": {
@@ -3858,7 +4350,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "a5fcae19-8740-48d0-b7b4-f818a0f20598"
+        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
       },
       "expected_status": 200,
       "expected_content_type": "application/json",
@@ -3866,7 +4358,7 @@
         "code": 200,
         "message": "已批准，动作交业务系统执行",
         "data": {
-          "id": "a5fcae19-8740-48d0-b7b4-f818a0f20598",
+          "id": "6705f1de-4921-46d8-a2ec-0ef4be787457",
           "ticket_type": "other",
           "ticket_type_display": "其他",
           "title": "契约基准：待决策审批单",
@@ -3881,12 +4373,12 @@
           "created_by": "",
           "decided_by": "farmer_xinfeng",
           "note": "契约基准批准",
-          "created_at": "2026-09-20T14:20:38.649291+00:00",
-          "decided_at": "2026-09-20T14:20:41.405282+00:00"
+          "created_at": "2026-09-20T15:57:08.842231+00:00",
+          "decided_at": "2026-09-20T15:57:12.466583+00:00"
         },
-        "timestamp": 1789914041405
+        "timestamp": 1789919832466
       },
-      "raw_body_sha256": "a7447ca031ab290a28432460df6736eeaa946840cc9f8ea95b98e96c40f942c2",
+      "raw_body_sha256": "c841686a5b1cb1424dca20e2d87e6746cf10ccde6d8a9364be331d58bb31aec5",
       "raw_body_bytes": 538,
       "normalize": [
         "$.timestamp",
@@ -3898,6 +4390,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -3907,7 +4412,9 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "created_at",
+        "decided_at",
         "id",
         "ref_id",
         "timestamp"
@@ -3923,7 +4430,7 @@
       "name": "agent_approval_decision_repeat_500",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/a5fcae19-8740-48d0-b7b4-f818a0f20598/decision",
+      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
       "method": "POST",
       "kind": "mutation",
       "headers": {
@@ -3936,7 +4443,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "a5fcae19-8740-48d0-b7b4-f818a0f20598"
+        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
       },
       "expected_status": 500,
       "expected_content_type": "application/json",
@@ -3957,6 +4464,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -3964,7 +4484,9 @@
         "$..package",
         "$..ref_id"
       ],
-      "normalize_hits": [],
+      "normalize_hits": [
+        "code"
+      ],
       "shape_only": false,
       "shape": null,
       "status_matches_design": true,
@@ -3977,7 +4499,7 @@
       "name": "agent_approval_decision_reject_ok",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/9c3773a0-6933-4b58-92c6-2cd5354d58d3/decision",
+      "path": "/api/agent/approvals/54154a77-843a-45ea-8c3e-821ab0b4a144/decision",
       "method": "POST",
       "kind": "mutation",
       "headers": {
@@ -3991,7 +4513,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "9c3773a0-6933-4b58-92c6-2cd5354d58d3"
+        "approval_id": "54154a77-843a-45ea-8c3e-821ab0b4a144"
       },
       "expected_status": 200,
       "expected_content_type": "application/json",
@@ -3999,7 +4521,7 @@
         "code": 200,
         "message": "已拒绝",
         "data": {
-          "id": "9c3773a0-6933-4b58-92c6-2cd5354d58d3",
+          "id": "54154a77-843a-45ea-8c3e-821ab0b4a144",
           "ticket_type": "restock",
           "ticket_type_display": "品质抽检",
           "title": "契约基准审批单",
@@ -4013,12 +4535,12 @@
           "created_by": "farmer_xinfeng",
           "decided_by": "farmer_xinfeng",
           "note": "契约基准拒绝",
-          "created_at": "2026-09-20T14:20:41.399282+00:00",
-          "decided_at": "2026-09-20T14:20:41.447282+00:00"
+          "created_at": "2026-09-20T15:57:12.457584+00:00",
+          "decided_at": "2026-09-20T15:57:12.484581+00:00"
         },
-        "timestamp": 1789914041448
+        "timestamp": 1789919832485
       },
-      "raw_body_sha256": "25a0bc45a5e9b335a73438ebbd2dc15f96d0a7231e85ba50300ed4211961f60e",
+      "raw_body_sha256": "7e54c115b618adbd327f0d75d3f49b01859159ec249556ab2ad2a4cbd37da5d4",
       "raw_body_bytes": 498,
       "normalize": [
         "$.timestamp",
@@ -4030,6 +4552,19 @@
         "$..token",
         "$..expiresAt",
         "$..expires_at",
+        "$..paid_at",
+        "$..cancelled_at",
+        "$..decided_at",
+        "$..completed_at",
+        "$..payment_number",
+        "$..trace_code",
+        "$..harvest_code",
+        "$..order_number",
+        "$..code",
+        "$..open_at",
+        "$..close_at",
+        "$..record_time",
+        "$..batch_code",
         "$..tree",
         "$..harvest_archive",
         "$..product",
@@ -4039,7 +4574,9 @@
         "$..id"
       ],
       "normalize_hits": [
+        "code",
         "created_at",
+        "decided_at",
         "id",
         "ref_id",
         "timestamp"

@@ -12,10 +12,53 @@
     "model_available": false,
     "recognition_mode": "mock",
     "random_seed": 20260913,
-    "real_db_sha256": "bfb0b1f0239b0fee85ce3225dedccc5d78fba1f503ee72293840d308f9c7b3d5",
+    "real_db_sha256": "6fda81ceeaef5d7d5ed9ef19df96fcc30d3c746dd9f4690928150ce9b9a80317",
     "test_db": "file:memorydb_default?mode=memory&cache=shared",
-    "captured_at": "2026-09-20T14:20:34+00:00",
-    "dump_command": "dumpdata <business model labels> --format=json --indent=2（保留主键）",
+    "captured_at": "2026-09-20T15:57:04+00:00",
+    "dump_command": "dumpdata <business model labels> --format=json --indent=2（保留主键）+ 按主键从 connection 读回原始 datetime（补回 dumpdata 截断的微秒）",
+    "datetime_precision_restored": {
+      "restored": 214,
+      "fields": {
+        "created_at": 83,
+        "updated_at": 38,
+        "timestamp": 30,
+        "verified_at": 3,
+        "last_observed_at": 7,
+        "open_at": 3,
+        "close_at": 3,
+        "harvested_at": 4,
+        "sampled_at": 4,
+        "occurred_at": 14,
+        "recorded_at": 14,
+        "expires_at": 3,
+        "paid_at": 2,
+        "packed_at": 2,
+        "shipped_at": 2,
+        "signed_at": 2
+      },
+      "models": {
+        "api.user": 8,
+        "api.temperaturehumiditydata": 60,
+        "api.task": 5,
+        "api.diseaserecognitionrecord": 4,
+        "api.orchard": 9,
+        "api.fruittreearchive": 21,
+        "api.salesbatch": 12,
+        "api.harvestarchive": 12,
+        "api.batchqualitysample": 8,
+        "api.traceevent": 28,
+        "api.citrusproduct": 14,
+        "api.buyeraddress": 4,
+        "api.cartitem": 4,
+        "api.order": 11,
+        "api.tracepackage": 10,
+        "api.aftersalerequest": 2,
+        "api.agentfeedback": 2
+      },
+      "skipped_unknown_model": 0,
+      "skipped_unknown_column": 0,
+      "skipped_no_row": 0
+    },
     "excluded": [
       "contenttypes.contenttype",
       "auth.permission",
@@ -49,561 +92,561 @@
   "objects": [
     {
       "model": "api.user",
-      "pk": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-      "fields": {
-        "username": "farmer_xinfeng",
-        "password": "pbkdf2_sha256$720000$9v4pzPFovtucXyIxzowUwi$x8sLz0Z+Q4brqnHHJSZK+rJ826ILbbSfyPwPzjwjAy0=",
-        "email": null,
-        "role": "farmer",
-        "orchard_address": "赣州市信丰县",
-        "latitude": 25.0,
-        "longitude": 115.0,
-        "created_at": "2026-09-20T14:20:37.028Z",
-        "updated_at": "2026-09-20T14:20:37.028Z"
-      }
-    },
-    {
-      "model": "api.user",
-      "pk": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-      "fields": {
-        "username": "farmer_xunwu",
-        "password": "pbkdf2_sha256$720000$Vvm59RpcErkFBCi6IKB2fY$oYNrPnCaMWbICT1TQrgseTmy33oEboOXwDwFqBJOM9Q=",
-        "email": null,
-        "role": "farmer",
-        "orchard_address": "赣州市寻乌县",
-        "latitude": 25.0,
-        "longitude": 115.0,
-        "created_at": "2026-09-20T14:20:37.308Z",
-        "updated_at": "2026-09-20T14:20:37.308Z"
-      }
-    },
-    {
-      "model": "api.user",
-      "pk": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
-      "fields": {
-        "username": "buyer_zhang",
-        "password": "pbkdf2_sha256$720000$QxFl1tcsgES1nhIjPbjhv7$EhXCc21gh8otZ3zrhGUXqk+ep2qiQwGX5iMCcOdxRSA=",
-        "email": "zhang@example.com",
-        "role": "buyer",
-        "orchard_address": null,
-        "latitude": null,
-        "longitude": null,
-        "created_at": "2026-09-20T14:20:37.922Z",
-        "updated_at": "2026-09-20T14:20:37.922Z"
-      }
-    },
-    {
-      "model": "api.user",
-      "pk": "909b43ff-8eb1-4335-a248-3879da69513e",
+      "pk": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
       "fields": {
         "username": "farmer_anyuan",
-        "password": "pbkdf2_sha256$720000$7g9srDC2daTenSLo9vAIC1$AxIOhCeF8u0X5Bm6GQjLBHS0f+147R2dMl9FBq74goY=",
+        "password": "pbkdf2_sha256$720000$C0R11fYtcKkiRHJHUWGMrp$15lGm5sP8LfGTW1BHWTO7wyECqBRh92gsOuKAVHR0iA=",
         "email": null,
         "role": "farmer",
         "orchard_address": "赣州市安远县",
         "latitude": 25.0,
         "longitude": 115.0,
-        "created_at": "2026-09-20T14:20:37.619Z",
-        "updated_at": "2026-09-20T14:20:37.619Z"
+        "created_at": "2026-09-20T15:57:07.656548+00:00",
+        "updated_at": "2026-09-20T15:57:07.656548+00:00"
+      }
+    },
+    {
+      "model": "api.user",
+      "pk": "686de717-1bcd-4990-928d-8058ff5054f1",
+      "fields": {
+        "username": "farmer_xinfeng",
+        "password": "pbkdf2_sha256$720000$3lxOUnpi6VCFJ8nlaYDEIv$H0EVoYEjLoyaioXgaHxA7V82Q4u0mvxCHB/RtOsM8qs=",
+        "email": null,
+        "role": "farmer",
+        "orchard_address": "赣州市信丰县",
+        "latitude": 25.0,
+        "longitude": 115.0,
+        "created_at": "2026-09-20T15:57:07.026252+00:00",
+        "updated_at": "2026-09-20T15:57:07.026252+00:00"
+      }
+    },
+    {
+      "model": "api.user",
+      "pk": "9b964798-568a-4ebb-ad50-c81ea292d768",
+      "fields": {
+        "username": "buyer_zhang",
+        "password": "pbkdf2_sha256$720000$zpenH4ogVVB71vlilx0xWV$NqitvUZejmq3iCehTsQKhL4ZRXVg2mUsg+decTPePi0=",
+        "email": "zhang@example.com",
+        "role": "buyer",
+        "orchard_address": null,
+        "latitude": null,
+        "longitude": null,
+        "created_at": "2026-09-20T15:57:07.970713+00:00",
+        "updated_at": "2026-09-20T15:57:07.970713+00:00"
+      }
+    },
+    {
+      "model": "api.user",
+      "pk": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+      "fields": {
+        "username": "farmer_xunwu",
+        "password": "pbkdf2_sha256$720000$1HfCXkkcHJ6i1uOoXNNZZI$b54881YEbv/GkKYe4U2axq/b2hNPqWZj4lGqpUjrdBQ=",
+        "email": null,
+        "role": "farmer",
+        "orchard_address": "赣州市寻乌县",
+        "latitude": 25.0,
+        "longitude": 115.0,
+        "created_at": "2026-09-20T15:57:07.329548+00:00",
+        "updated_at": "2026-09-20T15:57:07.329548+00:00"
       }
     },
     {
       "model": "api.temperaturehumiditydata",
-      "pk": "11b71665-bfb5-46b4-9410-c468d5f533b8",
+      "pk": "0006921d-a4f6-4cd0-bbe8-e291ed42948e",
       "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-12T14:20:37.949Z",
-        "temperature": 26.0,
-        "humidity": 77.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.950Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "15d65748-9906-47de-9f45-9fe7f1dba624",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-12T12:20:37.935Z",
-        "temperature": 25.9,
-        "humidity": 65.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.936Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "2aaae979-2e51-4f2a-b13e-79c7d034df23",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-16T14:20:37.949Z",
-        "temperature": 24.0,
-        "humidity": 80.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "32f8a56e-bafa-4692-bab2-c8cb7c0a2c64",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-15T14:20:37.949Z",
-        "temperature": 24.5,
-        "humidity": 68.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "39874d9c-e5b2-4479-bdfd-1ee75c74e6fe",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-15T13:20:37.942Z",
-        "temperature": 26.0,
-        "humidity": 76.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "3c1eb7df-4e64-423b-95fd-00d7ef8c01f4",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-19T12:20:37.935Z",
-        "temperature": 23.8,
-        "humidity": 69.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.935Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "54e42f17-a286-4d1a-8e41-a3f8a002c968",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-17T12:20:37.935Z",
-        "temperature": 24.4,
-        "humidity": 77.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.935Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "5ef551c3-44e1-4102-9128-7668137fb1ce",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-14T14:20:37.949Z",
-        "temperature": 25.0,
-        "humidity": 71.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "66138bf3-c3dd-4e9d-869b-8b8cde0058cb",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-15T12:20:37.935Z",
-        "temperature": 25.0,
-        "humidity": 69.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.935Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "6992a1a6-ec33-471a-8e3a-ab8002976ed3",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-17T13:20:37.942Z",
-        "temperature": 25.2,
-        "humidity": 66.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "7187aef8-6d7b-4048-96cf-918355a306e5",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-16T13:20:37.942Z",
-        "temperature": 25.6,
-        "humidity": 71.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "73a06693-0059-43c2-9157-e69dde9f40f8",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-14T12:20:37.935Z",
-        "temperature": 25.3,
-        "humidity": 73.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.935Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "77c77ac3-57a2-4695-9841-b3c4b4a4731f",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-16T12:20:37.935Z",
-        "temperature": 24.7,
-        "humidity": 65.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.935Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "88f45723-0c76-459e-bf88-2c4c52e9f979",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-13T14:20:37.949Z",
-        "temperature": 25.5,
-        "humidity": 74.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "8c48726f-dc5e-4277-a6f8-3939e006e95c",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-20T12:20:37.934Z",
-        "temperature": 23.5,
-        "humidity": 65.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.934Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "9b2cd1f5-da4c-439c-914d-82f0d75d2259",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-12T13:20:37.943Z",
-        "temperature": 27.2,
-        "humidity": 76.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.943Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "a1f81fb4-0fef-468b-a6ca-3f7f9f380282",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-20T14:20:37.949Z",
-        "temperature": 22.0,
-        "humidity": 68.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "a4f5df48-d8ba-4d80-999e-b53c575bd819",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-18T14:20:37.949Z",
-        "temperature": 23.0,
-        "humidity": 74.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "a54c6571-01b1-422d-b4a1-51c8a4573264",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-13T13:20:37.943Z",
-        "temperature": 26.8,
-        "humidity": 71.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.943Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "a6fae12d-8a44-4c8b-b181-0f7e09f8555d",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-19T13:20:37.942Z",
-        "temperature": 24.4,
-        "humidity": 71.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "bc502f51-42f3-4bad-96ec-b7938dbd0d71",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-17T14:20:37.949Z",
-        "temperature": 23.5,
-        "humidity": 77.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "cbc9aac2-b302-4201-a0c9-9ca70164d476",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-11T12:20:37.936Z",
-        "temperature": 26.2,
-        "humidity": 69.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.936Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "cfb9e530-6a16-472f-8128-33c6a76d4ca0",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-14T13:20:37.942Z",
-        "temperature": 26.4,
-        "humidity": 66.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "d1781ddb-fcdf-4406-8372-e1602b23c290",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-11T13:20:37.943Z",
-        "temperature": 27.6,
-        "humidity": 66.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.943Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "d2568a9f-3529-44ad-8398-18ddde307ccc",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-19T14:20:37.949Z",
-        "temperature": 22.5,
-        "humidity": 71.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.949Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "e0cfac46-efff-4842-ac2c-124a59b4010f",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-18T13:20:37.942Z",
-        "temperature": 24.8,
-        "humidity": 76.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "e9578a6c-1f9b-43bb-8ead-9fc2d988a2f9",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "timestamp": "2026-09-20T13:20:37.942Z",
-        "temperature": 24.0,
-        "humidity": 66.0,
-        "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.temperaturehumiditydata",
-      "pk": "f4d5156a-077f-45d8-85d9-3fd98a03006f",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-18T12:20:37.935Z",
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-18T13:57:07.983959+00:00",
         "temperature": 24.1,
         "humidity": 73.0,
         "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.935Z"
+        "created_at": "2026-09-20T15:57:07.983959+00:00"
       }
     },
     {
       "model": "api.temperaturehumiditydata",
-      "pk": "fba37ae3-8849-4d3a-95b4-3a794e7229a3",
+      "pk": "17de3861-9442-4bb2-800c-3f5ed4c61ddc",
       "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "timestamp": "2026-09-11T14:20:37.950Z",
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-18T14:57:07.991958+00:00",
+        "temperature": 24.8,
+        "humidity": 76.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.991958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "1c673438-cefc-4207-a2b6-06b63f88a7cd",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-12T15:57:08.001579+00:00",
+        "temperature": 26.0,
+        "humidity": 77.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.001579+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "232ee8fb-9d21-40f5-9898-7f3cd9050068",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-12T13:57:07.984960+00:00",
+        "temperature": 25.9,
+        "humidity": 65.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.984960+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "2cea651f-0645-4dda-95de-82e7d0f40f4f",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-17T13:57:07.983959+00:00",
+        "temperature": 24.4,
+        "humidity": 77.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.983959+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "40a97cdf-ece9-4ef3-bab1-2eba837181ae",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-12T14:57:07.992958+00:00",
+        "temperature": 27.2,
+        "humidity": 76.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.992958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "43d1e6e7-3104-401f-ba8d-7fb43ffd53b5",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-11T14:57:07.992958+00:00",
+        "temperature": 27.6,
+        "humidity": 66.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.992958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "55da602e-e389-43fe-a4cd-4fdf87a5df50",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-19T13:57:07.983959+00:00",
+        "temperature": 23.8,
+        "humidity": 69.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.983959+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "5c9e9878-a965-4891-a190-bad3ada2132d",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-14T15:57:08.001579+00:00",
+        "temperature": 25.0,
+        "humidity": 71.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.001579+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "604f70f7-5e3d-4587-8732-54179748b607",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-16T14:57:07.991958+00:00",
+        "temperature": 25.6,
+        "humidity": 71.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.991958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "60827b47-9439-4d3f-baf5-51705799ba63",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-15T13:57:07.984960+00:00",
+        "temperature": 25.0,
+        "humidity": 69.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.984960+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "6c78b42f-bdf3-4134-807a-a4f280cac91a",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-13T14:57:07.992958+00:00",
+        "temperature": 26.8,
+        "humidity": 71.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.992958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "7ebdd571-6a8d-41f7-bb7a-4ed77cf8750e",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-17T14:57:07.991958+00:00",
+        "temperature": 25.2,
+        "humidity": 66.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.991958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "85b71caf-f162-403b-8701-882ca93ff2a2",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-11T15:57:08.001579+00:00",
         "temperature": 26.5,
         "humidity": 80.0,
         "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.950Z"
+        "created_at": "2026-09-20T15:57:08.001579+00:00"
       }
     },
     {
       "model": "api.temperaturehumiditydata",
-      "pk": "fe41c07d-f7e6-4e0c-8009-97f37320d87b",
+      "pk": "86e09c0e-0b74-47ef-98e7-91b41b2eb91b",
       "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "timestamp": "2026-09-13T12:20:37.935Z",
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-14T13:57:07.984960+00:00",
+        "temperature": 25.3,
+        "humidity": 73.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.984960+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "93145714-d6ab-49ec-8d4d-a43f5eff3e21",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-15T15:57:08.001579+00:00",
+        "temperature": 24.5,
+        "humidity": 68.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.001579+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "9e0c7f8d-0ede-4d15-b78b-52f3481154f0",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-17T15:57:08.001579+00:00",
+        "temperature": 23.5,
+        "humidity": 77.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.001579+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "acaf5ddf-cc33-4f40-b0fb-30746abeed48",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-13T13:57:07.984960+00:00",
         "temperature": 25.6,
         "humidity": 77.0,
         "node_id": "0x4a80",
-        "created_at": "2026-09-20T14:20:37.935Z"
+        "created_at": "2026-09-20T15:57:07.984960+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "acb5ffaf-5792-49b7-b724-c5f21792cd7b",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-18T15:57:08.000574+00:00",
+        "temperature": 23.0,
+        "humidity": 74.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.000574+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "add19a91-f9ec-4da5-ab3b-34869e4ca457",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-11T13:57:07.984960+00:00",
+        "temperature": 26.2,
+        "humidity": 69.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.984960+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "b0614f92-6036-4a29-875d-3df05b11a56d",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-20T15:57:08.000574+00:00",
+        "temperature": 22.0,
+        "humidity": 68.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.000574+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "b240b953-b0e2-4073-bd89-419870585272",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-15T14:57:07.991958+00:00",
+        "temperature": 26.0,
+        "humidity": 76.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.991958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "bb06d7b3-e56d-463a-97bd-1acb2d935869",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-13T15:57:08.001579+00:00",
+        "temperature": 25.5,
+        "humidity": 74.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.001579+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "be76786b-8599-4471-a8c0-3ba22e24791b",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-19T14:57:07.991958+00:00",
+        "temperature": 24.4,
+        "humidity": 71.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.991958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "cd2a26c3-55e9-488b-a37c-8fab99a4bddb",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-16T13:57:07.983959+00:00",
+        "temperature": 24.7,
+        "humidity": 65.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.983959+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "dd8713d1-8fdb-452b-bb82-290abcdefddb",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-14T14:57:07.992958+00:00",
+        "temperature": 26.4,
+        "humidity": 66.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.992958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "e176f55a-024b-41c1-ba65-9ad9fe678f72",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-16T15:57:08.001579+00:00",
+        "temperature": 24.0,
+        "humidity": 80.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.001579+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "e18eb476-a260-4b86-836f-97fab756309a",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "timestamp": "2026-09-19T15:57:08.000574+00:00",
+        "temperature": 22.5,
+        "humidity": 71.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:08.000574+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "e2c557b1-d0ef-4fca-8881-3d55a4549131",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "timestamp": "2026-09-20T14:57:07.991958+00:00",
+        "temperature": 24.0,
+        "humidity": 66.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.991958+00:00"
+      }
+    },
+    {
+      "model": "api.temperaturehumiditydata",
+      "pk": "e73db1d3-8ead-4b4e-9e54-620f6d5188fd",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "timestamp": "2026-09-20T13:57:07.983959+00:00",
+        "temperature": 23.5,
+        "humidity": 65.0,
+        "node_id": "0x4a80",
+        "created_at": "2026-09-20T15:57:07.983959+00:00"
       }
     },
     {
       "model": "api.task",
-      "pk": "056a4ca4-2f48-40ab-b1c0-c8a244163e3a",
+      "pk": "0380f90c-ec38-4df3-8336-17d2f30bb59a",
       "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "title": "B区坡地黄龙病复核",
-        "description": "B区坡地识别到黄龙病，需巡园复核并安排木虱防治。",
-        "risk_level": "高风险",
-        "task_type": "病虫害防治",
-        "source": "疾病识别",
-        "is_completed": false,
-        "created_at": "2026-09-20T14:20:37.936Z",
-        "completed_at": null
-      }
-    },
-    {
-      "model": "api.task",
-      "pk": "2b1bf239-1fad-4625-9832-09b0262d2a10",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "title": "朋娜脐橙采前糖度记录",
-        "description": "记录朋娜脐橙采前糖度。",
-        "risk_level": "中风险",
-        "task_type": "品质抽检",
-        "source": "系统",
-        "is_completed": false,
-        "created_at": "2026-09-20T14:20:37.943Z",
-        "completed_at": null
-      }
-    },
-    {
-      "model": "api.task",
-      "pk": "6a537b4a-bdd3-44eb-9214-be8222837b86",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "title": "果园日常巡园",
-        "description": "常规巡园记录生长状态。",
-        "risk_level": "低风险",
-        "task_type": "日常巡园",
-        "source": "用户",
-        "is_completed": true,
-        "created_at": "2026-09-20T14:20:37.936Z",
-        "completed_at": null
-      }
-    },
-    {
-      "model": "api.task",
-      "pk": "8c8a2919-dac7-4875-a866-8d5fd56946c4",
-      "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "title": "红肉脐橙转色观察",
-        "description": "记录红肉脐橙转色与糖度变化。",
-        "risk_level": "低风险",
-        "task_type": "日常巡园",
-        "source": "系统",
-        "is_completed": false,
-        "created_at": "2026-09-20T14:20:37.950Z",
-        "completed_at": null
-      }
-    },
-    {
-      "model": "api.task",
-      "pk": "8e8dcf2d-0356-40c5-8982-7a083c77d01d",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
         "title": "采摘期前糖度抽检",
         "description": "对A区批次做采前糖度抽检。",
         "risk_level": "中风险",
         "task_type": "品质抽检",
         "source": "系统",
         "is_completed": false,
-        "created_at": "2026-09-20T14:20:37.936Z",
+        "created_at": "2026-09-20T15:57:07.985960+00:00",
+        "completed_at": null
+      }
+    },
+    {
+      "model": "api.task",
+      "pk": "1f1e58e6-ee7a-4d44-886e-d01ec2b45476",
+      "fields": {
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "title": "朋娜脐橙采前糖度记录",
+        "description": "记录朋娜脐橙采前糖度。",
+        "risk_level": "中风险",
+        "task_type": "品质抽检",
+        "source": "系统",
+        "is_completed": false,
+        "created_at": "2026-09-20T15:57:07.993959+00:00",
+        "completed_at": null
+      }
+    },
+    {
+      "model": "api.task",
+      "pk": "44c72e48-ed81-4a29-8f84-528b3dbd800e",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "title": "红肉脐橙转色观察",
+        "description": "记录红肉脐橙转色与糖度变化。",
+        "risk_level": "低风险",
+        "task_type": "日常巡园",
+        "source": "系统",
+        "is_completed": false,
+        "created_at": "2026-09-20T15:57:08.002580+00:00",
+        "completed_at": null
+      }
+    },
+    {
+      "model": "api.task",
+      "pk": "a217e613-abd3-4afe-86ba-2e104569349e",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "title": "B区坡地黄龙病复核",
+        "description": "B区坡地识别到黄龙病，需巡园复核并安排木虱防治。",
+        "risk_level": "高风险",
+        "task_type": "病虫害防治",
+        "source": "疾病识别",
+        "is_completed": false,
+        "created_at": "2026-09-20T15:57:07.985960+00:00",
+        "completed_at": null
+      }
+    },
+    {
+      "model": "api.task",
+      "pk": "fa0c4ac1-1072-4ac6-bc8c-e8bbedf465e5",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "title": "果园日常巡园",
+        "description": "常规巡园记录生长状态。",
+        "risk_level": "低风险",
+        "task_type": "日常巡园",
+        "source": "用户",
+        "is_completed": true,
+        "created_at": "2026-09-20T15:57:07.985960+00:00",
         "completed_at": null
       }
     },
     {
       "model": "api.diseaserecognitionrecord",
-      "pk": "115b18bd-e3e8-4db2-8e82-76fb4883e0ca",
+      "pk": "1a23d20f-5e96-4b68-b4d6-a7f962181d48",
       "fields": {
-        "user": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "image": "",
-        "disease_name": "健康果树",
-        "area": "山地一区",
-        "risk_level": "正常",
-        "recognition_date": "2026-09-17",
-        "confidence": 97.0,
-        "created_at": "2026-09-20T14:20:37.950Z"
-      }
-    },
-    {
-      "model": "api.diseaserecognitionrecord",
-      "pk": "2a939b87-52a2-468f-b3dc-4c76598a27a1",
-      "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
         "image": "",
         "disease_name": "黄龙病",
         "area": "B区坡地",
         "risk_level": "高风险",
         "recognition_date": "2026-09-19",
         "confidence": 88.2,
-        "created_at": "2026-09-20T14:20:37.936Z"
+        "created_at": "2026-09-20T15:57:07.984960+00:00"
       }
     },
     {
       "model": "api.diseaserecognitionrecord",
-      "pk": "5f9b7682-c8f5-4ebf-af08-79c1dc5fab0c",
+      "pk": "572f157a-3e6c-4931-add3-c2cea3c5dc07",
       "fields": {
-        "user": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "image": "",
-        "disease_name": "健康果树",
-        "area": "A区",
-        "risk_level": "正常",
-        "recognition_date": "2026-09-18",
-        "confidence": 96.5,
-        "created_at": "2026-09-20T14:20:37.936Z"
-      }
-    },
-    {
-      "model": "api.diseaserecognitionrecord",
-      "pk": "a0765a19-d886-48cb-945e-88a31d92472f",
-      "fields": {
-        "user": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
+        "user": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
         "image": "",
         "disease_name": "健康果树",
         "area": "果园区",
         "risk_level": "正常",
         "recognition_date": "2026-09-19",
         "confidence": 95.8,
-        "created_at": "2026-09-20T14:20:37.943Z"
+        "created_at": "2026-09-20T15:57:07.992958+00:00"
+      }
+    },
+    {
+      "model": "api.diseaserecognitionrecord",
+      "pk": "8bc69d2b-ac32-4913-9bcb-8c079f1e4665",
+      "fields": {
+        "user": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "image": "",
+        "disease_name": "健康果树",
+        "area": "A区",
+        "risk_level": "正常",
+        "recognition_date": "2026-09-18",
+        "confidence": 96.5,
+        "created_at": "2026-09-20T15:57:07.984960+00:00"
+      }
+    },
+    {
+      "model": "api.diseaserecognitionrecord",
+      "pk": "f8ed00b1-e9e7-4518-98e5-a46810ceb78b",
+      "fields": {
+        "user": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "image": "",
+        "disease_name": "健康果树",
+        "area": "山地一区",
+        "risk_level": "正常",
+        "recognition_date": "2026-09-17",
+        "confidence": 97.0,
+        "created_at": "2026-09-20T15:57:08.002580+00:00"
       }
     },
     {
       "model": "api.orchard",
-      "pk": "5242b4fd-1163-4366-93eb-5ae589a231f8",
+      "pk": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
       "fields": {
         "code": "GY-XF-DEMO-01",
-        "owner": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
+        "owner": "686de717-1bcd-4990-928d-8058ff5054f1",
         "name": "信丰县橙管家合作示范园",
         "grower_name": "farmer_xinfeng",
         "province": "江西省",
@@ -627,17 +670,17 @@
         "certifications": [],
         "status": "verified",
         "verification_note": "已完成合作主体、位置与档案流程核验",
-        "verified_at": "2026-07-22T14:20:37.922Z",
-        "created_at": "2026-09-20T14:20:37.922Z",
-        "updated_at": "2026-09-20T14:20:37.922Z"
+        "verified_at": "2026-07-22T15:57:07.970713+00:00",
+        "created_at": "2026-09-20T15:57:07.970713+00:00",
+        "updated_at": "2026-09-20T15:57:07.970713+00:00"
       }
     },
     {
       "model": "api.orchard",
-      "pk": "7a9ee352-b52a-437d-9461-a388e45972d4",
+      "pk": "53ff6de1-9571-4791-acfe-0a7f9d11403f",
       "fields": {
         "code": "GY-XW-GOLD-03",
-        "owner": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
+        "owner": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
         "name": "寻乌金果家庭农场",
         "grower_name": "farmer_xunwu",
         "province": "江西省",
@@ -661,17 +704,17 @@
         "certifications": [],
         "status": "verified",
         "verification_note": "已完成合作主体、位置与档案流程核验",
-        "verified_at": "2026-07-22T14:20:37.937Z",
-        "created_at": "2026-09-20T14:20:37.937Z",
-        "updated_at": "2026-09-20T14:20:37.937Z"
+        "verified_at": "2026-07-22T15:57:07.985960+00:00",
+        "created_at": "2026-09-20T15:57:07.985960+00:00",
+        "updated_at": "2026-09-20T15:57:07.985960+00:00"
       }
     },
     {
       "model": "api.orchard",
-      "pk": "bafd83ce-1e1f-4197-b894-58794bc9bb77",
+      "pk": "a29ed35f-7d1b-4ddf-b523-df066aef917c",
       "fields": {
         "code": "GY-AY-ECO-02",
-        "owner": "909b43ff-8eb1-4335-a248-3879da69513e",
+        "owner": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
         "name": "安远山地生态果园",
         "grower_name": "farmer_anyuan",
         "province": "江西省",
@@ -695,137 +738,17 @@
         "certifications": [],
         "status": "verified",
         "verification_note": "已完成合作主体、位置与档案流程核验",
-        "verified_at": "2026-07-22T14:20:37.943Z",
-        "created_at": "2026-09-20T14:20:37.943Z",
-        "updated_at": "2026-09-20T14:20:37.943Z"
+        "verified_at": "2026-07-22T15:57:07.994055+00:00",
+        "created_at": "2026-09-20T15:57:07.994055+00:00",
+        "updated_at": "2026-09-20T15:57:07.994055+00:00"
       }
     },
     {
       "model": "api.fruittreearchive",
-      "pk": "08779345-372d-40e1-adf1-7e0fc24c0245",
+      "pk": "374ef63f-36ad-4184-8d90-3d15d9af5603",
       "fields": {
-        "trace_code": "CGJ-TREE-B066260A0A",
-        "orchard": "5242b4fd-1163-4366-93eb-5ae589a231f8",
-        "tree_number": "信丰-02-005",
-        "plot_name": "B区坡地",
-        "variety": "纽荷尔脐橙",
-        "planted_year": 2018,
-        "growth_stage": "果实膨大期",
-        "health_status": "watch",
-        "growth_summary": "近期局部高湿，已安排巡园观察。",
-        "latest_temperature": "24.6",
-        "latest_humidity": "82.0",
-        "last_observed_at": "2026-09-18T14:20:37.923Z",
-        "cover_image_url": "",
-        "image_urls": [],
-        "video_urls": [],
-        "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.923Z",
-        "updated_at": "2026-09-20T14:20:37.923Z"
-      }
-    },
-    {
-      "model": "api.fruittreearchive",
-      "pk": "1418c558-5663-4fc8-b008-f76f973bd633",
-      "fields": {
-        "trace_code": "CGJ-TREE-46E6D7C4F3",
-        "orchard": "5242b4fd-1163-4366-93eb-5ae589a231f8",
-        "tree_number": "信丰-01-001",
-        "plot_name": "A区示范地块",
-        "variety": "纽荷尔脐橙",
-        "planted_year": 2018,
-        "growth_stage": "果实膨大转色期",
-        "health_status": "healthy",
-        "growth_summary": "树势稳定，叶色正常，果实分布均匀。",
-        "latest_temperature": "24.1",
-        "latest_humidity": "67.0",
-        "last_observed_at": "2026-09-19T14:20:37.923Z",
-        "cover_image_url": "",
-        "image_urls": [],
-        "video_urls": [],
-        "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.923Z",
-        "updated_at": "2026-09-20T14:20:37.923Z"
-      }
-    },
-    {
-      "model": "api.fruittreearchive",
-      "pk": "439213fb-e9ac-4e28-9dd9-24a1cdf1a00b",
-      "fields": {
-        "trace_code": "CGJ-TREE-604DEFE3B7",
-        "orchard": "bafd83ce-1e1f-4197-b894-58794bc9bb77",
-        "tree_number": "安远-02-001",
-        "plot_name": "山地一区",
-        "variety": "红肉脐橙",
-        "planted_year": 2018,
-        "growth_stage": "果实膨大转色期",
-        "health_status": "healthy",
-        "growth_summary": "果实饱满，转色均匀。",
-        "latest_temperature": "22.8",
-        "latest_humidity": "71.0",
-        "last_observed_at": "2026-09-19T14:20:37.943Z",
-        "cover_image_url": "",
-        "image_urls": [],
-        "video_urls": [],
-        "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.943Z",
-        "updated_at": "2026-09-20T14:20:37.943Z"
-      }
-    },
-    {
-      "model": "api.fruittreearchive",
-      "pk": "4db6e018-f971-4843-9d77-93866a059bdb",
-      "fields": {
-        "trace_code": "CGJ-TREE-A0206B6F2B",
-        "orchard": "5242b4fd-1163-4366-93eb-5ae589a231f8",
-        "tree_number": "信丰-01-002",
-        "plot_name": "A区示范地块",
-        "variety": "纽荷尔脐橙",
-        "planted_year": 2018,
-        "growth_stage": "果实膨大转色期",
-        "health_status": "healthy",
-        "growth_summary": "长势良好，无明显病虫害。",
-        "latest_temperature": "23.8",
-        "latest_humidity": "66.5",
-        "last_observed_at": "2026-09-19T14:20:37.923Z",
-        "cover_image_url": "",
-        "image_urls": [],
-        "video_urls": [],
-        "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.923Z",
-        "updated_at": "2026-09-20T14:20:37.923Z"
-      }
-    },
-    {
-      "model": "api.fruittreearchive",
-      "pk": "c8379660-e49f-4bbd-95ee-9118b85638d8",
-      "fields": {
-        "trace_code": "CGJ-TREE-19BE288CEF",
-        "orchard": "7a9ee352-b52a-437d-9461-a388e45972d4",
-        "tree_number": "寻乌-03-002",
-        "plot_name": "果园区",
-        "variety": "朋娜脐橙",
-        "planted_year": 2018,
-        "growth_stage": "果实膨大转色期",
-        "health_status": "healthy",
-        "growth_summary": "长势正常。",
-        "latest_temperature": "24.5",
-        "latest_humidity": "68.0",
-        "last_observed_at": "2026-09-19T14:20:37.937Z",
-        "cover_image_url": "",
-        "image_urls": [],
-        "video_urls": [],
-        "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.937Z",
-        "updated_at": "2026-09-20T14:20:37.937Z"
-      }
-    },
-    {
-      "model": "api.fruittreearchive",
-      "pk": "eaffc43c-609e-432c-930b-c67e0634b93e",
-      "fields": {
-        "trace_code": "CGJ-TREE-CBDDB703FA",
-        "orchard": "bafd83ce-1e1f-4197-b894-58794bc9bb77",
+        "trace_code": "CGJ-TREE-D482E9360A",
+        "orchard": "a29ed35f-7d1b-4ddf-b523-df066aef917c",
         "tree_number": "安远-02-002",
         "plot_name": "山地二区",
         "variety": "红肉脐橙",
@@ -835,21 +758,21 @@
         "growth_summary": "长势良好。",
         "latest_temperature": "22.5",
         "latest_humidity": "70.0",
-        "last_observed_at": "2026-09-19T14:20:37.944Z",
+        "last_observed_at": "2026-09-19T15:57:07.994576+00:00",
         "cover_image_url": "",
         "image_urls": [],
         "video_urls": [],
         "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.944Z",
-        "updated_at": "2026-09-20T14:20:37.944Z"
+        "created_at": "2026-09-20T15:57:07.994576+00:00",
+        "updated_at": "2026-09-20T15:57:07.994576+00:00"
       }
     },
     {
       "model": "api.fruittreearchive",
-      "pk": "ec37b19b-f370-41f7-80f5-8b4b46e87539",
+      "pk": "3b2c37bb-4618-4d55-b469-89b6d7eaf663",
       "fields": {
-        "trace_code": "CGJ-TREE-3606480CD6",
-        "orchard": "7a9ee352-b52a-437d-9461-a388e45972d4",
+        "trace_code": "CGJ-TREE-B35D3DA14D",
+        "orchard": "53ff6de1-9571-4791-acfe-0a7f9d11403f",
         "tree_number": "寻乌-03-001",
         "plot_name": "果园区",
         "variety": "朋娜脐橙",
@@ -859,117 +782,149 @@
         "growth_summary": "树势旺盛，果实着色均匀。",
         "latest_temperature": "25.0",
         "latest_humidity": "69.0",
-        "last_observed_at": "2026-09-19T14:20:37.937Z",
+        "last_observed_at": "2026-09-19T15:57:07.985960+00:00",
         "cover_image_url": "",
         "image_urls": [],
         "video_urls": [],
         "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.937Z",
-        "updated_at": "2026-09-20T14:20:37.937Z"
+        "created_at": "2026-09-20T15:57:07.985960+00:00",
+        "updated_at": "2026-09-20T15:57:07.985960+00:00"
       }
     },
     {
-      "model": "api.salesbatch",
-      "pk": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+      "model": "api.fruittreearchive",
+      "pk": "750b22a4-855d-415a-b997-63abed3879ff",
       "fields": {
-        "code": "CGJ-2026-XW-003",
-        "trace_code": "CGJ-BATCH-XW2026",
-        "orchard": "7a9ee352-b52a-437d-9461-a388e45972d4",
-        "title": "寻乌家庭农场·朋娜鲜果批次",
-        "subtitle": "真实果园建档，成熟分区采摘，产地分选直发",
-        "status": "open",
-        "planned_quantity": 300,
-        "sold_quantity": 45,
-        "open_at": "2026-08-21T14:20:37.937Z",
-        "close_at": "2026-11-19T14:20:37.937Z",
-        "expected_harvest_start": "2026-09-25",
-        "expected_harvest_end": "2026-09-30",
-        "expected_ship_start": "2026-09-26",
-        "expected_ship_end": "2026-10-01",
-        "maturity_standard": "果面自然转色，抽检糖度达到对应品种采摘标准",
-        "quality_commitment": "按批次记录糖度、果径和平均单果重量，采摘过程留档",
-        "natural_variation_note": "鲜果为自然农产品，果径、表皮颜色和甜酸度存在合理差异",
-        "aftersale_policy": "签收后 24 小时内可凭包装、面单和坏果照片申请售后",
+        "trace_code": "CGJ-TREE-A8D05A62B5",
+        "orchard": "a29ed35f-7d1b-4ddf-b523-df066aef917c",
+        "tree_number": "安远-02-001",
+        "plot_name": "山地一区",
+        "variety": "红肉脐橙",
+        "planted_year": 2018,
+        "growth_stage": "果实膨大转色期",
+        "health_status": "healthy",
+        "growth_summary": "果实饱满，转色均匀。",
+        "latest_temperature": "22.8",
+        "latest_humidity": "71.0",
+        "last_observed_at": "2026-09-19T15:57:07.994055+00:00",
         "cover_image_url": "",
-        "live_image_urls": [],
-        "environment_summary": {
-          "temperature": "24.0°C",
-          "humidity": "70%",
-          "source": "果园节点定时采集",
-          "recordedAt": "2026-09-20T14:20:37.937176+00:00"
-        },
-        "payment_mode": "full",
-        "deposit_ratio": "0.00",
-        "procurement_cost_per_box": "20.00",
-        "sorting_cost_per_box": "5.00",
-        "packaging_cost_per_box": "8.00",
-        "shipping_cost_per_box": "4.00",
-        "aftersale_reserve_per_box": "2.00",
-        "promotion_cost_per_box": "1.00",
-        "payment_fee_rate": "0.60",
+        "image_urls": [],
+        "video_urls": [],
         "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.937Z",
-        "updated_at": "2026-09-20T14:20:37.937Z"
+        "created_at": "2026-09-20T15:57:07.994576+00:00",
+        "updated_at": "2026-09-20T15:57:07.994576+00:00"
       }
     },
     {
-      "model": "api.salesbatch",
-      "pk": "a6347a0b-f024-4743-a074-f03c39f810d6",
+      "model": "api.fruittreearchive",
+      "pk": "92133613-5d0e-414e-96d2-7b415e5088f7",
       "fields": {
-        "code": "CGJ-2026-AY-002",
-        "trace_code": "CGJ-BATCH-AY2026",
-        "orchard": "bafd83ce-1e1f-4197-b894-58794bc9bb77",
-        "title": "安远山地·红肉脐橙鲜果批次",
-        "subtitle": "真实果园建档，成熟分区采摘，产地分选直发",
-        "status": "open",
-        "planned_quantity": 500,
-        "sold_quantity": 60,
-        "open_at": "2026-08-21T14:20:37.944Z",
-        "close_at": "2026-11-19T14:20:37.944Z",
-        "expected_harvest_start": "2026-09-27",
-        "expected_harvest_end": "2026-10-02",
-        "expected_ship_start": "2026-09-28",
-        "expected_ship_end": "2026-10-03",
-        "maturity_standard": "果面自然转色，抽检糖度达到对应品种采摘标准",
-        "quality_commitment": "按批次记录糖度、果径和平均单果重量，采摘过程留档",
-        "natural_variation_note": "鲜果为自然农产品，果径、表皮颜色和甜酸度存在合理差异",
-        "aftersale_policy": "签收后 24 小时内可凭包装、面单和坏果照片申请售后",
+        "trace_code": "CGJ-TREE-E70198CEF6",
+        "orchard": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
+        "tree_number": "信丰-01-002",
+        "plot_name": "A区示范地块",
+        "variety": "纽荷尔脐橙",
+        "planted_year": 2018,
+        "growth_stage": "果实膨大转色期",
+        "health_status": "healthy",
+        "growth_summary": "长势良好，无明显病虫害。",
+        "latest_temperature": "23.8",
+        "latest_humidity": "66.5",
+        "last_observed_at": "2026-09-19T15:57:07.971713+00:00",
         "cover_image_url": "",
-        "live_image_urls": [],
-        "environment_summary": {
-          "temperature": "24.0°C",
-          "humidity": "70%",
-          "source": "果园节点定时采集",
-          "recordedAt": "2026-09-20T14:20:37.944176+00:00"
-        },
-        "payment_mode": "full",
-        "deposit_ratio": "0.00",
-        "procurement_cost_per_box": "20.00",
-        "sorting_cost_per_box": "5.00",
-        "packaging_cost_per_box": "8.00",
-        "shipping_cost_per_box": "4.00",
-        "aftersale_reserve_per_box": "2.00",
-        "promotion_cost_per_box": "1.00",
-        "payment_fee_rate": "0.60",
+        "image_urls": [],
+        "video_urls": [],
         "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.944Z",
-        "updated_at": "2026-09-20T14:20:37.944Z"
+        "created_at": "2026-09-20T15:57:07.971713+00:00",
+        "updated_at": "2026-09-20T15:57:07.971713+00:00"
+      }
+    },
+    {
+      "model": "api.fruittreearchive",
+      "pk": "a952d8a7-2357-4ffe-ae7a-a6cb5e1f3a60",
+      "fields": {
+        "trace_code": "CGJ-TREE-B257905ABB",
+        "orchard": "53ff6de1-9571-4791-acfe-0a7f9d11403f",
+        "tree_number": "寻乌-03-002",
+        "plot_name": "果园区",
+        "variety": "朋娜脐橙",
+        "planted_year": 2018,
+        "growth_stage": "果实膨大转色期",
+        "health_status": "healthy",
+        "growth_summary": "长势正常。",
+        "latest_temperature": "24.5",
+        "latest_humidity": "68.0",
+        "last_observed_at": "2026-09-19T15:57:07.985960+00:00",
+        "cover_image_url": "",
+        "image_urls": [],
+        "video_urls": [],
+        "is_featured": false,
+        "created_at": "2026-09-20T15:57:07.986960+00:00",
+        "updated_at": "2026-09-20T15:57:07.986960+00:00"
+      }
+    },
+    {
+      "model": "api.fruittreearchive",
+      "pk": "b673e10f-6915-475d-873d-4eb09cfc6b29",
+      "fields": {
+        "trace_code": "CGJ-TREE-5139CB506F",
+        "orchard": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
+        "tree_number": "信丰-02-005",
+        "plot_name": "B区坡地",
+        "variety": "纽荷尔脐橙",
+        "planted_year": 2018,
+        "growth_stage": "果实膨大期",
+        "health_status": "watch",
+        "growth_summary": "近期局部高湿，已安排巡园观察。",
+        "latest_temperature": "24.6",
+        "latest_humidity": "82.0",
+        "last_observed_at": "2026-09-18T15:57:07.971713+00:00",
+        "cover_image_url": "",
+        "image_urls": [],
+        "video_urls": [],
+        "is_featured": false,
+        "created_at": "2026-09-20T15:57:07.971713+00:00",
+        "updated_at": "2026-09-20T15:57:07.971713+00:00"
+      }
+    },
+    {
+      "model": "api.fruittreearchive",
+      "pk": "fcdeb973-56bf-4de1-90be-609f9c66795e",
+      "fields": {
+        "trace_code": "CGJ-TREE-5A17D5DCC9",
+        "orchard": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
+        "tree_number": "信丰-01-001",
+        "plot_name": "A区示范地块",
+        "variety": "纽荷尔脐橙",
+        "planted_year": 2018,
+        "growth_stage": "果实膨大转色期",
+        "health_status": "healthy",
+        "growth_summary": "树势稳定，叶色正常，果实分布均匀。",
+        "latest_temperature": "24.1",
+        "latest_humidity": "67.0",
+        "last_observed_at": "2026-09-19T15:57:07.970713+00:00",
+        "cover_image_url": "",
+        "image_urls": [],
+        "video_urls": [],
+        "is_featured": false,
+        "created_at": "2026-09-20T15:57:07.970713+00:00",
+        "updated_at": "2026-09-20T15:57:07.970713+00:00"
       }
     },
     {
       "model": "api.salesbatch",
-      "pk": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+      "pk": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
       "fields": {
         "code": "CGJ-2026-XF-001",
         "trace_code": "CGJ-BATCH-XF2026",
-        "orchard": "5242b4fd-1163-4366-93eb-5ae589a231f8",
+        "orchard": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
         "title": "信丰示范园·纽荷尔鲜果批次",
         "subtitle": "真实果园建档，成熟分区采摘，产地分选直发",
         "status": "open",
         "planned_quantity": 800,
         "sold_quantity": 120,
-        "open_at": "2026-08-21T14:20:37.923Z",
-        "close_at": "2026-11-19T14:20:37.923Z",
+        "open_at": "2026-08-21T15:57:07.971713+00:00",
+        "close_at": "2026-11-19T15:57:07.971713+00:00",
         "expected_harvest_start": "2026-09-23",
         "expected_harvest_end": "2026-09-28",
         "expected_ship_start": "2026-09-24",
@@ -984,7 +939,7 @@
           "temperature": "24.0°C",
           "humidity": "70%",
           "source": "果园节点定时采集",
-          "recordedAt": "2026-09-20T14:20:37.926176+00:00"
+          "recordedAt": "2026-09-20T15:57:07.974715+00:00"
         },
         "payment_mode": "full",
         "deposit_ratio": "0.00",
@@ -996,18 +951,106 @@
         "promotion_cost_per_box": "1.00",
         "payment_fee_rate": "0.60",
         "is_featured": false,
-        "created_at": "2026-09-20T14:20:37.926Z",
-        "updated_at": "2026-09-20T14:20:37.926Z"
+        "created_at": "2026-09-20T15:57:07.974715+00:00",
+        "updated_at": "2026-09-20T15:57:07.974715+00:00"
+      }
+    },
+    {
+      "model": "api.salesbatch",
+      "pk": "89197bf2-7798-40c4-8b06-2414773a9444",
+      "fields": {
+        "code": "CGJ-2026-XW-003",
+        "trace_code": "CGJ-BATCH-XW2026",
+        "orchard": "53ff6de1-9571-4791-acfe-0a7f9d11403f",
+        "title": "寻乌家庭农场·朋娜鲜果批次",
+        "subtitle": "真实果园建档，成熟分区采摘，产地分选直发",
+        "status": "open",
+        "planned_quantity": 300,
+        "sold_quantity": 45,
+        "open_at": "2026-08-21T15:57:07.986960+00:00",
+        "close_at": "2026-11-19T15:57:07.986960+00:00",
+        "expected_harvest_start": "2026-09-25",
+        "expected_harvest_end": "2026-09-30",
+        "expected_ship_start": "2026-09-26",
+        "expected_ship_end": "2026-10-01",
+        "maturity_standard": "果面自然转色，抽检糖度达到对应品种采摘标准",
+        "quality_commitment": "按批次记录糖度、果径和平均单果重量，采摘过程留档",
+        "natural_variation_note": "鲜果为自然农产品，果径、表皮颜色和甜酸度存在合理差异",
+        "aftersale_policy": "签收后 24 小时内可凭包装、面单和坏果照片申请售后",
+        "cover_image_url": "",
+        "live_image_urls": [],
+        "environment_summary": {
+          "temperature": "24.0°C",
+          "humidity": "70%",
+          "source": "果园节点定时采集",
+          "recordedAt": "2026-09-20T15:57:07.986960+00:00"
+        },
+        "payment_mode": "full",
+        "deposit_ratio": "0.00",
+        "procurement_cost_per_box": "20.00",
+        "sorting_cost_per_box": "5.00",
+        "packaging_cost_per_box": "8.00",
+        "shipping_cost_per_box": "4.00",
+        "aftersale_reserve_per_box": "2.00",
+        "promotion_cost_per_box": "1.00",
+        "payment_fee_rate": "0.60",
+        "is_featured": false,
+        "created_at": "2026-09-20T15:57:07.986960+00:00",
+        "updated_at": "2026-09-20T15:57:07.986960+00:00"
+      }
+    },
+    {
+      "model": "api.salesbatch",
+      "pk": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+      "fields": {
+        "code": "CGJ-2026-AY-002",
+        "trace_code": "CGJ-BATCH-AY2026",
+        "orchard": "a29ed35f-7d1b-4ddf-b523-df066aef917c",
+        "title": "安远山地·红肉脐橙鲜果批次",
+        "subtitle": "真实果园建档，成熟分区采摘，产地分选直发",
+        "status": "open",
+        "planned_quantity": 500,
+        "sold_quantity": 60,
+        "open_at": "2026-08-21T15:57:07.994576+00:00",
+        "close_at": "2026-11-19T15:57:07.994576+00:00",
+        "expected_harvest_start": "2026-09-27",
+        "expected_harvest_end": "2026-10-02",
+        "expected_ship_start": "2026-09-28",
+        "expected_ship_end": "2026-10-03",
+        "maturity_standard": "果面自然转色，抽检糖度达到对应品种采摘标准",
+        "quality_commitment": "按批次记录糖度、果径和平均单果重量，采摘过程留档",
+        "natural_variation_note": "鲜果为自然农产品，果径、表皮颜色和甜酸度存在合理差异",
+        "aftersale_policy": "签收后 24 小时内可凭包装、面单和坏果照片申请售后",
+        "cover_image_url": "",
+        "live_image_urls": [],
+        "environment_summary": {
+          "temperature": "24.0°C",
+          "humidity": "70%",
+          "source": "果园节点定时采集",
+          "recordedAt": "2026-09-20T15:57:07.994576+00:00"
+        },
+        "payment_mode": "full",
+        "deposit_ratio": "0.00",
+        "procurement_cost_per_box": "20.00",
+        "sorting_cost_per_box": "5.00",
+        "packaging_cost_per_box": "8.00",
+        "shipping_cost_per_box": "4.00",
+        "aftersale_reserve_per_box": "2.00",
+        "promotion_cost_per_box": "1.00",
+        "payment_fee_rate": "0.60",
+        "is_featured": false,
+        "created_at": "2026-09-20T15:57:07.994576+00:00",
+        "updated_at": "2026-09-20T15:57:07.994576+00:00"
       }
     },
     {
       "model": "api.harvestarchive",
-      "pk": "2489ac5c-2111-497a-8536-2781030338f0",
+      "pk": "0d349b29-9ceb-4fc7-9e79-0af7218f900b",
       "fields": {
-        "harvest_code": "CGJ-HV-83563CD93E",
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "tree": "4db6e018-f971-4843-9d77-93866a059bdb",
-        "harvested_at": "2026-09-16T14:20:37.927Z",
+        "harvest_code": "CGJ-HV-C9A59015C3",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "tree": "92133613-5d0e-414e-96d2-7b415e5088f7",
+        "harvested_at": "2026-09-16T15:57:07.975716+00:00",
         "picker": "李师傅",
         "plot_name": "A区示范地块",
         "harvest_method": "人工轻采，分筐转运",
@@ -1023,72 +1066,18 @@
         "summary": "采前抽检达到成熟标准，采摘后立即转入果园分选区。",
         "image_urls": [],
         "video_urls": [],
-        "created_at": "2026-09-20T14:20:37.927Z",
-        "updated_at": "2026-09-20T14:20:37.927Z"
+        "created_at": "2026-09-20T15:57:07.975716+00:00",
+        "updated_at": "2026-09-20T15:57:07.975716+00:00"
       }
     },
     {
       "model": "api.harvestarchive",
-      "pk": "5df0e920-86db-4b59-aa50-b263c942580c",
+      "pk": "2db93122-7973-4102-a097-0e878662c54d",
       "fields": {
-        "harvest_code": "CGJ-HV-D5305F3378",
-        "batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
-        "tree": "ec37b19b-f370-41f7-80f5-8b4b46e87539",
-        "harvested_at": "2026-09-15T14:20:37.938Z",
-        "picker": "王师傅",
-        "plot_name": "果园区",
-        "harvest_method": "人工轻采，分筐转运",
-        "quantity_kg": "86.20",
-        "maturity_brix": "13.3",
-        "grade": "精选果",
-        "pre_harvest_status": "果面转色达到采摘标准，树势稳定",
-        "harvest_weather": "晴，果面干燥",
-        "fruit_condition": "good",
-        "appearance_note": "果面完整，色泽与成熟度正常",
-        "pest_status": "未见明显病虫害",
-        "damage_rate_percent": "0.00",
-        "summary": "采前抽检达到成熟标准，采摘后立即转入果园分选区。",
-        "image_urls": [],
-        "video_urls": [],
-        "created_at": "2026-09-20T14:20:37.938Z",
-        "updated_at": "2026-09-20T14:20:37.938Z"
-      }
-    },
-    {
-      "model": "api.harvestarchive",
-      "pk": "79069bb2-8364-4728-a3c2-6a4ace5d59ae",
-      "fields": {
-        "harvest_code": "CGJ-HV-8175B85832",
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "tree": "1418c558-5663-4fc8-b008-f76f973bd633",
-        "harvested_at": "2026-09-14T14:20:37.927Z",
-        "picker": "李师傅",
-        "plot_name": "A区示范地块",
-        "harvest_method": "人工轻采，分筐转运",
-        "quantity_kg": "128.50",
-        "maturity_brix": "12.9",
-        "grade": "精选果",
-        "pre_harvest_status": "果面转色达到采摘标准，树势稳定",
-        "harvest_weather": "晴，果面干燥",
-        "fruit_condition": "good",
-        "appearance_note": "果面完整，色泽与成熟度正常",
-        "pest_status": "未见明显病虫害",
-        "damage_rate_percent": "0.00",
-        "summary": "采前抽检达到成熟标准，采摘后立即转入果园分选区。",
-        "image_urls": [],
-        "video_urls": [],
-        "created_at": "2026-09-20T14:20:37.927Z",
-        "updated_at": "2026-09-20T14:20:37.927Z"
-      }
-    },
-    {
-      "model": "api.harvestarchive",
-      "pk": "fd374e84-6db3-430d-b8a3-ca84e8bd38f3",
-      "fields": {
-        "harvest_code": "CGJ-HV-D5F0A6F185",
-        "batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "tree": "439213fb-e9ac-4e28-9dd9-24a1cdf1a00b",
-        "harvested_at": "2026-09-12T14:20:37.944Z",
+        "harvest_code": "CGJ-HV-C5AAD65990",
+        "batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "tree": "750b22a4-855d-415a-b997-63abed3879ff",
+        "harvested_at": "2026-09-12T15:57:07.995574+00:00",
         "picker": "陈师傅",
         "plot_name": "山地一区",
         "harvest_method": "人工轻采，分筐转运",
@@ -1104,44 +1093,72 @@
         "summary": "采前抽检达到成熟标准，采摘后立即转入果园分选区。",
         "image_urls": [],
         "video_urls": [],
-        "created_at": "2026-09-20T14:20:37.945Z",
-        "updated_at": "2026-09-20T14:20:37.945Z"
+        "created_at": "2026-09-20T15:57:07.995574+00:00",
+        "updated_at": "2026-09-20T15:57:07.995574+00:00"
       }
     },
     {
-      "model": "api.batchqualitysample",
-      "pk": "2aa20eb5-40b6-4d04-aff2-d01154691089",
+      "model": "api.harvestarchive",
+      "pk": "60934feb-f94b-4cec-8646-abf9b0f710fa",
       "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "product": "04d854b4-aa5b-4d63-8f3c-f40819927ec6",
-        "harvest_archive": "79069bb2-8364-4728-a3c2-6a4ace5d59ae",
-        "sampled_at": "2026-09-15T14:20:37.927Z",
-        "inspection_stage": "at_harvest",
-        "health_status": "qualified",
-        "sample_size": 12,
-        "sweetness_brix": "12.6",
-        "acidity": null,
-        "average_weight_grams": 215,
-        "diameter_mm": "72.0",
+        "harvest_code": "CGJ-HV-820C3F98F9",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "tree": "fcdeb973-56bf-4de1-90be-609f9c66795e",
+        "harvested_at": "2026-09-14T15:57:07.975716+00:00",
+        "picker": "李师傅",
+        "plot_name": "A区示范地块",
+        "harvest_method": "人工轻采，分筐转运",
+        "quantity_kg": "128.50",
+        "maturity_brix": "12.9",
         "grade": "精选果",
-        "result": "本次商品健康检查达标，符合对应品种销售标准",
-        "appearance_status": "果面完整，色泽与成熟度正常",
+        "pre_harvest_status": "果面转色达到采摘标准，树势稳定",
+        "harvest_weather": "晴，果面干燥",
+        "fruit_condition": "good",
+        "appearance_note": "果面完整，色泽与成熟度正常",
         "pest_status": "未见明显病虫害",
-        "pesticide_residue_result": "符合食用农产品要求",
-        "inspector": "果园质检员",
-        "report_image_url": "",
-        "note": "",
-        "created_at": "2026-09-20T14:20:37.928Z"
+        "damage_rate_percent": "0.00",
+        "summary": "采前抽检达到成熟标准，采摘后立即转入果园分选区。",
+        "image_urls": [],
+        "video_urls": [],
+        "created_at": "2026-09-20T15:57:07.975716+00:00",
+        "updated_at": "2026-09-20T15:57:07.975716+00:00"
+      }
+    },
+    {
+      "model": "api.harvestarchive",
+      "pk": "631c1d8a-299b-47b1-855a-03fa600fec99",
+      "fields": {
+        "harvest_code": "CGJ-HV-F11695C53D",
+        "batch": "89197bf2-7798-40c4-8b06-2414773a9444",
+        "tree": "3b2c37bb-4618-4d55-b469-89b6d7eaf663",
+        "harvested_at": "2026-09-15T15:57:07.986960+00:00",
+        "picker": "王师傅",
+        "plot_name": "果园区",
+        "harvest_method": "人工轻采，分筐转运",
+        "quantity_kg": "86.20",
+        "maturity_brix": "13.3",
+        "grade": "精选果",
+        "pre_harvest_status": "果面转色达到采摘标准，树势稳定",
+        "harvest_weather": "晴，果面干燥",
+        "fruit_condition": "good",
+        "appearance_note": "果面完整，色泽与成熟度正常",
+        "pest_status": "未见明显病虫害",
+        "damage_rate_percent": "0.00",
+        "summary": "采前抽检达到成熟标准，采摘后立即转入果园分选区。",
+        "image_urls": [],
+        "video_urls": [],
+        "created_at": "2026-09-20T15:57:07.987958+00:00",
+        "updated_at": "2026-09-20T15:57:07.987958+00:00"
       }
     },
     {
       "model": "api.batchqualitysample",
-      "pk": "3dfc6c0f-50b6-4713-9572-bd4c516399bf",
+      "pk": "35264599-add6-4c8a-9803-d934fb843915",
       "fields": {
-        "batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "product": "2db9e0d7-4289-49fa-b185-4b8b75eba217",
-        "harvest_archive": "fd374e84-6db3-430d-b8a3-ca84e8bd38f3",
-        "sampled_at": "2026-09-13T14:20:37.945Z",
+        "batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "product": "753bf92d-301c-494f-8b5d-715b57294f28",
+        "harvest_archive": "2db93122-7973-4102-a097-0e878662c54d",
+        "sampled_at": "2026-09-13T15:57:07.995574+00:00",
         "inspection_stage": "at_harvest",
         "health_status": "qualified",
         "sample_size": 12,
@@ -1157,24 +1174,24 @@
         "inspector": "果园质检员",
         "report_image_url": "",
         "note": "",
-        "created_at": "2026-09-20T14:20:37.945Z"
+        "created_at": "2026-09-20T15:57:07.996574+00:00"
       }
     },
     {
       "model": "api.batchqualitysample",
-      "pk": "b9d08453-ae56-4461-9d57-d397a82c24ae",
+      "pk": "9dc46aad-298b-4b93-805d-afc4961b37ae",
       "fields": {
-        "batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
-        "product": "24fd12a0-58b9-42a9-841c-187e999af11b",
-        "harvest_archive": "5df0e920-86db-4b59-aa50-b263c942580c",
-        "sampled_at": "2026-09-16T14:20:37.938Z",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "product": "b1cef48a-4436-4232-8c03-bead1de8e521",
+        "harvest_archive": "60934feb-f94b-4cec-8646-abf9b0f710fa",
+        "sampled_at": "2026-09-15T15:57:07.975716+00:00",
         "inspection_stage": "at_harvest",
         "health_status": "qualified",
         "sample_size": 12,
-        "sweetness_brix": "13.1",
+        "sweetness_brix": "12.6",
         "acidity": null,
-        "average_weight_grams": 200,
-        "diameter_mm": "70.5",
+        "average_weight_grams": 215,
+        "diameter_mm": "72.0",
         "grade": "精选果",
         "result": "本次商品健康检查达标，符合对应品种销售标准",
         "appearance_status": "果面完整，色泽与成熟度正常",
@@ -1183,17 +1200,17 @@
         "inspector": "果园质检员",
         "report_image_url": "",
         "note": "",
-        "created_at": "2026-09-20T14:20:37.938Z"
+        "created_at": "2026-09-20T15:57:07.976713+00:00"
       }
     },
     {
       "model": "api.batchqualitysample",
-      "pk": "c2e20ecd-7fba-4d39-8766-fba48aed6e0e",
+      "pk": "c4de4a04-34f8-4a32-9986-7bc9019cb733",
       "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "product": "8e31b734-be41-4568-9f97-97fd70e86ce2",
-        "harvest_archive": "2489ac5c-2111-497a-8536-2781030338f0",
-        "sampled_at": "2026-09-17T14:20:37.928Z",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "product": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
+        "harvest_archive": "0d349b29-9ceb-4fc7-9e79-0af7218f900b",
+        "sampled_at": "2026-09-17T15:57:07.976713+00:00",
         "inspection_stage": "at_harvest",
         "health_status": "qualified",
         "sample_size": 12,
@@ -1209,17 +1226,43 @@
         "inspector": "果园质检员",
         "report_image_url": "",
         "note": "",
-        "created_at": "2026-09-20T14:20:37.928Z"
+        "created_at": "2026-09-20T15:57:07.976713+00:00"
+      }
+    },
+    {
+      "model": "api.batchqualitysample",
+      "pk": "fb1048af-fd33-4d1f-9299-2f012bf516df",
+      "fields": {
+        "batch": "89197bf2-7798-40c4-8b06-2414773a9444",
+        "product": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
+        "harvest_archive": "631c1d8a-299b-47b1-855a-03fa600fec99",
+        "sampled_at": "2026-09-16T15:57:07.987958+00:00",
+        "inspection_stage": "at_harvest",
+        "health_status": "qualified",
+        "sample_size": 12,
+        "sweetness_brix": "13.1",
+        "acidity": null,
+        "average_weight_grams": 200,
+        "diameter_mm": "70.5",
+        "grade": "精选果",
+        "result": "本次商品健康检查达标，符合对应品种销售标准",
+        "appearance_status": "果面完整，色泽与成熟度正常",
+        "pest_status": "未见明显病虫害",
+        "pesticide_residue_result": "符合食用农产品要求",
+        "inspector": "果园质检员",
+        "report_image_url": "",
+        "note": "",
+        "created_at": "2026-09-20T15:57:07.987958+00:00"
       }
     },
     {
       "model": "api.traceevent",
-      "pk": "0b7a9b11-db9f-4055-90b8-f2072d83d3cd",
+      "pk": "1b2d21d8-183e-419c-9467-e3df32dfe1d9",
       "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
         "event_type": "environment",
         "source_type": "sensor",
-        "occurred_at": "2026-09-10T14:20:37.929Z",
+        "occurred_at": "2026-09-10T15:57:07.978714+00:00",
         "title": "果园环境记录",
         "description": "节点记录当前果园温湿度。",
         "location": "江西省赣州市信丰县",
@@ -1227,59 +1270,19 @@
         "source_reference": "DEMO-CGJ-2026-XF-001-10",
         "image_urls": [],
         "data": {},
-        "previous_hash": "2b99fdb6e55587c404ff44fc61df26fa582622bb04978cda69d6a565024b6c6b",
-        "evidence_hash": "b6e4f826119942c003ad929bb2c3210073586460e6ada8390b4c906eedafb697",
-        "recorded_at": "2026-09-20T14:20:37.930Z"
+        "previous_hash": "e476a86e3fa659c9394c7f61ee107eb5798accb351768a436c4d8501b4f22fc3",
+        "evidence_hash": "459d4476e1cdd5e22fd708a6dfb4638d0bf1cb63d8848b84d3fd880c6afcaa9c",
+        "recorded_at": "2026-09-20T15:57:07.979963+00:00"
       }
     },
     {
       "model": "api.traceevent",
-      "pk": "2f4a7d10-4e03-464d-b758-a1ac41515550",
+      "pk": "1d5249e1-7d51-41b4-bcc5-3d511c2ac047",
       "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "event_type": "packing",
-        "source_type": "operator",
-        "occurred_at": "2026-09-17T14:20:37.933Z",
-        "title": "装箱赋码",
-        "description": "按规格装箱并赋追溯箱码。",
-        "location": "产地包装区",
-        "actor": "包装员",
-        "source_reference": "DEMO-CGJ-2026-XF-001-3",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "5472d845ba7b79bb8013297c0e669de3d0ed0ad335513c06bcfd38170285b793",
-        "evidence_hash": "6fe79125092d355237e31d0e2a42074847721ed6f0cd836dfadf46fbb518f0d2",
-        "recorded_at": "2026-09-20T14:20:37.933Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "3fc4b53d-2332-4620-b44f-140028a05c05",
-      "fields": {
-        "batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "event_type": "orchard",
-        "source_type": "operator",
-        "occurred_at": "2026-08-06T14:20:37.945Z",
-        "title": "生态果园建档",
-        "description": "生态种植果园建档核验。",
-        "location": "江西省赣州市安远县",
-        "actor": "橙管家运营",
-        "source_reference": "DEMO-CGJ-2026-AY-002-45",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "",
-        "evidence_hash": "c5443f519060a45f1a605b7d62b4616379616c2cc3c4fbc527308b74cfd4ebdb",
-        "recorded_at": "2026-09-20T14:20:37.946Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "6465a36a-5d79-4631-b43e-8db6f7181eea",
-      "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
         "event_type": "sorting",
         "source_type": "operator",
-        "occurred_at": "2026-09-15T14:20:37.932Z",
+        "occurred_at": "2026-09-15T15:57:07.980961+00:00",
         "title": "分选称重",
         "description": "按果径与糖度分选，剔除不合格果。",
         "location": "果园分选区",
@@ -1287,179 +1290,19 @@
         "source_reference": "DEMO-CGJ-2026-XF-001-5",
         "image_urls": [],
         "data": {},
-        "previous_hash": "6f62dd18fda3b06950890bccec6cbf1a4fbb3e054479973f077b1128dbc06238",
-        "evidence_hash": "5472d845ba7b79bb8013297c0e669de3d0ed0ad335513c06bcfd38170285b793",
-        "recorded_at": "2026-09-20T14:20:37.933Z"
+        "previous_hash": "20ffbefc341102eea533f5bc61c332ecc60929ac9ef8db3210d19f5a36464a06",
+        "evidence_hash": "766d89d29191936b8271337e972335b61a2c024016ba31726536d6f326c9e6ec",
+        "recorded_at": "2026-09-20T15:57:07.981961+00:00"
       }
     },
     {
       "model": "api.traceevent",
-      "pk": "6599641b-c588-499e-88c6-d08feb65c6f9",
+      "pk": "1e3085e6-95b2-4005-afad-f36afb3de174",
       "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "event_type": "shipping",
-        "source_type": "logistics",
-        "occurred_at": "2026-09-18T14:20:37.934Z",
-        "title": "产地发货",
-        "description": "订单装车产地直发。",
-        "location": "产地发货区",
-        "actor": "物流",
-        "source_reference": "DEMO-CGJ-2026-XF-001-2",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "5472d845ba7b79bb8013297c0e669de3d0ed0ad335513c06bcfd38170285b793",
-        "evidence_hash": "ed0ab10a7d3fe952e422d25346f2c5fed6a61d560746f4a200a64f5c798478cc",
-        "recorded_at": "2026-09-20T14:20:37.934Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "97693970-e8dc-4ddf-be39-fd2b14bd48e4",
-      "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "event_type": "orchard",
-        "source_type": "operator",
-        "occurred_at": "2026-08-11T14:20:37.928Z",
-        "title": "合作果园完成建档核验",
-        "description": "核验合作果园主体、位置、种植品种和本批次供货意向。",
-        "location": "江西省赣州市信丰县",
-        "actor": "橙管家运营",
-        "source_reference": "DEMO-CGJ-2026-XF-001-40",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "",
-        "evidence_hash": "2b99fdb6e55587c404ff44fc61df26fa582622bb04978cda69d6a565024b6c6b",
-        "recorded_at": "2026-09-20T14:20:37.929Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "9c174d31-a9c7-41c8-9f35-9ac2f8ffb50d",
-      "fields": {
-        "batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
-        "event_type": "shipping",
-        "source_type": "logistics",
-        "occurred_at": "2026-09-18T14:20:37.941Z",
-        "title": "产地发货",
-        "description": "特色果品产地直发。",
-        "location": "产地发货区",
-        "actor": "物流",
-        "source_reference": "DEMO-CGJ-2026-XW-003-2",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "e6be6f3a0ef180fa695d09d4388d43ebf67ad20baee8119819c314b73828314c",
-        "evidence_hash": "0e82ad5749f2d589bc36c2c1ff07334e38b32e9513563c8359b68300380bee47",
-        "recorded_at": "2026-09-20T14:20:37.942Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "9f98da25-59e7-4e06-adc2-2d8315a56d9b",
-      "fields": {
-        "batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
         "event_type": "harvest",
         "source_type": "farmer",
-        "occurred_at": "2026-09-12T14:20:37.946Z",
-        "title": "成熟采摘",
-        "description": "红肉脐橙成熟采摘。",
-        "location": "山地一区",
-        "actor": "陈师傅",
-        "source_reference": "DEMO-CGJ-2026-AY-002-8",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "c5443f519060a45f1a605b7d62b4616379616c2cc3c4fbc527308b74cfd4ebdb",
-        "evidence_hash": "440025726beffcd86401f0f2f7d92eafd9560ec5230843778bf2b91099f564c6",
-        "recorded_at": "2026-09-20T14:20:37.946Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "a6158f30-045a-4069-bbfe-5bf40bd9a5a7",
-      "fields": {
-        "batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "event_type": "packing",
-        "source_type": "operator",
-        "occurred_at": "2026-09-15T14:20:37.946Z",
-        "title": "装箱赋码",
-        "description": "按规格装箱赋码。",
-        "location": "包装区",
-        "actor": "包装员",
-        "source_reference": "DEMO-CGJ-2026-AY-002-5",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "440025726beffcd86401f0f2f7d92eafd9560ec5230843778bf2b91099f564c6",
-        "evidence_hash": "d3650b424f0e9d2ed32911c31203bf50549a6188cfb48a40090603dcc6ab758d",
-        "recorded_at": "2026-09-20T14:20:37.948Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "a9c55e83-13d2-4ff5-8bd3-8775afb88742",
-      "fields": {
-        "batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
-        "event_type": "harvest",
-        "source_type": "farmer",
-        "occurred_at": "2026-09-15T14:20:37.939Z",
-        "title": "成熟采摘",
-        "description": "朋娜脐橙达到采摘标准。",
-        "location": "果园区",
-        "actor": "王师傅",
-        "source_reference": "DEMO-CGJ-2026-XW-003-5",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "4c5cbca6fff13312df300010387a1c7dcc9ba3abfe255868b9e296a682f4f889",
-        "evidence_hash": "fc8cf95bb8322ee82370b77e6a73c6c27dc41193687ef2380d3bf831ce31d877",
-        "recorded_at": "2026-09-20T14:20:37.940Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "bce8e854-5494-434d-949b-df63cb50d538",
-      "fields": {
-        "batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "event_type": "shipping",
-        "source_type": "logistics",
-        "occurred_at": "2026-09-17T14:20:37.948Z",
-        "title": "产地发货",
-        "description": "订单产地直发。",
-        "location": "发货区",
-        "actor": "物流",
-        "source_reference": "DEMO-CGJ-2026-AY-002-3",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "d3650b424f0e9d2ed32911c31203bf50549a6188cfb48a40090603dcc6ab758d",
-        "evidence_hash": "6b250f0dc13c9e047302c09ad04723e18f103e7db6f3dfe38cb3c9f22b7d23cd",
-        "recorded_at": "2026-09-20T14:20:37.948Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "d8eb13d9-bf27-4b0c-b7db-cd8e70fb297f",
-      "fields": {
-        "batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
-        "event_type": "sorting",
-        "source_type": "operator",
-        "occurred_at": "2026-09-16T14:20:37.940Z",
-        "title": "分选称重",
-        "description": "按单果重分选。",
-        "location": "分选区",
-        "actor": "分选员",
-        "source_reference": "DEMO-CGJ-2026-XW-003-4",
-        "image_urls": [],
-        "data": {},
-        "previous_hash": "fc8cf95bb8322ee82370b77e6a73c6c27dc41193687ef2380d3bf831ce31d877",
-        "evidence_hash": "e6be6f3a0ef180fa695d09d4388d43ebf67ad20baee8119819c314b73828314c",
-        "recorded_at": "2026-09-20T14:20:37.941Z"
-      }
-    },
-    {
-      "model": "api.traceevent",
-      "pk": "dc0127c4-b58f-4a69-9bb0-82fd6bbe16ec",
-      "fields": {
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "event_type": "harvest",
-        "source_type": "farmer",
-        "occurred_at": "2026-09-14T14:20:37.930Z",
+        "occurred_at": "2026-09-14T15:57:07.979963+00:00",
         "title": "成熟采摘",
         "description": "第一批脐橙达到采摘标准，开始人工轻采。",
         "location": "A区示范地块",
@@ -1467,19 +1310,59 @@
         "source_reference": "DEMO-CGJ-2026-XF-001-6",
         "image_urls": [],
         "data": {},
-        "previous_hash": "b6e4f826119942c003ad929bb2c3210073586460e6ada8390b4c906eedafb697",
-        "evidence_hash": "6f62dd18fda3b06950890bccec6cbf1a4fbb3e054479973f077b1128dbc06238",
-        "recorded_at": "2026-09-20T14:20:37.932Z"
+        "previous_hash": "459d4476e1cdd5e22fd708a6dfb4638d0bf1cb63d8848b84d3fd880c6afcaa9c",
+        "evidence_hash": "20ffbefc341102eea533f5bc61c332ecc60929ac9ef8db3210d19f5a36464a06",
+        "recorded_at": "2026-09-20T15:57:07.980961+00:00"
       }
     },
     {
       "model": "api.traceevent",
-      "pk": "e9e2bc72-4059-4012-9dd1-d1c858130d8e",
+      "pk": "1eed375d-e59a-4262-8fa9-b8d82816641f",
       "fields": {
-        "batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+        "batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "event_type": "shipping",
+        "source_type": "logistics",
+        "occurred_at": "2026-09-17T15:57:07.999574+00:00",
+        "title": "产地发货",
+        "description": "订单产地直发。",
+        "location": "发货区",
+        "actor": "物流",
+        "source_reference": "DEMO-CGJ-2026-AY-002-3",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "435a4cc63aae60e42f291bd13a9de69338219b03f58e893bf0335f0b178b6986",
+        "evidence_hash": "96fd46ca9d061c1bf2fbddde8a5bc86cec0ed05ee19fb4c8fdfcdd1ca129d6e0",
+        "recorded_at": "2026-09-20T15:57:08.000574+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "26411219-13d6-4ca2-b05b-13b5c39a55c9",
+      "fields": {
+        "batch": "89197bf2-7798-40c4-8b06-2414773a9444",
+        "event_type": "shipping",
+        "source_type": "logistics",
+        "occurred_at": "2026-09-18T15:57:07.990958+00:00",
+        "title": "产地发货",
+        "description": "特色果品产地直发。",
+        "location": "产地发货区",
+        "actor": "物流",
+        "source_reference": "DEMO-CGJ-2026-XW-003-2",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "6f516fd7395b2fad88aca87e0433cbcf6a94657538ee99e65c64ebbf3b450095",
+        "evidence_hash": "f6d39da6f46d0030d9216acee248056c9af805cf1fc1164da236d1281eae957d",
+        "recorded_at": "2026-09-20T15:57:07.991958+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "37feb59b-13b6-4dfc-8e56-c13568695995",
+      "fields": {
+        "batch": "89197bf2-7798-40c4-8b06-2414773a9444",
         "event_type": "orchard",
         "source_type": "operator",
-        "occurred_at": "2026-08-16T14:20:37.938Z",
+        "occurred_at": "2026-08-16T15:57:07.987958+00:00",
         "title": "果园建档",
         "description": "小产区特色果品果园建档。",
         "location": "江西省赣州市寻乌县",
@@ -1488,44 +1371,176 @@
         "image_urls": [],
         "data": {},
         "previous_hash": "",
-        "evidence_hash": "4c5cbca6fff13312df300010387a1c7dcc9ba3abfe255868b9e296a682f4f889",
-        "recorded_at": "2026-09-20T14:20:37.939Z"
+        "evidence_hash": "cc7c641d097c913d9ac48cc3f041d5861b90d092b705d4b97778ff71b13086b3",
+        "recorded_at": "2026-09-20T15:57:07.988958+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "6d8d563b-cf2e-43bb-b4b0-537af737885e",
+      "fields": {
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "event_type": "packing",
+        "source_type": "operator",
+        "occurred_at": "2026-09-17T15:57:07.981961+00:00",
+        "title": "装箱赋码",
+        "description": "按规格装箱并赋追溯箱码。",
+        "location": "产地包装区",
+        "actor": "包装员",
+        "source_reference": "DEMO-CGJ-2026-XF-001-3",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "766d89d29191936b8271337e972335b61a2c024016ba31726536d6f326c9e6ec",
+        "evidence_hash": "0bb933334a623b64d04d677cfb7de44569e36270d5581e3b4a30afd451240fb0",
+        "recorded_at": "2026-09-20T15:57:07.982958+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "81bdabb5-9be7-4471-bae4-f22a3a5ffede",
+      "fields": {
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "event_type": "shipping",
+        "source_type": "logistics",
+        "occurred_at": "2026-09-18T15:57:07.982958+00:00",
+        "title": "产地发货",
+        "description": "订单装车产地直发。",
+        "location": "产地发货区",
+        "actor": "物流",
+        "source_reference": "DEMO-CGJ-2026-XF-001-2",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "0bb933334a623b64d04d677cfb7de44569e36270d5581e3b4a30afd451240fb0",
+        "evidence_hash": "31be115904c5ca3294f159e6da58860145535e184ece1d3ca948b6424ef3f9de",
+        "recorded_at": "2026-09-20T15:57:07.983959+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "954a1cf4-cced-4f62-b14f-ca7cc3c4de83",
+      "fields": {
+        "batch": "89197bf2-7798-40c4-8b06-2414773a9444",
+        "event_type": "sorting",
+        "source_type": "operator",
+        "occurred_at": "2026-09-16T15:57:07.989958+00:00",
+        "title": "分选称重",
+        "description": "按单果重分选。",
+        "location": "分选区",
+        "actor": "分选员",
+        "source_reference": "DEMO-CGJ-2026-XW-003-4",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "5cc20efb7ad8332314c053d03ccc83a13cf5cca1dd648e7f16d951a51ad1eb92",
+        "evidence_hash": "6f516fd7395b2fad88aca87e0433cbcf6a94657538ee99e65c64ebbf3b450095",
+        "recorded_at": "2026-09-20T15:57:07.990958+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "a63e6db4-db1f-4bc2-adce-f746ba1f3bd9",
+      "fields": {
+        "batch": "89197bf2-7798-40c4-8b06-2414773a9444",
+        "event_type": "harvest",
+        "source_type": "farmer",
+        "occurred_at": "2026-09-15T15:57:07.988958+00:00",
+        "title": "成熟采摘",
+        "description": "朋娜脐橙达到采摘标准。",
+        "location": "果园区",
+        "actor": "王师傅",
+        "source_reference": "DEMO-CGJ-2026-XW-003-5",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "cc7c641d097c913d9ac48cc3f041d5861b90d092b705d4b97778ff71b13086b3",
+        "evidence_hash": "5cc20efb7ad8332314c053d03ccc83a13cf5cca1dd648e7f16d951a51ad1eb92",
+        "recorded_at": "2026-09-20T15:57:07.989958+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "b6e5b0ed-18b8-4a07-98d5-2c478cb4d700",
+      "fields": {
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "event_type": "orchard",
+        "source_type": "operator",
+        "occurred_at": "2026-08-11T15:57:07.976713+00:00",
+        "title": "合作果园完成建档核验",
+        "description": "核验合作果园主体、位置、种植品种和本批次供货意向。",
+        "location": "江西省赣州市信丰县",
+        "actor": "橙管家运营",
+        "source_reference": "DEMO-CGJ-2026-XF-001-40",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "",
+        "evidence_hash": "e476a86e3fa659c9394c7f61ee107eb5798accb351768a436c4d8501b4f22fc3",
+        "recorded_at": "2026-09-20T15:57:07.978714+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "b83c6118-c661-4837-a37e-644f32cbe0dd",
+      "fields": {
+        "batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "event_type": "harvest",
+        "source_type": "farmer",
+        "occurred_at": "2026-09-12T15:57:07.997576+00:00",
+        "title": "成熟采摘",
+        "description": "红肉脐橙成熟采摘。",
+        "location": "山地一区",
+        "actor": "陈师傅",
+        "source_reference": "DEMO-CGJ-2026-AY-002-8",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "f80a438907ebadbc126aabb634fee48d254e933181291719d361a0f66a705c07",
+        "evidence_hash": "bdea78fb4b047d68556f11a86f292645d82401ca88347407689711d95e06c7c6",
+        "recorded_at": "2026-09-20T15:57:07.998577+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "c3dd612c-3e13-4c55-a720-bc3a190a36f8",
+      "fields": {
+        "batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "event_type": "orchard",
+        "source_type": "operator",
+        "occurred_at": "2026-08-06T15:57:07.996574+00:00",
+        "title": "生态果园建档",
+        "description": "生态种植果园建档核验。",
+        "location": "江西省赣州市安远县",
+        "actor": "橙管家运营",
+        "source_reference": "DEMO-CGJ-2026-AY-002-45",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "",
+        "evidence_hash": "f80a438907ebadbc126aabb634fee48d254e933181291719d361a0f66a705c07",
+        "recorded_at": "2026-09-20T15:57:07.997576+00:00"
+      }
+    },
+    {
+      "model": "api.traceevent",
+      "pk": "e37e020d-018d-4108-8066-2bd05ea4f029",
+      "fields": {
+        "batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "event_type": "packing",
+        "source_type": "operator",
+        "occurred_at": "2026-09-15T15:57:07.998577+00:00",
+        "title": "装箱赋码",
+        "description": "按规格装箱赋码。",
+        "location": "包装区",
+        "actor": "包装员",
+        "source_reference": "DEMO-CGJ-2026-AY-002-5",
+        "image_urls": [],
+        "data": {},
+        "previous_hash": "bdea78fb4b047d68556f11a86f292645d82401ca88347407689711d95e06c7c6",
+        "evidence_hash": "435a4cc63aae60e42f291bd13a9de69338219b03f58e893bf0335f0b178b6986",
+        "recorded_at": "2026-09-20T15:57:07.999574+00:00"
       }
     },
     {
       "model": "api.citrusproduct",
-      "pk": "04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+      "pk": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
       "fields": {
-        "seller": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "sales_batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "name": "赣南纽荷尔家庭装",
-        "sku_type": "family",
-        "fruit_type": "脐橙",
-        "variety": "纽荷尔脐橙",
-        "origin": "江西赣州信丰县",
-        "description": "赣南纽荷尔家庭装，关联果树档案与采摘档案，产地分选后直发。",
-        "price": "39.90",
-        "unit": "5斤/箱",
-        "stock": 500,
-        "sweetness": "13.2",
-        "grade": "精选果",
-        "harvest_date": null,
-        "shipping_note": "采摘分选后 48 小时内产地发货",
-        "cover_image_url": "",
-        "purchase_limit": 20,
-        "minimum_order_quantity": 1,
-        "sort_order": 0,
-        "status": "on_sale",
-        "created_at": "2026-09-20T14:20:37.926Z",
-        "updated_at": "2026-09-20T14:20:37.926Z"
-      }
-    },
-    {
-      "model": "api.citrusproduct",
-      "pk": "24fd12a0-58b9-42a9-841c-187e999af11b",
-      "fields": {
-        "seller": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "sales_batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+        "seller": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "sales_batch": "89197bf2-7798-40c4-8b06-2414773a9444",
         "name": "朋娜脐橙精品尝鲜装",
         "sku_type": "specialty",
         "fruit_type": "脐橙",
@@ -1544,100 +1559,16 @@
         "minimum_order_quantity": 1,
         "sort_order": 0,
         "status": "on_sale",
-        "created_at": "2026-09-20T14:20:37.938Z",
-        "updated_at": "2026-09-20T14:20:37.938Z"
+        "created_at": "2026-09-20T15:57:07.986960+00:00",
+        "updated_at": "2026-09-20T15:57:07.986960+00:00"
       }
     },
     {
       "model": "api.citrusproduct",
-      "pk": "2db9e0d7-4289-49fa-b185-4b8b75eba217",
+      "pk": "2ee35bbd-7459-4fd4-9b07-611925cd7937",
       "fields": {
-        "seller": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "sales_batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "name": "红肉脐橙家庭装",
-        "sku_type": "family",
-        "fruit_type": "脐橙",
-        "variety": "红肉脐橙",
-        "origin": "江西赣州安远县",
-        "description": "红肉脐橙家庭装，关联果树档案与采摘档案，产地分选后直发。",
-        "price": "45.00",
-        "unit": "5斤/箱",
-        "stock": 300,
-        "sweetness": "13.8",
-        "grade": "精选果",
-        "harvest_date": null,
-        "shipping_note": "采摘分选后 48 小时内产地发货",
-        "cover_image_url": "",
-        "purchase_limit": 20,
-        "minimum_order_quantity": 1,
-        "sort_order": 0,
-        "status": "on_sale",
-        "created_at": "2026-09-20T14:20:37.944Z",
-        "updated_at": "2026-09-20T14:20:37.944Z"
-      }
-    },
-    {
-      "model": "api.citrusproduct",
-      "pk": "8098d1e1-8ea5-4dcd-baef-37ce8a45dd99",
-      "fields": {
-        "seller": "909b43ff-8eb1-4335-a248-3879da69513e",
-        "sales_batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "name": "红肉脐橙企业装",
-        "sku_type": "enterprise",
-        "fruit_type": "脐橙",
-        "variety": "红肉脐橙",
-        "origin": "江西赣州安远县",
-        "description": "红肉脐橙企业装，关联果树档案与采摘档案，产地分选后直发。",
-        "price": "168.00",
-        "unit": "20斤/箱",
-        "stock": 120,
-        "sweetness": "13.5",
-        "grade": "精选果",
-        "harvest_date": null,
-        "shipping_note": "采摘分选后 48 小时内产地发货",
-        "cover_image_url": "",
-        "purchase_limit": 40,
-        "minimum_order_quantity": 1,
-        "sort_order": 0,
-        "status": "on_sale",
-        "created_at": "2026-09-20T14:20:37.944Z",
-        "updated_at": "2026-09-20T14:20:37.944Z"
-      }
-    },
-    {
-      "model": "api.citrusproduct",
-      "pk": "8e31b734-be41-4568-9f97-97fd70e86ce2",
-      "fields": {
-        "seller": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "sales_batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "name": "纽荷尔企业装",
-        "sku_type": "enterprise",
-        "fruit_type": "脐橙",
-        "variety": "纽荷尔脐橙",
-        "origin": "江西赣州信丰县",
-        "description": "纽荷尔企业装，关联果树档案与采摘档案，产地分选后直发。",
-        "price": "159.00",
-        "unit": "20斤/箱",
-        "stock": 200,
-        "sweetness": "12.8",
-        "grade": "精选果",
-        "harvest_date": null,
-        "shipping_note": "采摘分选后 48 小时内产地发货",
-        "cover_image_url": "",
-        "purchase_limit": 50,
-        "minimum_order_quantity": 1,
-        "sort_order": 0,
-        "status": "on_sale",
-        "created_at": "2026-09-20T14:20:37.927Z",
-        "updated_at": "2026-09-20T14:20:37.927Z"
-      }
-    },
-    {
-      "model": "api.citrusproduct",
-      "pk": "a3a2ab95-a40c-43e7-9659-4315d88d9a8f",
-      "fields": {
-        "seller": "764fe42b-7e22-4924-9a27-64d921e9e6e1",
-        "sales_batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+        "seller": "a3ba41d6-df1a-4fa1-9130-741c5c9b3870",
+        "sales_batch": "89197bf2-7798-40c4-8b06-2414773a9444",
         "name": "朋娜脐橙礼赠装",
         "sku_type": "gift",
         "fruit_type": "脐橙",
@@ -1656,16 +1587,128 @@
         "minimum_order_quantity": 1,
         "sort_order": 0,
         "status": "on_sale",
-        "created_at": "2026-09-20T14:20:37.938Z",
-        "updated_at": "2026-09-20T14:20:37.938Z"
+        "created_at": "2026-09-20T15:57:07.986960+00:00",
+        "updated_at": "2026-09-20T15:57:07.986960+00:00"
       }
     },
     {
       "model": "api.citrusproduct",
-      "pk": "c393d8e4-260e-4ee2-8645-c3e9e9d66e63",
+      "pk": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
       "fields": {
-        "seller": "39997f25-1d2d-4b44-985a-ff30e1c8c896",
-        "sales_batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
+        "seller": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "sales_batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "name": "纽荷尔企业装",
+        "sku_type": "enterprise",
+        "fruit_type": "脐橙",
+        "variety": "纽荷尔脐橙",
+        "origin": "江西赣州信丰县",
+        "description": "纽荷尔企业装，关联果树档案与采摘档案，产地分选后直发。",
+        "price": "159.00",
+        "unit": "20斤/箱",
+        "stock": 200,
+        "sweetness": "12.8",
+        "grade": "精选果",
+        "harvest_date": null,
+        "shipping_note": "采摘分选后 48 小时内产地发货",
+        "cover_image_url": "",
+        "purchase_limit": 50,
+        "minimum_order_quantity": 1,
+        "sort_order": 0,
+        "status": "on_sale",
+        "created_at": "2026-09-20T15:57:07.975716+00:00",
+        "updated_at": "2026-09-20T15:57:07.975716+00:00"
+      }
+    },
+    {
+      "model": "api.citrusproduct",
+      "pk": "753bf92d-301c-494f-8b5d-715b57294f28",
+      "fields": {
+        "seller": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "sales_batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "name": "红肉脐橙家庭装",
+        "sku_type": "family",
+        "fruit_type": "脐橙",
+        "variety": "红肉脐橙",
+        "origin": "江西赣州安远县",
+        "description": "红肉脐橙家庭装，关联果树档案与采摘档案，产地分选后直发。",
+        "price": "45.00",
+        "unit": "5斤/箱",
+        "stock": 300,
+        "sweetness": "13.8",
+        "grade": "精选果",
+        "harvest_date": null,
+        "shipping_note": "采摘分选后 48 小时内产地发货",
+        "cover_image_url": "",
+        "purchase_limit": 20,
+        "minimum_order_quantity": 1,
+        "sort_order": 0,
+        "status": "on_sale",
+        "created_at": "2026-09-20T15:57:07.995574+00:00",
+        "updated_at": "2026-09-20T15:57:07.995574+00:00"
+      }
+    },
+    {
+      "model": "api.citrusproduct",
+      "pk": "912e866f-18df-44bc-aced-848c60f3523c",
+      "fields": {
+        "seller": "3f5eb70d-008b-43dd-8996-56a5a9da193b",
+        "sales_batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "name": "红肉脐橙企业装",
+        "sku_type": "enterprise",
+        "fruit_type": "脐橙",
+        "variety": "红肉脐橙",
+        "origin": "江西赣州安远县",
+        "description": "红肉脐橙企业装，关联果树档案与采摘档案，产地分选后直发。",
+        "price": "168.00",
+        "unit": "20斤/箱",
+        "stock": 120,
+        "sweetness": "13.5",
+        "grade": "精选果",
+        "harvest_date": null,
+        "shipping_note": "采摘分选后 48 小时内产地发货",
+        "cover_image_url": "",
+        "purchase_limit": 40,
+        "minimum_order_quantity": 1,
+        "sort_order": 0,
+        "status": "on_sale",
+        "created_at": "2026-09-20T15:57:07.995574+00:00",
+        "updated_at": "2026-09-20T15:57:07.995574+00:00"
+      }
+    },
+    {
+      "model": "api.citrusproduct",
+      "pk": "b1cef48a-4436-4232-8c03-bead1de8e521",
+      "fields": {
+        "seller": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "sales_batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "name": "赣南纽荷尔家庭装",
+        "sku_type": "family",
+        "fruit_type": "脐橙",
+        "variety": "纽荷尔脐橙",
+        "origin": "江西赣州信丰县",
+        "description": "赣南纽荷尔家庭装，关联果树档案与采摘档案，产地分选后直发。",
+        "price": "39.90",
+        "unit": "5斤/箱",
+        "stock": 500,
+        "sweetness": "13.2",
+        "grade": "精选果",
+        "harvest_date": null,
+        "shipping_note": "采摘分选后 48 小时内产地发货",
+        "cover_image_url": "",
+        "purchase_limit": 20,
+        "minimum_order_quantity": 1,
+        "sort_order": 0,
+        "status": "on_sale",
+        "created_at": "2026-09-20T15:57:07.974715+00:00",
+        "updated_at": "2026-09-20T15:57:07.974715+00:00"
+      }
+    },
+    {
+      "model": "api.citrusproduct",
+      "pk": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
+      "fields": {
+        "seller": "686de717-1bcd-4990-928d-8058ff5054f1",
+        "sales_batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
         "name": "纽荷尔试吃装",
         "sku_type": "trial",
         "fruit_type": "脐橙",
@@ -1684,31 +1727,15 @@
         "minimum_order_quantity": 1,
         "sort_order": 0,
         "status": "on_sale",
-        "created_at": "2026-09-20T14:20:37.927Z",
-        "updated_at": "2026-09-20T14:20:37.927Z"
+        "created_at": "2026-09-20T15:57:07.975716+00:00",
+        "updated_at": "2026-09-20T15:57:07.975716+00:00"
       }
     },
     {
       "model": "api.buyeraddress",
-      "pk": "e334dd6f-2a3e-433f-ac4f-5edf5ff606dd",
+      "pk": "33d80eda-f2d7-4eb0-9648-5d6e092ebb7a",
       "fields": {
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
-        "recipient_name": "张三",
-        "phone": "13800138000",
-        "province": "广东省",
-        "city": "深圳市",
-        "district": "南山区",
-        "detail": "科技园路8号",
-        "is_default": false,
-        "created_at": "2026-09-20T14:20:37.950Z",
-        "updated_at": "2026-09-20T14:20:37.950Z"
-      }
-    },
-    {
-      "model": "api.buyeraddress",
-      "pk": "e49860c6-6817-4bdf-b8e0-c3298cb6aa8d",
-      "fields": {
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
         "recipient_name": "张三",
         "phone": "13800138000",
         "province": "江西省",
@@ -1716,89 +1743,55 @@
         "district": "章贡区",
         "detail": "红旗大道100号",
         "is_default": true,
-        "created_at": "2026-09-20T14:20:37.950Z",
-        "updated_at": "2026-09-20T14:20:37.950Z"
+        "created_at": "2026-09-20T15:57:08.002580+00:00",
+        "updated_at": "2026-09-20T15:57:08.002580+00:00"
+      }
+    },
+    {
+      "model": "api.buyeraddress",
+      "pk": "4b8be63a-8257-44a1-92b7-809f2f4e6781",
+      "fields": {
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
+        "recipient_name": "张三",
+        "phone": "13800138000",
+        "province": "广东省",
+        "city": "深圳市",
+        "district": "南山区",
+        "detail": "科技园路8号",
+        "is_default": false,
+        "created_at": "2026-09-20T15:57:08.003576+00:00",
+        "updated_at": "2026-09-20T15:57:08.003576+00:00"
       }
     },
     {
       "model": "api.cartitem",
-      "pk": "22b203eb-9770-485d-96fe-7747cff23807",
+      "pk": "661b6bee-21f4-426e-836e-0962e7aa139a",
       "fields": {
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
-        "product": "8e31b734-be41-4568-9f97-97fd70e86ce2",
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
+        "product": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
         "quantity": 2,
-        "created_at": "2026-09-20T14:20:37.954Z",
-        "updated_at": "2026-09-20T14:20:37.954Z"
+        "created_at": "2026-09-20T15:57:08.007574+00:00",
+        "updated_at": "2026-09-20T15:57:08.007574+00:00"
       }
     },
     {
       "model": "api.cartitem",
-      "pk": "2f2757d4-3e6d-4298-a0a5-9b032913c299",
+      "pk": "8a9bf572-54c2-43ba-8fb6-b095572c7941",
       "fields": {
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
-        "product": "8098d1e1-8ea5-4dcd-baef-37ce8a45dd99",
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
+        "product": "912e866f-18df-44bc-aced-848c60f3523c",
         "quantity": 1,
-        "created_at": "2026-09-20T14:20:37.954Z",
-        "updated_at": "2026-09-20T14:20:37.954Z"
+        "created_at": "2026-09-20T15:57:08.008573+00:00",
+        "updated_at": "2026-09-20T15:57:08.008573+00:00"
       }
     },
     {
       "model": "api.order",
-      "pk": "353ef930-8477-4648-82ea-332ad00b3888",
-      "fields": {
-        "order_number": "ORD-DEMO-1001",
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
-        "sales_batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "status": "completed",
-        "payment_mode": "full",
-        "recipient_name": "张三",
-        "recipient_phone": "13800138000",
-        "shipping_address": "江西省赣州市章贡区红旗大道100号",
-        "total_amount": "39.90",
-        "deposit_amount": "0.00",
-        "balance_amount": "0.00",
-        "paid_amount": "39.90",
-        "note": "",
-        "expires_at": "2026-09-20T14:50:37.950Z",
-        "balance_due_at": null,
-        "paid_at": "2026-08-16T14:20:37.950Z",
-        "cancelled_at": null,
-        "created_at": "2026-08-16T14:20:37.952Z",
-        "updated_at": "2026-09-20T14:20:37.952Z"
-      }
-    },
-    {
-      "model": "api.order",
-      "pk": "3a0e20d0-5e51-4553-b0ec-7280321b4e5a",
-      "fields": {
-        "order_number": "ORD-DEMO-1003",
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
-        "sales_batch": "a6347a0b-f024-4743-a074-f03c39f810d6",
-        "status": "pending_payment",
-        "payment_mode": "full",
-        "recipient_name": "张三",
-        "recipient_phone": "13800138000",
-        "shipping_address": "江西省赣州市章贡区红旗大道100号",
-        "total_amount": "45.00",
-        "deposit_amount": "0.00",
-        "balance_amount": "0.00",
-        "paid_amount": "0.00",
-        "note": "",
-        "expires_at": "2026-09-20T14:40:37.953Z",
-        "balance_due_at": null,
-        "paid_at": null,
-        "cancelled_at": null,
-        "created_at": "2026-09-20T14:20:37.953Z",
-        "updated_at": "2026-09-20T14:20:37.953Z"
-      }
-    },
-    {
-      "model": "api.order",
-      "pk": "ad0ddd68-eb4c-4fea-b946-dd3787081e13",
+      "pk": "3630e61b-bd24-4a96-abb2-20aae54e2ae8",
       "fields": {
         "order_number": "ORD-DEMO-1002",
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
-        "sales_batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
+        "sales_batch": "89197bf2-7798-40c4-8b06-2414773a9444",
         "status": "completed",
         "payment_mode": "full",
         "recipient_name": "张三",
@@ -1809,37 +1802,70 @@
         "balance_amount": "0.00",
         "paid_amount": "49.90",
         "note": "",
-        "expires_at": "2026-09-20T14:50:37.952Z",
+        "expires_at": "2026-09-20T16:27:08.005575+00:00",
         "balance_due_at": null,
-        "paid_at": "2026-08-31T14:20:37.952Z",
+        "paid_at": "2026-08-31T15:57:08.005575+00:00",
         "cancelled_at": null,
-        "created_at": "2026-08-31T14:20:37.953Z",
-        "updated_at": "2026-09-20T14:20:37.953Z"
+        "created_at": "2026-08-31T15:57:08.007574+00:00",
+        "updated_at": "2026-09-20T15:57:08.007574+00:00"
+      }
+    },
+    {
+      "model": "api.order",
+      "pk": "4c4bea1f-04d1-4cda-af30-ed678352528b",
+      "fields": {
+        "order_number": "ORD-DEMO-1001",
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
+        "sales_batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "status": "completed",
+        "payment_mode": "full",
+        "recipient_name": "张三",
+        "recipient_phone": "13800138000",
+        "shipping_address": "江西省赣州市章贡区红旗大道100号",
+        "total_amount": "39.90",
+        "deposit_amount": "0.00",
+        "balance_amount": "0.00",
+        "paid_amount": "39.90",
+        "note": "",
+        "expires_at": "2026-09-20T16:27:08.003576+00:00",
+        "balance_due_at": null,
+        "paid_at": "2026-08-16T15:57:08.003576+00:00",
+        "cancelled_at": null,
+        "created_at": "2026-08-16T15:57:08.005575+00:00",
+        "updated_at": "2026-09-20T15:57:08.005575+00:00"
+      }
+    },
+    {
+      "model": "api.order",
+      "pk": "fa6eaac3-bf7a-48af-8f66-1c95974ed138",
+      "fields": {
+        "order_number": "ORD-DEMO-1003",
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
+        "sales_batch": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+        "status": "pending_payment",
+        "payment_mode": "full",
+        "recipient_name": "张三",
+        "recipient_phone": "13800138000",
+        "shipping_address": "江西省赣州市章贡区红旗大道100号",
+        "total_amount": "45.00",
+        "deposit_amount": "0.00",
+        "balance_amount": "0.00",
+        "paid_amount": "0.00",
+        "note": "",
+        "expires_at": "2026-09-20T16:17:08.007574+00:00",
+        "balance_due_at": null,
+        "paid_at": null,
+        "cancelled_at": null,
+        "created_at": "2026-09-20T15:57:08.007574+00:00",
+        "updated_at": "2026-09-20T15:57:08.007574+00:00"
       }
     },
     {
       "model": "api.orderitem",
-      "pk": "7ed77369-cdf4-4988-80e0-abddb555939a",
+      "pk": "5b8ae4c5-e982-4d0f-9fd9-abb733352e43",
       "fields": {
-        "order": "3a0e20d0-5e51-4553-b0ec-7280321b4e5a",
-        "product": "2db9e0d7-4289-49fa-b185-4b8b75eba217",
-        "product_name": "红肉脐橙家庭装",
-        "product_image_url": "",
-        "batch_code": "CGJ-2026-AY-002",
-        "batch_title": "安远山地·红肉脐橙鲜果批次",
-        "sku_type": "family",
-        "unit_price": "45.00",
-        "unit": "5斤/箱",
-        "quantity": 1,
-        "subtotal": "45.00"
-      }
-    },
-    {
-      "model": "api.orderitem",
-      "pk": "a458f044-22f5-4b25-9c2e-a40b1d1b871d",
-      "fields": {
-        "order": "353ef930-8477-4648-82ea-332ad00b3888",
-        "product": "04d854b4-aa5b-4d63-8f3c-f40819927ec6",
+        "order": "4c4bea1f-04d1-4cda-af30-ed678352528b",
+        "product": "b1cef48a-4436-4232-8c03-bead1de8e521",
         "product_name": "赣南纽荷尔家庭装",
         "product_image_url": "",
         "batch_code": "CGJ-2026-XF-001",
@@ -1853,10 +1879,10 @@
     },
     {
       "model": "api.orderitem",
-      "pk": "b34d7257-f1ef-46cf-8c29-fe561bdcd5d1",
+      "pk": "ae390bfc-9e31-4767-80be-deb7fa1bb626",
       "fields": {
-        "order": "ad0ddd68-eb4c-4fea-b946-dd3787081e13",
-        "product": "24fd12a0-58b9-42a9-841c-187e999af11b",
+        "order": "3630e61b-bd24-4a96-abb2-20aae54e2ae8",
+        "product": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
         "product_name": "朋娜脐橙精品尝鲜装",
         "product_image_url": "",
         "batch_code": "CGJ-2026-XW-003",
@@ -1869,88 +1895,105 @@
       }
     },
     {
-      "model": "api.tracepackage",
-      "pk": "80825162-a8b6-443b-9212-3d12b936aba9",
+      "model": "api.orderitem",
+      "pk": "fe46e769-9f02-49a6-a02d-7380d9445a9f",
       "fields": {
-        "trace_code": "CGJ-147E753ED3BE",
-        "order": "353ef930-8477-4648-82ea-332ad00b3888",
-        "order_item": "a458f044-22f5-4b25-9c2e-a40b1d1b871d",
-        "batch": "dffb44ac-c6e7-41f4-a375-b1334894b670",
-        "sequence": 1,
-        "box_spec": "5斤家庭装",
-        "status": "signed",
-        "carrier": "顺丰",
-        "tracking_number": "SF1234567890",
-        "packed_at": "2026-08-15T14:20:37.952Z",
-        "shipped_at": "2026-08-16T14:20:37.952Z",
-        "signed_at": "2026-08-18T14:20:37.952Z",
-        "created_at": "2026-09-20T14:20:37.952Z",
-        "updated_at": "2026-09-20T14:20:37.952Z"
+        "order": "fa6eaac3-bf7a-48af-8f66-1c95974ed138",
+        "product": "753bf92d-301c-494f-8b5d-715b57294f28",
+        "product_name": "红肉脐橙家庭装",
+        "product_image_url": "",
+        "batch_code": "CGJ-2026-AY-002",
+        "batch_title": "安远山地·红肉脐橙鲜果批次",
+        "sku_type": "family",
+        "unit_price": "45.00",
+        "unit": "5斤/箱",
+        "quantity": 1,
+        "subtotal": "45.00"
       }
     },
     {
       "model": "api.tracepackage",
-      "pk": "fdedc2f5-88f8-4bd8-ac7d-d26356b7ded3",
+      "pk": "60064324-a46f-4ab6-b8a8-800bdc842bed",
       "fields": {
-        "trace_code": "CGJ-5519CBA0CCCD",
-        "order": "ad0ddd68-eb4c-4fea-b946-dd3787081e13",
-        "order_item": "b34d7257-f1ef-46cf-8c29-fe561bdcd5d1",
-        "batch": "18578e5c-8424-470a-bb16-d90f18be4e2c",
+        "trace_code": "CGJ-CAC442E710B0",
+        "order": "3630e61b-bd24-4a96-abb2-20aae54e2ae8",
+        "order_item": "ae390bfc-9e31-4767-80be-deb7fa1bb626",
+        "batch": "89197bf2-7798-40c4-8b06-2414773a9444",
         "sequence": 1,
         "box_spec": "4斤尝鲜装",
         "status": "signed",
         "carrier": "顺丰",
         "tracking_number": "SF1234567891",
-        "packed_at": "2026-08-30T14:20:37.953Z",
-        "shipped_at": "2026-08-31T14:20:37.953Z",
-        "signed_at": "2026-09-02T14:20:37.953Z",
-        "created_at": "2026-09-20T14:20:37.953Z",
-        "updated_at": "2026-09-20T14:20:37.953Z"
+        "packed_at": "2026-08-30T15:57:08.006574+00:00",
+        "shipped_at": "2026-08-31T15:57:08.006574+00:00",
+        "signed_at": "2026-09-02T15:57:08.006574+00:00",
+        "created_at": "2026-09-20T15:57:08.007574+00:00",
+        "updated_at": "2026-09-20T15:57:08.007574+00:00"
+      }
+    },
+    {
+      "model": "api.tracepackage",
+      "pk": "d0f6c2e5-1671-4bdc-99dd-51fbe9dd6590",
+      "fields": {
+        "trace_code": "CGJ-B32C2CD80C76",
+        "order": "4c4bea1f-04d1-4cda-af30-ed678352528b",
+        "order_item": "5b8ae4c5-e982-4d0f-9fd9-abb733352e43",
+        "batch": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+        "sequence": 1,
+        "box_spec": "5斤家庭装",
+        "status": "signed",
+        "carrier": "顺丰",
+        "tracking_number": "SF1234567890",
+        "packed_at": "2026-08-15T15:57:08.005575+00:00",
+        "shipped_at": "2026-08-16T15:57:08.005575+00:00",
+        "signed_at": "2026-08-18T15:57:08.005575+00:00",
+        "created_at": "2026-09-20T15:57:08.005575+00:00",
+        "updated_at": "2026-09-20T15:57:08.005575+00:00"
       }
     },
     {
       "model": "api.aftersalerequest",
-      "pk": "38a5743e-f75e-4380-9420-72996d3a7211",
+      "pk": "b189980e-d89b-4427-94d7-ad16628a4509",
       "fields": {
-        "order": "ad0ddd68-eb4c-4fea-b946-dd3787081e13",
-        "package": "fdedc2f5-88f8-4bd8-ac7d-d26356b7ded3",
-        "buyer": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
+        "order": "3630e61b-bd24-4a96-abb2-20aae54e2ae8",
+        "package": "60064324-a46f-4ab6-b8a8-800bdc842bed",
+        "buyer": "9b964798-568a-4ebb-ad50-c81ea292d768",
         "issue_type": "logistics",
         "description": "物流稍慢但包装完好",
         "evidence_urls": [],
         "status": "resolved",
         "resolution": "已与买家沟通确认，无需退款",
         "refund_amount": "0.00",
-        "created_at": "2026-09-20T14:20:37.955Z",
-        "updated_at": "2026-09-20T14:20:37.955Z"
+        "created_at": "2026-09-20T15:57:08.009573+00:00",
+        "updated_at": "2026-09-20T15:57:08.009573+00:00"
       }
     },
     {
       "model": "api.agentfeedback",
-      "pk": "4e6c8188-d890-46bf-9bcc-ab03254e72d5",
+      "pk": "2ad253be-95b2-4afd-b7c1-be50f9b6934f",
       "fields": {
-        "user": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
+        "user": "9b964798-568a-4ebb-ad50-c81ea292d768",
         "product_name": "朋娜脐橙精品尝鲜装",
         "batch_code": "CGJ-2026-XW-003",
         "rating": 4,
         "taste": "甜度不错",
         "package": "完好",
         "note": "",
-        "created_at": "2026-09-20T14:20:37.954Z"
+        "created_at": "2026-09-20T15:57:08.008573+00:00"
       }
     },
     {
       "model": "api.agentfeedback",
-      "pk": "d303fe76-b79a-4e6c-8cd5-31598a08a48d",
+      "pk": "88b14763-36c5-4608-9a8f-f9525457e1d2",
       "fields": {
-        "user": "8b4d6d83-a9fd-4cc7-bcb4-11f18e467bbb",
+        "user": "9b964798-568a-4ebb-ad50-c81ea292d768",
         "product_name": "赣南纽荷尔家庭装",
         "batch_code": "CGJ-2026-XF-001",
         "rating": 5,
         "taste": "很甜，果大，水分足",
         "package": "包装完好",
         "note": "很满意，会回购",
-        "created_at": "2026-09-20T14:20:37.954Z"
+        "created_at": "2026-09-20T15:57:08.008573+00:00"
       }
     }
   ]

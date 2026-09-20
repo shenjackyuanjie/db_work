@@ -1,7 +1,7 @@
 # Wave 0' 契约基准报告（Django 5 + DRF → Rust golden fixtures）
 
-- **captured_at**（UTC）：`2026-09-20T14:20:34+00:00`
-- **seed_signature**：`sha256:7244af9d80d7dec4e96ca5f8bbcafec22cf1ce8330c3ef149db90ff5ab3a1c8c`
+- **captured_at**（UTC）：`2026-09-20T15:57:04+00:00`
+- **seed_signature**：`sha256:132dd937d0663088674d5c6ab897f160fba737b5a458da0a68790427dc9b0cff`
 - 夹具目录：`db/tests/fixtures/contract/`
 - 蓝本：`navel_backend_git/`（Django 5.0.14 / DRF 3.15.2 / Python 3.12.10）
 - 本次录制域：agent, auth, commerce, core, orchard_trace
@@ -138,7 +138,7 @@
 | `citrus_disease_upload_shape_only` | `/api/citrus-disease` | shape_only：走 base64 IMAGE 分支；Django 侧 mock 随机识别，Rust 侧真 ONNX |
 | `farmer_upload_image_shape_only` | `/api/v1/farmer/upload-image` | shape_only：返回绝对 URL（含 host 与随机文件名） |
 | `farmer_batch_create_shape_only` | `/api/v1/farmer/batches/create` | shape_only：code/trace_code 由 uuid 生成，Rust 侧无法逐字复现 |
-| `farmer_quality_sample_create_shape_only` | `/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/quality-samples` | shape_only：写入同时追加 TraceEvent（哈希链依赖时间序列） |
+| `farmer_quality_sample_create_shape_only` | `/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/quality-samples` | shape_only：写入同时追加 TraceEvent（哈希链依赖时间序列） |
 
 shape_only 用例的键/类型契约写在用例的 `shape` 字段里（形如 `$.data.items[*].name:str`），Rust 侧按此校验，不要比对数值。
 
@@ -149,36 +149,36 @@ shape_only 用例的键/类型契约写在用例的 `shape` 字段里（形如 `
 
 | JSON 路径 | 实测样例 | 判定 |
 |---|---|---|
-| `$.me_ok_buyer.data.created_at` | `2026-09-20T14:20:37.922176Z` | ❌ 形状异常 |
-| `$.me_ok_farmer.data.created_at` | `2026-09-20T14:20:37.028780Z` | ❌ 形状异常 |
-| `$.user_alias_ok_farmer.data.created_at` | `2026-09-20T14:20:37.028780Z` | ❌ 形状异常 |
-| `$.login_ok_farmer.data.expiresAt` | `2026-10-20T14:20:38.960103+00:00` | ✅ 带 +00:00 与微秒 |
-| `$.login_ok_farmer.data.user.created_at` | `2026-09-20T14:20:37.028780Z` | ❌ 形状异常 |
-| `$.v1_login_ok_farmer.data.expiresAt` | `2026-10-20T14:20:39.527847+00:00` | ✅ 带 +00:00 与微秒 |
-| `$.v1_login_ok_farmer.data.user.created_at` | `2026-09-20T14:20:37.028780Z` | ❌ 形状异常 |
-| `$.register_ok_buyer.data.expiresAt` | `2026-10-20T14:20:39.815514+00:00` | ✅ 带 +00:00 与微秒 |
-| `$.register_ok_buyer.data.user.created_at` | `2026-09-20T14:20:39.814514Z` | ❌ 形状异常 |
-| `$.v1_register_ok_farmer.data.expiresAt` | `2026-10-20T14:20:40.110582+00:00` | ✅ 带 +00:00 与微秒 |
-| `$.v1_register_ok_farmer.data.user.created_at` | `2026-09-20T14:20:40.109581Z` | ❌ 形状异常 |
-| `$.diagnose_shape_only.data.getList.list[*].created_at` | `2026-09-20T14:20:40.140580Z` | ❌ 形状异常 |
-| `$.temperature_humidity_get_ok.data.recentRecords[*].record_time` | `2026-09-11T12:20:37.936176+00:00` | ✅ 带 +00:00 与微秒 |
-| `$.tasks_list_ok.data[*].created_at` | `2026-09-20T14:20:37.936176Z` | ❌ 形状异常 |
-| `$.recognition_records_shape_only.data.records[*].created_at` | `2026-09-20T14:20:37.936176Z` | ❌ 形状异常 |
-| `$.temperature_humidity_post_ok.data.recentRecords[*].record_time` | `2026-09-12T12:20:37.935180+00:00` | ✅ 带 +00:00 与微秒 |
-| `$.tasks_add_ok.data.created_at` | `2026-09-20T14:20:40.200293Z` | ❌ 形状异常 |
-| `$.tasks_complete_ok.data.created_at` | `2026-09-20T14:20:40.200293Z` | ❌ 形状异常 |
-| `$.tasks_complete_ok.data.completed_at` | `2026-09-20T22:20:40.204291Z` | ❌ 形状异常 |
-| `$.tasks_generate_disease_ok.data.created_at` | `2026-09-20T14:20:40.210290Z` | ❌ 形状异常 |
-| `$.tasks_generate_environment_shape_only.data.created_at` | `2026-09-20T14:20:40.219290Z` | ❌ 形状异常 |
-| `$.products_list_ok.data.items[*].sales_batch.open_at` | `2026-08-21T14:20:37.944176Z` | ❌ 形状异常 |
-| `$.products_list_search_ok.data.items[*].sales_batch.open_at` | `2026-08-21T14:20:37.944176Z` | ❌ 形状异常 |
-| `$.products_list_sku_filter_ok.data.items[*].sales_batch.open_at` | `2026-08-21T14:20:37.944176Z` | ❌ 形状异常 |
-| `$.products_list_v1_ok.data.items[*].sales_batch.open_at` | `2026-08-21T14:20:37.944176Z` | ❌ 形状异常 |
-| `$.product_detail_ok.data.sales_batch.open_at` | `2026-08-21T14:20:37.923176Z` | ❌ 形状异常 |
-| `$.product_detail_ok.data.sales_batch.close_at` | `2026-11-19T14:20:37.923176Z` | ❌ 形状异常 |
-| `$.product_detail_ok.data.sales_batch.environment_summary.recordedAt` | `2026-09-20T14:20:37.926176+00:00` | ✅ 带 +00:00 与微秒 |
-| `$.product_detail_ok.data.sales_batch.orchard.verified_at` | `2026-07-22T14:20:37.922176Z` | ❌ 形状异常 |
-| `$.product_detail_v1_ok.data.sales_batch.open_at` | `2026-08-21T14:20:37.923176Z` | ❌ 形状异常 |
+| `$.me_ok_buyer.data.created_at` | `2026-09-20T15:57:07.970713Z` | ❌ 形状异常 |
+| `$.me_ok_farmer.data.created_at` | `2026-09-20T15:57:07.026252Z` | ❌ 形状异常 |
+| `$.user_alias_ok_farmer.data.created_at` | `2026-09-20T15:57:07.026252Z` | ❌ 形状异常 |
+| `$.login_ok_farmer.data.expiresAt` | `2026-10-20T15:57:09.187121+00:00` | ✅ 带 +00:00 与微秒 |
+| `$.login_ok_farmer.data.user.created_at` | `2026-09-20T15:57:07.026252Z` | ❌ 形状异常 |
+| `$.v1_login_ok_farmer.data.expiresAt` | `2026-10-20T15:57:09.881120+00:00` | ✅ 带 +00:00 与微秒 |
+| `$.v1_login_ok_farmer.data.user.created_at` | `2026-09-20T15:57:07.026252Z` | ❌ 形状异常 |
+| `$.register_ok_buyer.data.expiresAt` | `2026-10-20T15:57:10.203120+00:00` | ✅ 带 +00:00 与微秒 |
+| `$.register_ok_buyer.data.user.created_at` | `2026-09-20T15:57:10.203120Z` | ❌ 形状异常 |
+| `$.v1_register_ok_farmer.data.expiresAt` | `2026-10-20T15:57:10.537696+00:00` | ✅ 带 +00:00 与微秒 |
+| `$.v1_register_ok_farmer.data.user.created_at` | `2026-09-20T15:57:10.535695Z` | ❌ 形状异常 |
+| `$.diagnose_shape_only.data.getList.list[*].created_at` | `2026-09-20T15:57:10.571696Z` | ❌ 形状异常 |
+| `$.temperature_humidity_get_ok.data.recentRecords[*].record_time` | `2026-09-11T13:57:07.984960+00:00` | ✅ 带 +00:00 与微秒 |
+| `$.tasks_list_ok.data[*].created_at` | `2026-09-20T15:57:07.985960Z` | ❌ 形状异常 |
+| `$.recognition_records_shape_only.data.records[*].created_at` | `2026-09-20T15:57:07.984960Z` | ❌ 形状异常 |
+| `$.temperature_humidity_post_ok.data.recentRecords[*].record_time` | `2026-09-12T13:57:07.984960+00:00` | ✅ 带 +00:00 与微秒 |
+| `$.tasks_add_ok.data.created_at` | `2026-09-20T15:57:10.648489Z` | ❌ 形状异常 |
+| `$.tasks_complete_ok.data.created_at` | `2026-09-20T15:57:10.648489Z` | ❌ 形状异常 |
+| `$.tasks_complete_ok.data.completed_at` | `2026-09-20T23:57:10.655489Z` | ❌ 形状异常 |
+| `$.tasks_generate_disease_ok.data.created_at` | `2026-09-20T15:57:10.663490Z` | ❌ 形状异常 |
+| `$.tasks_generate_environment_shape_only.data.created_at` | `2026-09-20T15:57:10.679490Z` | ❌ 形状异常 |
+| `$.products_list_ok.data.items[*].sales_batch.open_at` | `2026-08-21T15:57:07.994576Z` | ❌ 形状异常 |
+| `$.products_list_search_ok.data.items[*].sales_batch.open_at` | `2026-08-21T15:57:07.994576Z` | ❌ 形状异常 |
+| `$.products_list_sku_filter_ok.data.items[*].sales_batch.open_at` | `2026-08-21T15:57:07.994576Z` | ❌ 形状异常 |
+| `$.products_list_v1_ok.data.items[*].sales_batch.open_at` | `2026-08-21T15:57:07.994576Z` | ❌ 形状异常 |
+| `$.product_detail_ok.data.sales_batch.open_at` | `2026-08-21T15:57:07.971713Z` | ❌ 形状异常 |
+| `$.product_detail_ok.data.sales_batch.close_at` | `2026-11-19T15:57:07.971713Z` | ❌ 形状异常 |
+| `$.product_detail_ok.data.sales_batch.environment_summary.recordedAt` | `2026-09-20T15:57:07.974715+00:00` | ✅ 带 +00:00 与微秒 |
+| `$.product_detail_ok.data.sales_batch.orchard.verified_at` | `2026-07-22T15:57:07.970713Z` | ❌ 形状异常 |
+| `$.product_detail_v1_ok.data.sales_batch.open_at` | `2026-08-21T15:57:07.971713Z` | ❌ 形状异常 |
 
 - 形状规则：`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?\+00:00$`
 - 形状不符的样例数：**62**
@@ -233,27 +233,27 @@ shape_only 用例的键/类型契约写在用例的 `shape` 字段里（形如 `
 | 404 | `购物车商品不存在` | `/api/cart/00000000-0000-4000-8000-000000000000` |
 | 400 | `{"recipient_name": ["该字段是必填项。"], "phone": ["该字段是必填项。"], "detail": ["该字段是必填项。"]}` | `/api/addresses` |
 | 404 | `收货地址不存在` | `/api/addresses/00000000-0000-4000-8000-000000000000` |
-| 405 | `方法 “GET” 不被允许。` | `/api/v1/orders/353ef930-8477-4648-82ea-332ad00b3888/pay` |
+| 405 | `方法 “GET” 不被允许。` | `/api/v1/orders/4c4bea1f-04d1-4cda-af30-ed678352528b/pay` |
 | 404 | `订单不存在` | `/api/orders/00000000-0000-4000-8000-000000000000` |
 | 400 | `{"address_id": ["该字段是必填项。"]}` | `/api/orders` |
-| 400 | `当前订单状态不能取消` | `/api/orders/353ef930-8477-4648-82ea-332ad00b3888/cancel` |
-| 400 | `当前订单状态不能支付` | `/api/orders/353ef930-8477-4648-82ea-332ad00b3888/pay` |
+| 400 | `当前订单状态不能取消` | `/api/orders/4c4bea1f-04d1-4cda-af30-ed678352528b/cancel` |
+| 400 | `当前订单状态不能支付` | `/api/orders/4c4bea1f-04d1-4cda-af30-ed678352528b/pay` |
 | 400 | `{"order": ["该字段是必填项。"], "issue_type": ["该字段是必填项。"], "description": ["该字段是必填项。"]}` | `/api/after-sales` |
 | 400 | `{"order": ["无效主键 “00000000-0000-4000-8000-000000000000” － 对象不存在。"]}` | `/api/v1/after-sales` |
 | 400 | `请选择有效的购物车商品` | `/api/orders` |
 | 404 | `果园不存在或尚未通过认证` | `/api/orchards/00000000-0000-4000-8000-000000000000` |
 | 404 | `供货批次不存在` | `/api/supply-batches/00000000-0000-4000-8000-000000000000` |
 | 404 | `未查询到对应的来源追溯记录` | `/api/traces/CGJ-NOT-EXIST` |
-| 404 | `果园不存在或无权操作` | `/api/v1/farmer/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8/trees` |
-| 400 | `{"tree_number": ["该字段是必填项。"], "variety": ["该字段是必填项。"]}` | `/api/v1/farmer/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8/trees` |
+| 404 | `果园不存在或无权操作` | `/api/v1/farmer/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b/trees` |
+| 400 | `{"tree_number": ["该字段是必填项。"], "variety": ["该字段是必填项。"]}` | `/api/v1/farmer/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b/trees` |
 | 400 | `未提供图片文件` | `/api/v1/farmer/upload-image` |
 | 400 | `{"name": ["该字段是必填项。"], "origin": ["该字段是必填项。"], "price": ["该字段是必填项。"]}` | `/api/v1/farmer/products` |
-| 404 | `商品不存在或无权操作` | `/api/v1/farmer/products/04d854b4-aa5b-4d63-8f3c-f40819927ec6` |
-| 400 | `{"harvested_at": ["该字段是必填项。"], "picker": ["该字段是必填项。"], "quantity_kg": ["该字段是必填项。"]}` | `/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/harvest-archives` |
-| 400 | `{"event_type": ["该字段是必填项。"], "occurred_at": ["该字段是必填项。"], "title": ["该字段是必填项。"]}` | `/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/trace-events` |
-| 400 | `{"sampled_at": ["该字段是必填项。"]}` | `/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/quality-samples` |
-| 404 | `批次不存在或无权操作` | `/api/v1/farmer/batches/dffb44ac-c6e7-41f4-a375-b1334894b670/health-records` |
-| 500 | `Internal server error` | `/api/v1/farmer/orchards/5242b4fd-1163-4366-93eb-5ae589a231f8/trees` |
+| 404 | `商品不存在或无权操作` | `/api/v1/farmer/products/b1cef48a-4436-4232-8c03-bead1de8e521` |
+| 400 | `{"harvested_at": ["该字段是必填项。"], "picker": ["该字段是必填项。"], "quantity_kg": ["该字段是必填项。"]}` | `/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/harvest-archives` |
+| 400 | `{"event_type": ["该字段是必填项。"], "occurred_at": ["该字段是必填项。"], "title": ["该字段是必填项。"]}` | `/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/trace-events` |
+| 400 | `{"sampled_at": ["该字段是必填项。"]}` | `/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/quality-samples` |
+| 404 | `批次不存在或无权操作` | `/api/v1/farmer/batches/6109a446-b1ed-467c-982f-87f0c8a70bb0/health-records` |
+| 500 | `Internal server error` | `/api/v1/farmer/orchards/0afe849f-ddd9-40b3-afc3-b6e75ab1b40b/trees` |
 | 400 | `上架商品必须关联一个供货批次` | `/api/v1/farmer/products` |
 
 ### 5.3 蓝本自身的缺陷（**必须原样复刻，否则契约比对会失败**）
@@ -286,7 +286,7 @@ shape_only 用例的键/类型契约写在用例的 `shape` 字段里（形如 `
 
 - 自动对比 **18** 组同状态别名：normalize 后相等 **16** 组，不等 **2** 组。
   - `/api/v1/auth/register`（v1_register_ok_farmer）vs `/api/register`（register_ok_buyer）：diff=[".data.user.email: 'qa-register@example.com' != None", '.data.user.latitude: None != 25.1', '.data.user.longitude: None != 115.1', ".data.user.orchard_address: None != '赣州市信丰县 QA 果园'", ".data.user.role: 'buyer' != 'farmer'", ".data.user.username: 'qa_register_buyer' != 'qa_register_farmer'"]
-  - `/api/v1/traces/CGJ-BATCH-XF2026`（traces_lookup_v1_ok）vs `/api/traces/CGJ-BATCH-XF2026`（traces_lookup_batch_ok）：diff=[".data.integrity.checkedAt: '2026-09-20T14:20:40.960219+00:00' != '2026-09-20T14:20:41.038768+00:00'"]
+  - `/api/v1/traces/CGJ-BATCH-XF2026`（traces_lookup_v1_ok）vs `/api/traces/CGJ-BATCH-XF2026`（traces_lookup_batch_ok）：diff=[".data.integrity.checkedAt: '2026-09-20T15:57:11.801582+00:00' != '2026-09-20T15:57:11.918583+00:00'"]
 - 全部别名都是「同一个 `@api_view` 函数挂在两条 path 上」，无独立实现。
 - `POST /api/v1/auth/login` 与 `POST /api/login` 是**同一视图**，会重建 token（`_create_session` 先删该用户全部 token）。录制时 `v1_login_ok_farmer` 排在复用 token 的用例之后；Rust 侧测试也必须遵守「一次登录、token 复用」的顺序。
 - `GET /api/user` 与 `GET /api/me` 是同一视图（`auth_views.me_api`）。
@@ -341,7 +341,7 @@ shape_only 用例的键/类型契约写在用例的 `shape` 字段里（形如 `
 - `random.seed(20260913)` 在导入期设置。
 - **不做时间 rebase**：`seed.json` 保存绝对时间戳。`TraceEvent.evidence_hash = sha256(规范化 JSON)`，输入含 `occurredAt.isoformat()` 的微秒，改写时间必然导致 `chainValid=false`。
 - 因此 **Rust 侧必须在 `2026-09-20`（UTC 日历日）当天回放**。跨天会改变：`SalesBatch.is_open`（`close_at` 过期）、`_expire_stale_orders`（`expires_at <= now` 的待支付订单被自动取消）、日报 `today_order_count`/`today_order_amount`、复购 `days_since`、`fulfillment_risk_score` 的「发货窗口临近 / 已过预计发货日」分支。
-- 若必须跨天回放：请把 Rust 侧时钟冻结到 `2026-09-20T14:20:34+00:00` 附近，或按相同相对时间重建 seed，**不要改夹具**。
+- 若必须跨天回放：请把 Rust 侧时钟冻结到 `2026-09-20T15:57:04+00:00` 附近，或按相同相对时间重建 seed，**不要改夹具**。
 - 用 `seed_signature`（`sha256(seed.json)`）识别夹具版本；回放前先校验签名。
 - 临时媒体目录：`D:\githubs\db_work\.venv-django-tmp\media`（仓库外，跑完自动清理）。`navel_backend_git/media/` 与 `db.sqlite3` 全程未被写入（脚本前后对 `db.sqlite3` 做 mtime+size 双检，并把 `real_db_sha256` 记进 index/seed）。
 
