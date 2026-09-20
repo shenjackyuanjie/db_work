@@ -7,7 +7,9 @@ edition = "2024"
 tokio = { version = "1.49", features = ["full"] }
 reqwest = { version = "0.13", features = ["json"] }
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+# preserve_order：serde_json 默认用 BTreeMap，键会按字典序输出；
+# 契约要求与 Django 的声明序（code, message, data, timestamp）逐字节一致。
+serde_json = { version = "1.0", features = ["preserve_order"] }
 clap = { version = "4.5", features = ["derive"] }
 base64 = "0.22"
 axum = { version = "0.8", features = ["macros", "multipart"] }

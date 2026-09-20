@@ -146,4 +146,39 @@ mod tests {
         assert_eq!(value["code"], 403);
         assert!(value.get("timestamp").is_none(), "{value}");
     }
+
+    async fn raw_body(response: Response) -> String {
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        String::from_utf8(bytes.to_vec()).unwrap()
+    }
+
+    /// Django 输出的是字段声明序，不是字典序。这依赖 `serde_json` 的 `preserve_order`
+    /// feature；一旦被关掉会静默退化成字典序（code, data, message, timestamp），
+    /// 逐字节比对就会整体失败却很难定位。
+    #[tokio::test]
+    async fn success_envelope_keeps_django_key_order() {
+        let text = raw_body(api_ok(serde_json::json!({"a": 1}))).await;
+        let message = text.find(r#""message""#).unwrap();
+        let data = text.find(r#""data""#).unwrap();
+        let timestamp = text.find(r#""timestamp""#).unwrap();
+
+        assert!(text.starts_with(r#"{"code":200"#), "{text}");
+        assert!(message < data && data < timestamp, "{text}");
+    }
+
+    #[tokio::test]
+    async fn error_envelope_keeps_django_key_order() {
+        let text = raw_body(api_error(
+            StatusCode::NOT_FOUND,
+            Value::String("订单不存在".into()),
+        ))
+        .await;
+        let message = text.find(r#""message""#).unwrap();
+        let data = text.find(r#""data""#).unwrap();
+
+        assert!(text.starts_with(r#"{"code":404"#), "{text}");
+        assert!(message < data, "{text}");
+    }
 }
