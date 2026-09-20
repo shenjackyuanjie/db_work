@@ -11,7 +11,7 @@
 |---|---|---|---|---|
 | **D1** | `api/agent_views.py` 漏 `import status` | `/api/agent/select`、`inquiry`、`chat`、`feedback`、`approvals`、`approvals/<id>/decision` 的**全部校验分支恒返回 500** `Internal server error`（DRF 异常体，无 timestamp） | **修正为设计意图的 400/404** | 用户裁定。App 不可能依赖 500 崩溃；复刻等于把 bug 搬进新后端 |
 | **D2** | `api/views.py::fertilization_plan_api` 引用未导入的 `FertilizationPlanRequestSerializer` | `POST /api/generate/fertilization-plan` **恒 500**（message 是 Python 异常文本，且带 timestamp） | **按序列化器意图实现正常语义** | 该接口在蓝本里从未可用，App 不可能在用它。**需 App 侧确认**，见「待确认」 |
-| **D3** | `complete_task_api` 写 `completed_at` 用 `datetime.now()` | 序列化出**无时区偏移**的本地时间串（`2026-09-20T22:03:05.671819`） | **逐字复刻**，用 `ser::dt_naive_local` | 属于 App 已适配的实际契约形状，改动风险大于收益 |
+| **D3** | `complete_task_api` 写 `completed_at` 用 `datetime.now()` | ~~序列化出无时区偏移的本地时间串~~ **【已更正】** 实测走 DRF 序列化，输出的是 `…294565Z`（带 `Z`、无偏移串） | **改用 `ser::dt_z`**（原按"无偏移"实现，是误判） | 前一版结论基于误读；该字段被 `normalize` 屏蔽所以没体现为失败，但形态差异对 App 侧 `new Date()` 解析是真实的。**待修** |
 | **D4** | 时间后缀两种形态并存 | `Z` 718 处（DRF `JSONEncoder`）、`+00:00` 152 处（DRF `DateTimeField`） | **按字段逐个对齐夹具实测值**；比对器把两者归一化后比较，并单独计数漂移 | 两者语义等价，App 侧 `new Date()` 解析结果相同；但要在报告里可见 |
 | **D5** | 重复 `tree_number` 建树 | DB 唯一约束 `IntegrityError` 冒泡 → **500** | **返回 400** | 输入校验错误应当是 4xx |
 | **D6** | `category_labels` 顺序不可复现 | `commerce_serializers.py` 的 `.distinct()` 无 `order_by`，两次运行顺序不同 | **Rust 侧定序输出**；比对时按**集合**比较 | 蓝本自身不确定，无法逐字节对齐 |
@@ -20,6 +20,8 @@
 | **D9** | 蓝本外键不带 `ON DELETE` | 级联在 Python 层（`on_delete`） | **我方按 `on_delete` 写 CASCADE/SET NULL/RESTRICT，并加 `DEFERRABLE INITIALLY DEFERRED`** | 保证数据一致性；`DEFERRABLE` 让夹具乱序导入在单事务内也成立 |
 | **D10** | `login` 凭据错误分支的信封形状 | 蓝本源码（`serializers.ValidationError`）看似该走 DRF 异常体（**无** timestamp），但实测录到的是 `{code:401, message:{"non_field_errors":["Invalid credentials"]}, data:null, timestamp:…}`——**成功体形状、message 是对象、带 timestamp** | **取夹具** | 这是 App 实际收到的字节。`views_auth.rs` 已用 ⚠️ 注释标出该反直觉点 |
 | **D11** | 字符串长度校验 | 蓝本靠 DB 约束（`VARCHAR(150)` 等），超长会变成 500 | **待补：在契约层加 `max_length` 校验返回 400** | 目前 `username > 150` / `password > 128` / `email` 超长会撞列宽变 500，与蓝本行为也不一致。属已知缺口 |
+| **D12** | 夹具把「平局时的数据库返回序」当成了契约 | 蓝本 `Task` / `AgentFeedback` 的 `Meta.ordering` 只有 `-created_at` 没有次级键；测试库里多条记录 `created_at` **完全相同**，SQLite 按 rowid 返回，PG 按物理顺序返回，两者不同 | **接受为夹具不确定，实现侧不迁就**（不为匹配某个物理顺序而写凑数代码） | 残留 4 条失败全部源于此：`core/tasks_list_ok`、`agent/agent_context_ok`、`agent/agent_feedback_get_buyer_ok`、`agent/agent_risk_alert_ok`。**建议夹具给这些列表补稳定次级键**，或让 seed 不再产生平局。这是夹具自身的不确定性，不是实现缺陷 |
+| **D13** | 单测写死了录制实例的字面量 | — | **待修：commerce 单测改为从夹具派生，不手写条数/uuid/数组字面量** | 重录夹具后 `commerce_tests.rs` 11 条失败（`:206` `10 != 7`、`:565` `3 != 2`、商品 uuid 等），**不是实现回归**——端到端全序列 commerce 81/81 全绿。手写字面量会持续污染判断力 |
 
 ## 安全问题（已记录，未处理）
 
