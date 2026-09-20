@@ -15,7 +15,15 @@ tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-sqlx = { version = "0.8.6", features = ["postgres", "uuid", "chrono", "runtime-tokio", "tls-rustls"] }
+sqlx = { version = "0.8.6", features = [
+    "postgres",
+    "uuid",
+    "chrono",
+    "json",
+    "rust_decimal",
+    "runtime-tokio",
+    "tls-rustls",
+] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 anyhow = "1.0.100"
 argon2 = "0.5"
@@ -27,3 +35,7 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 tract-onnx = "0.22.1"
 multer = "3.1.0"
 futures-util = "0.3.32"
+rust_decimal = "1"
+pbkdf2 = "0.12"
+hmac = "0.12"
+sha2 = "0.10"
