@@ -1,0 +1,2747 @@
+{
+  "domain": "core",
+  "captured_at": "2026-09-20T14:05:36+00:00",
+  "seed_signature": "sha256:eca5166b7d330e244a7d7b00cb3044649bed9632131abf85ca0a0a33e4a16851",
+  "environment": {
+    "django_version": "5.0.14",
+    "drf_version": "3.15.2",
+    "python_version": "3.12.10",
+    "time_zone": "UTC",
+    "use_tz": true,
+    "language_code": "zh-hans",
+    "media_root_used": "D:\\githubs\\db_work\\.venv-django-tmp\\media",
+    "media_root_repo_default": "D:\\githubs\\db_work\\navel_backend_git\\media",
+    "llm_enabled": false,
+    "model_available": false,
+    "recognition_mode": "mock",
+    "random_seed": 20260913,
+    "real_db_sha256": "bfb0b1f0239b0fee85ce3225dedccc5d78fba1f503ee72293840d308f9c7b3d5",
+    "test_db": "file:memorydb_default?mode=memory&cache=shared"
+  },
+  "case_count": 42,
+  "cases": [
+    {
+      "name": "home_ok_farmer",
+      "path_name": "home_api",
+      "path_template": "api/home",
+      "path": "/api/home",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "weatherCondition": "阴",
+          "temperatureRange": "20℃ - 25℃",
+          "suggestion": "建议：保持正常天气，注意防晒。",
+          "healthScore": 80,
+          "weeklyAlerts": 2,
+          "pendingTasks": 10,
+          "growthRate": 85.5,
+          "DiagnosisStatus": "正常",
+          "GrowthStatus": "涨果期"
+        },
+        "timestamp": 1789913142029
+      },
+      "raw_body_sha256": "c4d59c72c3b02c1ad9f5394578d25410890ff3fa1d3dbf37cbf2ed2a92df9589",
+      "raw_body_bytes": 312,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "home_no_token_401",
+      "path_name": "home_api",
+      "path_template": "api/home",
+      "path": "/api/home",
+      "method": "GET",
+      "kind": "auth",
+      "headers": {
+        "role": null,
+        "auth": "none"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 401,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 401,
+        "message": "身份认证信息未提供。",
+        "data": null
+      },
+      "raw_body_sha256": "fa1d7d9533dd9dde8405571a88bc21b045505ca0a6ae2721110643fe2a272a48",
+      "raw_body_bytes": 67,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 401,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "home_buyer_403",
+      "path_name": "home_api",
+      "path_template": "api/home",
+      "path": "/api/home",
+      "method": "GET",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": "文案：该接口仅限果农使用"
+    },
+    {
+      "name": "growth_tracking_ok",
+      "path_name": "growth_tracking_api",
+      "path_template": "api/growth-tracking",
+      "path": "/api/growth-tracking",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "growthStageText": "涨果期",
+          "growthStageDuration": "30",
+          "startDate": "2025-12-01",
+          "endDate": "2026-01-30",
+          "fruitExpansionStartDate": "2025-12-01",
+          "fruitExpansionEndDate": "2026-01-30",
+          "colorChangeStartDate": "2026-02-01",
+          "colorChangeEndDate": "2026-03-30",
+          "youngFruitStartDate": "2026-04-01",
+          "youngFruitEndDate": "2026-05-30",
+          "diameter": 7.2,
+          "ratio": 1.2
+        },
+        "timestamp": 1789913142033
+      },
+      "raw_body_sha256": "dd7f573384666aa07abc957a2b827e706e8cdbaa301a95c516b21122c855e27f",
+      "raw_body_bytes": 413,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "growth_tracking_buyer_403",
+      "path_name": "growth_tracking_api",
+      "path_template": "api/growth-tracking",
+      "path": "/api/growth-tracking",
+      "method": "GET",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "diagnose_shape_only",
+      "path_name": "diagnose_api",
+      "path_template": "api/diagnose",
+      "path": "/api/diagnose",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "data": "2025-12-03",
+          "n_P_K_ViewModel": {
+            "nitrogenValue": 110.0,
+            "phosphorusValue": 50.0,
+            "potassiumValue": 10.0
+          },
+          "percentage": 86.0,
+          "getList": {
+            "list": [
+              {
+                "id": "b1e01189-b9b1-4a8f-9377-2ae535292c21",
+                "title": "氮元素含量稳定",
+                "content": "当前氮含量水平有利于叶片生长，维持现状即可",
+                "created_at": "2026-09-20T14:05:42.036209Z"
+              },
+              {
+                "id": "863b19db-cd88-44ff-acb4-27c282d7d71b",
+                "title": "钾元素缺乏",
+                "content": "第5区果树钾元素偏低，建议补充钾肥提高果实品质",
+                "created_at": "2026-09-20T14:05:42.036209Z"
+              },
+              {
+                "id": "26f9c1f4-1b0a-4b64-88a0-29f080b36a4c",
+                "title": "钙镁元素平衡",
+                "content": "当前钙镁比例适宜，有利于果实发育",
+                "created_at": "2026-09-20T14:05:42.036209Z"
+              }
+            ]
+          }
+        },
+        "timestamp": 1789913142037
+      },
+      "raw_body_sha256": "9ca5c4df2aeb5854ce83f28e406138a083a5411a6fa277382ef33135a2cab3aa",
+      "raw_body_bytes": 784,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "created_at",
+        "timestamp"
+      ],
+      "shape_only": true,
+      "shape": [
+        "$.code:int",
+        "$.message:str",
+        "$.data:dict",
+        "$.data.data:str",
+        "$.data.n_P_K_ViewModel:dict",
+        "$.data.n_P_K_ViewModel.nitrogenValue:float",
+        "$.data.n_P_K_ViewModel.phosphorusValue:float",
+        "$.data.n_P_K_ViewModel.potassiumValue:float",
+        "$.data.percentage:float",
+        "$.data.getList:dict",
+        "$.data.getList.list[*]:dict",
+        "$.data.getList.list[*].id:str",
+        "$.data.getList.list[*].title:str",
+        "$.data.getList.list[*].content:str",
+        "$.data.getList.list[*].created_at:str",
+        "$.timestamp:int"
+      ],
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": "shape_only：惰性创建后返回聚合结构，键固定、值随数据变"
+    },
+    {
+      "name": "diagnose_no_token_401",
+      "path_name": "diagnose_api",
+      "path_template": "api/diagnose",
+      "path": "/api/diagnose",
+      "method": "GET",
+      "kind": "auth",
+      "headers": {
+        "role": null,
+        "auth": "none"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 401,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 401,
+        "message": "身份认证信息未提供。",
+        "data": null
+      },
+      "raw_body_sha256": "fa1d7d9533dd9dde8405571a88bc21b045505ca0a6ae2721110643fe2a272a48",
+      "raw_body_bytes": 67,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 401,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "temperature_humidity_get_ok",
+      "path_name": "temperature_humidity_api",
+      "path_template": "api/temperature-humidity",
+      "path": "/api/temperature-humidity",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "temperatureHistory": [
+            {
+              "timestamp": "12:05",
+              "value": 26.2
+            },
+            {
+              "timestamp": "",
+              "value": 25.9
+            },
+            {
+              "timestamp": "12:05",
+              "value": 25.6
+            },
+            {
+              "timestamp": "",
+              "value": 25.3
+            },
+            {
+              "timestamp": "12:05",
+              "value": 25.0
+            },
+            {
+              "timestamp": "",
+              "value": 24.7
+            },
+            {
+              "timestamp": "12:05",
+              "value": 24.4
+            },
+            {
+              "timestamp": "",
+              "value": 24.1
+            },
+            {
+              "timestamp": "12:05",
+              "value": 23.8
+            },
+            {
+              "timestamp": "12:05",
+              "value": 23.5
+            }
+          ],
+          "humidityHistory": [
+            {
+              "timestamp": "12:05",
+              "value": 69.0
+            },
+            {
+              "timestamp": "",
+              "value": 65.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 77.0
+            },
+            {
+              "timestamp": "",
+              "value": 73.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 69.0
+            },
+            {
+              "timestamp": "",
+              "value": 65.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 77.0
+            },
+            {
+              "timestamp": "",
+              "value": 73.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 69.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 65.0
+            }
+          ],
+          "currentTemperature": 23.5,
+          "currentHumidity": 65.0,
+          "recentRecords": [
+            {
+              "temperature": 26.2,
+              "humidity": 69.0,
+              "record_time": "2026-09-11T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 25.9,
+              "humidity": 65.0,
+              "record_time": "2026-09-12T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 25.6,
+              "humidity": 77.0,
+              "record_time": "2026-09-13T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 25.3,
+              "humidity": 73.0,
+              "record_time": "2026-09-14T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 25.0,
+              "humidity": 69.0,
+              "record_time": "2026-09-15T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 24.7,
+              "humidity": 65.0,
+              "record_time": "2026-09-16T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 24.4,
+              "humidity": 77.0,
+              "record_time": "2026-09-17T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 24.1,
+              "humidity": 73.0,
+              "record_time": "2026-09-18T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 23.8,
+              "humidity": 69.0,
+              "record_time": "2026-09-19T12:05:39.699728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 23.5,
+              "humidity": 65.0,
+              "record_time": "2026-09-20T12:05:39.699728+00:00",
+              "tag_serial_number": "0x4a80"
+            }
+          ]
+        },
+        "timestamp": 1789913142040
+      },
+      "raw_body_sha256": "7f043a05b3c70bea407534d994a89576e6b35a3b73ea627e720c94af69e9e08a",
+      "raw_body_bytes": 1987,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "temperature_humidity_buyer_403",
+      "path_name": "temperature_humidity_api",
+      "path_template": "api/temperature-humidity",
+      "path": "/api/temperature-humidity",
+      "method": "GET",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "temperature_humidity_no_token_401",
+      "path_name": "temperature_humidity_api",
+      "path_template": "api/temperature-humidity",
+      "path": "/api/temperature-humidity",
+      "method": "GET",
+      "kind": "auth",
+      "headers": {
+        "role": null,
+        "auth": "none"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 401,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 401,
+        "message": "身份认证信息未提供。",
+        "data": null
+      },
+      "raw_body_sha256": "fa1d7d9533dd9dde8405571a88bc21b045505ca0a6ae2721110643fe2a272a48",
+      "raw_body_bytes": 67,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 401,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "generate_ok",
+      "path_name": "generate_api",
+      "path_template": "api/generate",
+      "path": "/api/generate",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "textii": "针对赣南脐橙，建议实施\"测土配方、分期精准\"的施肥策略。基肥以腐熟有机肥（如羊粪、饼肥）为主，秋季深施，改良酸性红壤。追肥分三次：春梢期以高氮复合肥促梢保花；壮果期增施钾肥（如硫酸钾），配施磷与中微量元素，提升糖度与果皮光泽；采果前补施速效肥恢复树势。全年注重叶片营养诊断，结合土壤检测结果灵活调整，确保氮、磷、钾与钙、镁、硼等元素平衡，避免偏施氮肥。坚持生草栽培，保墒增肥。"
+        },
+        "timestamp": 1789913142043
+      },
+      "raw_body_sha256": "39d9fa1eaa8f2d852abf4c2153a3cc62f20a96460ac53b47f2d8bbc4506f80da",
+      "raw_body_bytes": 641,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "generate_no_token_401",
+      "path_name": "generate_api",
+      "path_template": "api/generate",
+      "path": "/api/generate",
+      "method": "GET",
+      "kind": "auth",
+      "headers": {
+        "role": null,
+        "auth": "none"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 401,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 401,
+        "message": "身份认证信息未提供。",
+        "data": null
+      },
+      "raw_body_sha256": "fa1d7d9533dd9dde8405571a88bc21b045505ca0a6ae2721110643fe2a272a48",
+      "raw_body_bytes": 67,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 401,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "disease_treatment_known_ok",
+      "path_name": "get_disease_treatment_api",
+      "path_template": "api/disease-treatment",
+      "path": "/api/disease-treatment",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {
+        "disease_name": "黄龙病"
+      },
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "disease_name": "黄龙病",
+          "treatment": "先杀虫，后砍树：发现病树后，先全园喷洒噻虫嗪、联苯菊酯等药剂杀灭柑橘木虱。间隔3-5天后，将病树连根挖除或砍除，并集中烧毁。砍除时需对树蔸做毁蔸处理（如划十字、涂草甘膦、覆土），防止复发。"
+        },
+        "timestamp": 1789913142045
+      },
+      "raw_body_sha256": "8aa07f2d64761f4f1d5ca208091a28c06a9084e52c90bfbffa588033c3022bf9",
+      "raw_body_bytes": 385,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "disease_treatment_unknown_ok",
+      "path_name": "get_disease_treatment_api",
+      "path_template": "api/disease-treatment",
+      "path": "/api/disease-treatment",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {
+        "disease_name": "不存在的病害"
+      },
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "disease_name": "不存在的病害",
+          "treatment": "暂无治理建议"
+        },
+        "timestamp": 1789913142047
+      },
+      "raw_body_sha256": "7e15b54026efebcf3b1c28142cb89593c016c5fe97fb3216afc1b9ac1b07c2ee",
+      "raw_body_bytes": 136,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "disease_treatment_missing_param_400",
+      "path_name": "get_disease_treatment_api",
+      "path_template": "api/disease-treatment",
+      "path": "/api/disease-treatment",
+      "method": "GET",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "disease_name parameter is required",
+        "data": null,
+        "timestamp": 1789913142047
+      },
+      "raw_body_sha256": "ed1e8cbeaae05d150264406c92ea78cabd8bcbf7a6c231b9736c5c6b96a57c2c",
+      "raw_body_bytes": 97,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": "英文文案：disease_name parameter is required"
+    },
+    {
+      "name": "disease_treatment_buyer_403",
+      "path_name": "get_disease_treatment_api",
+      "path_template": "api/disease-treatment",
+      "path": "/api/disease-treatment",
+      "method": "GET",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {
+        "disease_name": "黄龙病"
+      },
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_list_ok",
+      "path_name": "get_tasks_api",
+      "path_template": "api/tasks",
+      "path": "/api/tasks",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": [
+          {
+            "id": "8fb9e42b-184c-40bf-81fe-633350cf71f2",
+            "title": "B区坡地黄龙病复核",
+            "description": "B区坡地识别到黄龙病，需巡园复核并安排木虱防治。",
+            "risk_level": "高风险",
+            "task_type": "病虫害防治",
+            "source": "疾病识别",
+            "is_completed": false,
+            "created_at": "2026-09-20T14:05:39.701731Z",
+            "completed_at": null
+          },
+          {
+            "id": "db94cd78-f180-4270-bd82-e984107b5a8d",
+            "title": "采摘期前糖度抽检",
+            "description": "对A区批次做采前糖度抽检。",
+            "risk_level": "中风险",
+            "task_type": "品质抽检",
+            "source": "系统",
+            "is_completed": false,
+            "created_at": "2026-09-20T14:05:39.701731Z",
+            "completed_at": null
+          },
+          {
+            "id": "63206025-4ad7-4496-9ab8-5c6e065ce21a",
+            "title": "果园日常巡园",
+            "description": "常规巡园记录生长状态。",
+            "risk_level": "低风险",
+            "task_type": "日常巡园",
+            "source": "用户",
+            "is_completed": true,
+            "created_at": "2026-09-20T14:05:39.701731Z",
+            "completed_at": null
+          }
+        ],
+        "timestamp": 1789913142051
+      },
+      "raw_body_sha256": "15e8b4c665042bb223da23dfacb173064421cee4ccff4962c1752daeac7d7b63",
+      "raw_body_bytes": 966,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id",
+        "$..id"
+      ],
+      "normalize_hits": [
+        "created_at",
+        "id",
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_list_no_token_401",
+      "path_name": "get_tasks_api",
+      "path_template": "api/tasks",
+      "path": "/api/tasks",
+      "method": "GET",
+      "kind": "auth",
+      "headers": {
+        "role": null,
+        "auth": "none"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 401,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 401,
+        "message": "身份认证信息未提供。",
+        "data": null
+      },
+      "raw_body_sha256": "fa1d7d9533dd9dde8405571a88bc21b045505ca0a6ae2721110643fe2a272a48",
+      "raw_body_bytes": 67,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 401,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_list_buyer_403",
+      "path_name": "get_tasks_api",
+      "path_template": "api/tasks",
+      "path": "/api/tasks",
+      "method": "GET",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "recognition_records_shape_only",
+      "path_name": "recognition_records_api",
+      "path_template": "api/recognition-records",
+      "path": "/api/recognition-records",
+      "method": "GET",
+      "kind": "read",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "records": [
+            {
+              "id": "2fd21bc1-7647-4ecf-bfd0-39fd1e655e06",
+              "imagePath": "",
+              "diseaseName": "健康果树",
+              "area": "A区",
+              "riskLevel": "正常",
+              "recognitionDate": "2026-09-18",
+              "confidence": 96.5,
+              "created_at": "2026-09-20T14:05:39.701731Z"
+            },
+            {
+              "id": "69fa2ede-8df8-40ba-93dc-98f438df615f",
+              "imagePath": "",
+              "diseaseName": "黄龙病",
+              "area": "B区坡地",
+              "riskLevel": "高风险",
+              "recognitionDate": "2026-09-19",
+              "confidence": 88.2,
+              "created_at": "2026-09-20T14:05:39.701731Z"
+            }
+          ]
+        },
+        "timestamp": 1789913142054
+      },
+      "raw_body_sha256": "bf2c9c8895be93901cc65ad3a51ffd71420368b1e28948841403ac04d34ce162",
+      "raw_body_bytes": 519,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "created_at",
+        "timestamp"
+      ],
+      "shape_only": true,
+      "shape": [
+        "$.code:int",
+        "$.message:str",
+        "$.data:dict",
+        "$.data.records[*]:dict",
+        "$.data.records[*].id:str",
+        "$.data.records[*].imagePath:str",
+        "$.data.records[*].diseaseName:str",
+        "$.data.records[*].area:str",
+        "$.data.records[*].riskLevel:str",
+        "$.data.records[*].recognitionDate:str",
+        "$.data.records[*].confidence:float",
+        "$.data.records[*].created_at:str",
+        "$.timestamp:int"
+      ],
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": "shape_only：Django 侧 mock、Rust 侧真 ONNX；seed 记录 image 为空"
+    },
+    {
+      "name": "recognition_records_buyer_403",
+      "path_name": "recognition_records_api",
+      "path_template": "api/recognition-records",
+      "path": "/api/recognition-records",
+      "method": "GET",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_add_missing_fields_400",
+      "path_name": "add_task_api",
+      "path_template": "api/tasks/add",
+      "path": "/api/tasks/add",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": {
+          "title": [
+            "该字段是必填项。"
+          ],
+          "description": [
+            "该字段是必填项。"
+          ]
+        },
+        "data": null,
+        "timestamp": 1789913142057
+      },
+      "raw_body_sha256": "30610011adef34b67bc02a0907eac04dfe106aa0d47a8174106665cf686bc9a8",
+      "raw_body_bytes": 142,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_add_no_token_401",
+      "path_name": "add_task_api",
+      "path_template": "api/tasks/add",
+      "path": "/api/tasks/add",
+      "method": "POST",
+      "kind": "auth",
+      "headers": {
+        "role": null,
+        "auth": "none"
+      },
+      "query": {},
+      "body": null,
+      "upload": null,
+      "path_params": {},
+      "expected_status": 401,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 401,
+        "message": "身份认证信息未提供。",
+        "data": null
+      },
+      "raw_body_sha256": "fa1d7d9533dd9dde8405571a88bc21b045505ca0a6ae2721110643fe2a272a48",
+      "raw_body_bytes": 67,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 401,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_add_buyer_403",
+      "path_name": "add_task_api",
+      "path_template": "api/tasks/add",
+      "path": "/api/tasks/add",
+      "method": "POST",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_complete_missing_id_400",
+      "path_name": "complete_task_api",
+      "path_template": "api/tasks/complete",
+      "path": "/api/tasks/complete",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "task_id is required",
+        "data": null,
+        "timestamp": 1789913142061
+      },
+      "raw_body_sha256": "2d2b16bb8a25a9e9821d6b75943b7af5a26ac898f0b72c8fcf53282faa4a28ad",
+      "raw_body_bytes": 82,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_complete_unknown_404",
+      "path_name": "complete_task_api",
+      "path_template": "api/tasks/complete",
+      "path": "/api/tasks/complete",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "task_id": "00000000-0000-4000-8000-000000000000"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 404,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 404,
+        "message": "Task not found",
+        "data": null,
+        "timestamp": 1789913142062
+      },
+      "raw_body_sha256": "d396d2ce02fe73fa68ce5657bb2c03f50c65ae6af3419ada3bb876eceb97848c",
+      "raw_body_bytes": 77,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 404,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_generate_disease_missing_param_400",
+      "path_name": "generate_task_from_disease_api",
+      "path_template": "api/tasks/generate/disease",
+      "path": "/api/tasks/generate/disease",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "disease_name is required",
+        "data": null,
+        "timestamp": 1789913142063
+      },
+      "raw_body_sha256": "c8f107c2a3a6eeff5e79021069c95fb72555fecd20574870053f3552a560c40c",
+      "raw_body_bytes": 87,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_generate_environment_missing_params_400",
+      "path_name": "generate_task_from_environment_api",
+      "path_template": "api/tasks/generate/environment",
+      "path": "/api/tasks/generate/environment",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "temperature and humidity are required",
+        "data": null,
+        "timestamp": 1789913142064
+      },
+      "raw_body_sha256": "21a7b846fd7285d5da0b68657976b9fd01abbd070c6271346525e6a63c3c64b5",
+      "raw_body_bytes": 100,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "citrus_disease_no_image_400",
+      "path_name": "citrus_disease_api",
+      "path_template": "api/citrus-disease",
+      "path": "/api/citrus-disease",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "No image provided",
+        "data": null,
+        "timestamp": 1789913142065
+      },
+      "raw_body_sha256": "86f792ee7c970e688284001da9b215700c07d951a193d20f1d29d311e0bc3311",
+      "raw_body_bytes": 80,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": "英文文案：No image provided"
+    },
+    {
+      "name": "citrus_disease_buyer_403",
+      "path_name": "citrus_disease_api",
+      "path_template": "api/citrus-disease",
+      "path": "/api/citrus-disease",
+      "method": "POST",
+      "kind": "role",
+      "headers": {
+        "role": "buyer_zhang",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 403,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 403,
+        "message": "该接口仅限果农使用",
+        "data": null
+      },
+      "raw_body_sha256": "74f0f14c4f200cfdf3968cd2f42c479c99a04d71b23cc90e6fe170d60edc20e2",
+      "raw_body_bytes": 64,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 403,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "fertilization_plan_always_500",
+      "path_name": "fertilization_plan_api",
+      "path_template": "api/generate/fertilization-plan",
+      "path": "/api/generate/fertilization-plan",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 500,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 500,
+        "message": "name 'FertilizationPlanRequestSerializer' is not defined",
+        "data": null,
+        "timestamp": 1789913142068
+      },
+      "raw_body_sha256": "7133d5bef683249b4153c31ea56dad6ac0ffe13cd5be898c9f1b01755800f3b1",
+      "raw_body_bytes": 119,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 500,
+      "alias_of": null,
+      "note": "蓝本缺陷：views.py 未定义 FertilizationPlanRequestSerializer -> 恒 500；message=\"name 'FertilizationPlanRequestSerializer' is not defined\"，且属成功体形状（带 timestamp）",
+      "server_error": true
+    },
+    {
+      "name": "temperature_humidity_post_bad_type_400",
+      "path_name": "temperature_humidity_api",
+      "path_template": "api/temperature-humidity",
+      "path": "/api/temperature-humidity",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "temperature": "abc",
+        "humidity": 70
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "temperature and humidity must be numbers",
+        "data": null,
+        "timestamp": 1789913142084
+      },
+      "raw_body_sha256": "1ca06f8bc2424b2a0aa25cf43c8488e2ed8cdf64e65c8311a2c34d858860068c",
+      "raw_body_bytes": 103,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "temperature_humidity_post_out_of_range_400",
+      "path_name": "temperature_humidity_api",
+      "path_template": "api/temperature-humidity",
+      "path": "/api/temperature-humidity",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "temperature": 200,
+        "humidity": 70
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "temperature or humidity is outside the supported range",
+        "data": null,
+        "timestamp": 1789913142085
+      },
+      "raw_body_sha256": "eedd5b9d6c740fdf01fe90a7683574419a70c0a9b986dac4f2deee02795a1a64",
+      "raw_body_bytes": 117,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "temperature_humidity_post_bad_time_400",
+      "path_name": "temperature_humidity_api",
+      "path_template": "api/temperature-humidity",
+      "path": "/api/temperature-humidity",
+      "method": "POST",
+      "kind": "validation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "temperature": 26,
+        "humidity": 70,
+        "record_time": "not-a-time"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 400,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 400,
+        "message": "record_time must be ISO 8601",
+        "data": null,
+        "timestamp": 1789913142087
+      },
+      "raw_body_sha256": "abd7d3adfbfe82da0334cfabc4b464b84b1e45fd79d541a4dbe8226d9c47ce9b",
+      "raw_body_bytes": 91,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 400,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "temperature_humidity_post_ok",
+      "path_name": "temperature_humidity_api",
+      "path_template": "api/temperature-humidity",
+      "path": "/api/temperature-humidity",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "temperature": 27.5,
+        "humidity": 88.0,
+        "record_time": "2026-09-13T10:20:30.123456+00:00",
+        "tag_serial_number": "NFC-QA-0001"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "Temperature and humidity data saved",
+        "data": {
+          "temperatureHistory": [
+            {
+              "timestamp": "12:05",
+              "value": 25.9
+            },
+            {
+              "timestamp": "",
+              "value": 27.5
+            },
+            {
+              "timestamp": "12:05",
+              "value": 25.6
+            },
+            {
+              "timestamp": "",
+              "value": 25.3
+            },
+            {
+              "timestamp": "12:05",
+              "value": 25.0
+            },
+            {
+              "timestamp": "",
+              "value": 24.7
+            },
+            {
+              "timestamp": "12:05",
+              "value": 24.4
+            },
+            {
+              "timestamp": "",
+              "value": 24.1
+            },
+            {
+              "timestamp": "12:05",
+              "value": 23.8
+            },
+            {
+              "timestamp": "12:05",
+              "value": 23.5
+            }
+          ],
+          "humidityHistory": [
+            {
+              "timestamp": "12:05",
+              "value": 65.0
+            },
+            {
+              "timestamp": "",
+              "value": 88.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 77.0
+            },
+            {
+              "timestamp": "",
+              "value": 73.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 69.0
+            },
+            {
+              "timestamp": "",
+              "value": 65.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 77.0
+            },
+            {
+              "timestamp": "",
+              "value": 73.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 69.0
+            },
+            {
+              "timestamp": "12:05",
+              "value": 65.0
+            }
+          ],
+          "currentTemperature": 23.5,
+          "currentHumidity": 65.0,
+          "recentRecords": [
+            {
+              "temperature": 25.9,
+              "humidity": 65.0,
+              "record_time": "2026-09-12T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 27.5,
+              "humidity": 88.0,
+              "record_time": "2026-09-13T10:20:30.123456+00:00",
+              "tag_serial_number": "NFC-QA-0001"
+            },
+            {
+              "temperature": 25.6,
+              "humidity": 77.0,
+              "record_time": "2026-09-13T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 25.3,
+              "humidity": 73.0,
+              "record_time": "2026-09-14T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 25.0,
+              "humidity": 69.0,
+              "record_time": "2026-09-15T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 24.7,
+              "humidity": 65.0,
+              "record_time": "2026-09-16T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 24.4,
+              "humidity": 77.0,
+              "record_time": "2026-09-17T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 24.1,
+              "humidity": 73.0,
+              "record_time": "2026-09-18T12:05:39.700728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 23.8,
+              "humidity": 69.0,
+              "record_time": "2026-09-19T12:05:39.699728+00:00",
+              "tag_serial_number": "0x4a80"
+            },
+            {
+              "temperature": 23.5,
+              "humidity": 65.0,
+              "record_time": "2026-09-20T12:05:39.699728+00:00",
+              "tag_serial_number": "0x4a80"
+            }
+          ]
+        },
+        "timestamp": 1789913142092
+      },
+      "raw_body_sha256": "b838d39263e786da5920789e3176082d38ea6bdc1a98d0959c6d9ffef59276da",
+      "raw_body_bytes": 2020,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id",
+        "$..id",
+        "$.data.recentRecords[*].record_time"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_add_ok",
+      "path_name": "add_task_api",
+      "path_template": "api/tasks/add",
+      "path": "/api/tasks/add",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "title": "QA 巡园记录",
+        "description": "契约基准用例生成的巡园任务",
+        "risk_level": "低风险",
+        "task_type": "日常巡园",
+        "source": "用户"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "Task created successfully",
+        "data": {
+          "id": "81a135e6-a976-40cd-9efb-068515e9a773",
+          "title": "QA 巡园记录",
+          "description": "契约基准用例生成的巡园任务",
+          "risk_level": "低风险",
+          "task_type": "日常巡园",
+          "source": "用户",
+          "is_completed": false,
+          "created_at": "2026-09-20T14:05:42.097849Z",
+          "completed_at": null
+        },
+        "timestamp": 1789913142097
+      },
+      "raw_body_sha256": "068a805ec2f19557ff15bc5b97a2964502a91f41204f485e8274ee2ea47024e7",
+      "raw_body_bytes": 365,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id",
+        "$..id"
+      ],
+      "normalize_hits": [
+        "created_at",
+        "id",
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_complete_ok",
+      "path_name": "complete_task_api",
+      "path_template": "api/tasks/complete",
+      "path": "/api/tasks/complete",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "task_id": "81a135e6-a976-40cd-9efb-068515e9a773"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "Task completed successfully",
+        "data": {
+          "id": "81a135e6-a976-40cd-9efb-068515e9a773",
+          "title": "QA 巡园记录",
+          "description": "契约基准用例生成的巡园任务",
+          "risk_level": "低风险",
+          "task_type": "日常巡园",
+          "source": "用户",
+          "is_completed": true,
+          "created_at": "2026-09-20T14:05:42.097849Z",
+          "completed_at": "2026-09-20T22:05:42.101849Z"
+        },
+        "timestamp": 1789913142102
+      },
+      "raw_body_sha256": "f0cb957eb354cf6d84f5a01f061e0e368b85a51cb4478de945849ad047d23808",
+      "raw_body_bytes": 391,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id",
+        "$..id"
+      ],
+      "normalize_hits": [
+        "created_at",
+        "id",
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": "依赖 tasks_add_ok 捕获的 task_id；completed_at 是朴素时间（无偏移）"
+    },
+    {
+      "name": "tasks_generate_disease_ok",
+      "path_name": "generate_task_from_disease_api",
+      "path_template": "api/tasks/generate/disease",
+      "path": "/api/tasks/generate/disease",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "disease_name": "溃疡病"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "Task created successfully",
+        "data": {
+          "id": "6282e33a-2f17-438c-9f0d-0b714e7b61ae",
+          "title": "溃疡病治理",
+          "description": "采用\"药-剪-药\"策略：首先使用铜制剂（如噻菌铜、春雷·王铜）全面喷雾杀菌。然后彻底剪除病枝、病叶、病果并集中销毁，修剪工具需消毒。修剪完成后，再喷一次杀菌剂进行保护，7-10天后可再施一次。同时注意防治潜叶蛾等虫媒，减少传播伤口。",
+          "risk_level": "高风险",
+          "task_type": "疾病识别",
+          "source": "自动生成",
+          "is_completed": false,
+          "created_at": "2026-09-20T14:05:42.107849Z",
+          "completed_at": null
+        },
+        "timestamp": 1789913142107
+      },
+      "raw_body_sha256": "0490193818c5b30681213099cd3022b8cacce1950f306d50f2f81ea423bee64b",
+      "raw_body_bytes": 665,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id",
+        "$..id"
+      ],
+      "normalize_hits": [
+        "created_at",
+        "id",
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": ""
+    },
+    {
+      "name": "tasks_generate_disease_healthy_200",
+      "path_name": "generate_task_from_disease_api",
+      "path_template": "api/tasks/generate/disease",
+      "path": "/api/tasks/generate/disease",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "disease_name": "健康果树"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "No task needed for healthy tree",
+        "data": null,
+        "timestamp": 1789913142111
+      },
+      "raw_body_sha256": "27ddd93fd5c7ac0fe2d0726b566513cdc47f8e0b909a718c103717d9bbaf17ef",
+      "raw_body_bytes": 94,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": "200 + data=null + message='No task needed for healthy tree'（英文）"
+    },
+    {
+      "name": "tasks_generate_environment_shape_only",
+      "path_name": "generate_task_from_environment_api",
+      "path_template": "api/tasks/generate/environment",
+      "path": "/api/tasks/generate/environment",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "temperature": 27.5,
+        "humidity": 88.0
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "Task created successfully",
+        "data": {
+          "id": "be31a4f4-1570-4cd3-bf0f-60a41c3f0d7e",
+          "title": "环境监测-高风险",
+          "description": "加强果园巡查，每7-10天喷施木虱防治药剂（如噻虫嗪、高效氯氟氰菊酯）；发现病树立即标记并挖除，防止传播。",
+          "risk_level": "高风险",
+          "task_type": "温湿度监测",
+          "source": "自动生成",
+          "is_completed": false,
+          "created_at": "2026-09-20T14:05:42.114852Z",
+          "completed_at": null
+        },
+        "timestamp": 1789913142115
+      },
+      "raw_body_sha256": "9448f1975563c5d39eb888cd9361563235b8e65ca951992e06744282298eb4a0",
+      "raw_body_bytes": 493,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "created_at",
+        "timestamp"
+      ],
+      "shape_only": true,
+      "shape": [
+        "$.code:int",
+        "$.message:str",
+        "$.data:dict",
+        "$.data.id:str",
+        "$.data.title:str",
+        "$.data.description:str",
+        "$.data.risk_level:str",
+        "$.data.task_type:str",
+        "$.data.source:str",
+        "$.data.is_completed:bool",
+        "$.data.created_at:str",
+        "$.data.completed_at:null",
+        "$.timestamp:int"
+      ],
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": "shape_only：风险分级由规则常量表决定，Rust 侧需逐字复刻规则"
+    },
+    {
+      "name": "citrus_disease_upload_shape_only",
+      "path_name": "citrus_disease_api",
+      "path_template": "api/citrus-disease",
+      "path": "/api/citrus-disease",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {
+        "IMAGE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAbUlEQVR42hXOUREAUQhCUaMYhShEMcqNQhSi7Fs/OQzjDLOMGDPHwIQpM8MuK9bssbBhyz7QIiGjQ6CgogdeLGx8GBxc/OCWE2fuOLhw5R78w2/ilV/8LtD3w5AlIib3hwkpedCloqb3Vxta+gHqqGABClcGxwAAAABJRU5ErkJggg==",
+        "area": "A区示范地块"
+      },
+      "upload": null,
+      "path_params": {},
+      "expected_status": 200,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 200,
+        "message": "success",
+        "data": {
+          "predicted_class": "黄龙病",
+          "confidence": 92.38,
+          "stage": "mock"
+        },
+        "timestamp": 1789913142132
+      },
+      "raw_body_sha256": "b0ee1981e450a9809c2467f6ba10967182a4f0d6ee8e980b9fdd6aef406c0f0b",
+      "raw_body_bytes": 131,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": true,
+      "shape": [
+        "$.code:int",
+        "$.message:str",
+        "$.data:dict",
+        "$.data.predicted_class:str",
+        "$.data.confidence:float",
+        "$.data.stage:str",
+        "$.timestamp:int"
+      ],
+      "status_matches_design": true,
+      "expected_status_design": 200,
+      "alias_of": null,
+      "note": "shape_only：走 base64 IMAGE 分支；Django 侧 mock 随机识别，Rust 侧真 ONNX"
+    },
+    {
+      "name": "fertilization_plan_after_state_500",
+      "path_name": "fertilization_plan_api",
+      "path_template": "api/generate/fertilization-plan",
+      "path": "/api/generate/fertilization-plan",
+      "method": "POST",
+      "kind": "mutation",
+      "headers": {
+        "role": "farmer_xinfeng",
+        "auth": "bearer"
+      },
+      "query": {},
+      "body": {},
+      "upload": null,
+      "path_params": {},
+      "expected_status": 500,
+      "expected_content_type": "application/json",
+      "expected_body": {
+        "code": 500,
+        "message": "name 'FertilizationPlanRequestSerializer' is not defined",
+        "data": null,
+        "timestamp": 1789913142138
+      },
+      "raw_body_sha256": "7dffcf02fea3f1814b9c5c0df46fc3eb3c414fec614bbe97ebf5860597a08a6a",
+      "raw_body_bytes": 119,
+      "normalize": [
+        "$.timestamp",
+        "$..createdAt",
+        "$..updatedAt",
+        "$..created_at",
+        "$..updated_at",
+        "$..timestamp",
+        "$..token",
+        "$..expiresAt",
+        "$..expires_at",
+        "$..tree",
+        "$..harvest_archive",
+        "$..product",
+        "$..order",
+        "$..package",
+        "$..ref_id",
+        "$..id"
+      ],
+      "normalize_hits": [
+        "timestamp"
+      ],
+      "shape_only": false,
+      "shape": null,
+      "status_matches_design": true,
+      "expected_status_design": 500,
+      "alias_of": null,
+      "note": "重读确认恒 500（成功体形状）",
+      "server_error": true
+    }
+  ]
+}

@@ -1,0 +1,5384 @@
+{
+  "captured_at": "2026-09-20T14:05:36+00:00",
+  "seed_signature": "sha256:eca5166b7d330e244a7d7b00cb3044649bed9632131abf85ca0a0a33e4a16851",
+  "environment": {
+    "django_version": "5.0.14",
+    "drf_version": "3.15.2",
+    "python_version": "3.12.10",
+    "time_zone": "UTC",
+    "use_tz": true,
+    "language_code": "zh-hans",
+    "media_root_used": "D:\\githubs\\db_work\\.venv-django-tmp\\media",
+    "media_root_repo_default": "D:\\githubs\\db_work\\navel_backend_git\\media",
+    "llm_enabled": false,
+    "model_available": false,
+    "recognition_mode": "mock",
+    "random_seed": 20260913,
+    "real_db_sha256": "bfb0b1f0239b0fee85ce3225dedccc5d78fba1f503ee72293840d308f9c7b3d5",
+    "test_db": "file:memorydb_default?mode=memory&cache=shared"
+  },
+  "path_count": 79,
+  "domain_counts": {
+    "auth": 9,
+    "core": 14,
+    "commerce": 24,
+    "orchard_trace": 21,
+    "agent": 11,
+    "unassigned": 0
+  },
+  "domain_covered": [
+    "agent",
+    "auth",
+    "commerce",
+    "core",
+    "orchard_trace"
+  ],
+  "method_case_capacity": 99,
+  "case_count": 246,
+  "covered": 79,
+  "partial": 0,
+  "blocked": 0,
+  "unresolved": [],
+  "uncovered": [],
+  "seed_refs": {
+    "auth": {
+      "farmer_xinfeng": {
+        "password": "farmer123",
+        "role": "farmer"
+      },
+      "farmer_xunwu": {
+        "password": "farmer123",
+        "role": "farmer"
+      },
+      "farmer_anyuan": {
+        "password": "farmer123",
+        "role": "farmer"
+      },
+      "buyer_zhang": {
+        "password": "buyer123",
+        "role": "buyer"
+      }
+    },
+    "login_endpoint": "/api/login",
+    "login_payload": {
+      "username": "<seed username>",
+      "password": "<seed password>"
+    },
+    "orchard_id": "cf76b166-e6a5-4088-a971-f50850f76e82",
+    "batch_id": "a8756f98-4664-4fe6-9df5-fe96758fb818",
+    "product_id": "0fa00dc3-2d5c-437a-a933-6f67f1b53d3a",
+    "product_enterprise_id": "0b21f91d-6f9a-47a0-8914-bd96d4c4bf2c",
+    "product_ay_enterprise_id": "cab8adc6-808c-4d0e-af04-1a9746fa162d",
+    "product_ay_family_id": "b8d189e7-a101-48e2-a007-23b783018914",
+    "order_completed_id": "105e11d5-4839-4d64-87eb-03e134ff8722",
+    "order_pending_id": "5b907f4e-c68c-4c14-8c39-8285da0d0ee1",
+    "address_id": "1f3101bc-9893-4444-b994-81663f7f5e42",
+    "address_secondary_id": "0b14552f-1372-4e1c-9327-221c601d6e0d",
+    "item_id": "c5a24c4d-5bd7-4401-a9c3-3aad3e46e49b",
+    "item_id_b3": "17dfa127-0886-433b-9230-b2cd50706859",
+    "item_ids": [
+      "17dfa127-0886-433b-9230-b2cd50706859",
+      "c5a24c4d-5bd7-4401-a9c3-3aad3e46e49b"
+    ],
+    "trace_code": "CGJ-BATCH-XF2026",
+    "tree_number": "信丰-01-001",
+    "tree_id": "ff708984-14ea-4c0a-85a5-5c924794f21b",
+    "tree_trace_code": "CGJ-TREE-8C4DDB0FBD",
+    "package_id": "825849e7-5efe-466b-aae5-d269f75ea1e4",
+    "package_trace_code": "CGJ-B9B762DFAD24",
+    "batch_ids": {
+      "CGJ-2026-AY-002": "2af821d1-251b-49d0-844f-265627a62799",
+      "CGJ-2026-XW-003": "af1a5cd3-d89b-4c8f-99e4-50a5c3a516a6",
+      "CGJ-2026-XF-001": "a8756f98-4664-4fe6-9df5-fe96758fb818"
+    },
+    "batch_trace_codes": {
+      "CGJ-2026-AY-002": "CGJ-BATCH-AY2026",
+      "CGJ-2026-XW-003": "CGJ-BATCH-XW2026",
+      "CGJ-2026-XF-001": "CGJ-BATCH-XF2026"
+    },
+    "product_ids": {
+      "红肉脐橙家庭装": "b8d189e7-a101-48e2-a007-23b783018914",
+      "红肉脐橙企业装": "cab8adc6-808c-4d0e-af04-1a9746fa162d",
+      "朋娜脐橙礼赠装": "7af891c4-7acd-4c72-968c-4b512914f448",
+      "朋娜脐橙精品尝鲜装": "59c20634-dc12-41fd-ae0b-58d52d26ed74",
+      "赣南纽荷尔家庭装": "0fa00dc3-2d5c-437a-a933-6f67f1b53d3a",
+      "纽荷尔企业装": "0b21f91d-6f9a-47a0-8914-bd96d4c4bf2c",
+      "纽荷尔试吃装": "16154308-c9b6-42b9-99a7-3fc8f848633d"
+    },
+    "order_ids": {
+      "ORD-DEMO-1003": "5b907f4e-c68c-4c14-8c39-8285da0d0ee1",
+      "ORD-DEMO-1002": "1b2f2610-7fe1-4c90-8eb7-ef2769877933",
+      "ORD-DEMO-1001": "105e11d5-4839-4d64-87eb-03e134ff8722"
+    },
+    "_codes": {
+      "orchard": "GY-XF-DEMO-01",
+      "batch": "CGJ-2026-XF-001",
+      "product": "赣南纽荷尔家庭装",
+      "order": "ORD-DEMO-1001",
+      "trace_code": "CGJ-BATCH-XF2026",
+      "tree_number": "信丰-01-001"
+    }
+  },
+  "captured_values": {
+    "task_id": "81a135e6-a976-40cd-9efb-068515e9a773",
+    "cart_item_b1": "3b9520c7-cd5e-4843-95be-469b66b7cdf7",
+    "cart_item_b1_2": "3b9520c7-cd5e-4843-95be-469b66b7cdf7",
+    "order_new": "061f35dd-4421-48fa-bc2f-6e947395ec87",
+    "order_paid": "061f35dd-4421-48fa-bc2f-6e947395ec87",
+    "order_new_v1": "34d19331-b084-4790-9064-a07af4c00a73",
+    "batch_new": "07c1f675-a07f-464f-bdbd-6db759f35366",
+    "harvest_archive_id": "12d75057-2867-4a4b-8762-563ee2507ab7",
+    "approval_new": "c3c5af4a-0876-45e2-b456-819229f25d48"
+  },
+  "seed_approval_id": "5d9ee466-f6d7-4a89-8d1f-384c10e94183",
+  "seed_row_counts": {
+    "api.homedata": 1,
+    "api.growthtracking": 1,
+    "api.diagnosedata": 1,
+    "api.diagnoselistitem": 3,
+    "api.user": 8,
+    "api.temperaturehumiditydata": 31,
+    "api.task": 8,
+    "api.diseaserecognitionrecord": 4,
+    "api.authtoken": 7,
+    "api.orchard": 4,
+    "api.fruittreearchive": 8,
+    "api.salesbatch": 5,
+    "api.harvestarchive": 5,
+    "api.batchqualitysample": 6,
+    "api.traceevent": 18,
+    "api.citrusproduct": 8,
+    "api.buyeraddress": 3,
+    "api.order": 5,
+    "api.orderitem": 5,
+    "api.paymentrecord": 2,
+    "api.tracepackage": 4,
+    "api.aftersalerequest": 3,
+    "api.agentapproval": 4,
+    "api.agentfeedback": 3
+  },
+  "mutation_order": [
+    {
+      "order": 1,
+      "domain": "auth",
+      "case": "logout_ok",
+      "method": "POST",
+      "path": "/api/logout",
+      "note": "scratch 账号登出，不影响复用 token"
+    },
+    {
+      "order": 2,
+      "domain": "auth",
+      "case": "logout_after_ward_401",
+      "method": "POST",
+      "path": "/api/logout",
+      "note": "先删掉 scratch token 再登出 -> 401 登录凭证无效"
+    },
+    {
+      "order": 3,
+      "domain": "auth",
+      "case": "v1_logout_ok",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "note": "第二个 scratch 账号，验证 v1 别名"
+    },
+    {
+      "order": 4,
+      "domain": "auth",
+      "case": "v1_logout_after_ward_401",
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "note": "别名登出同样走 BearerTokenAuthentication"
+    },
+    {
+      "order": 5,
+      "domain": "core",
+      "case": "temperature_humidity_post_ok",
+      "method": "POST",
+      "path": "/api/temperature-humidity",
+      "note": ""
+    },
+    {
+      "order": 6,
+      "domain": "core",
+      "case": "tasks_add_ok",
+      "method": "POST",
+      "path": "/api/tasks/add",
+      "note": ""
+    },
+    {
+      "order": 7,
+      "domain": "core",
+      "case": "tasks_complete_ok",
+      "method": "POST",
+      "path": "/api/tasks/complete",
+      "note": "依赖 tasks_add_ok 捕获的 task_id；completed_at 是朴素时间（无偏移）"
+    },
+    {
+      "order": 8,
+      "domain": "core",
+      "case": "tasks_generate_disease_ok",
+      "method": "POST",
+      "path": "/api/tasks/generate/disease",
+      "note": ""
+    },
+    {
+      "order": 9,
+      "domain": "core",
+      "case": "tasks_generate_disease_healthy_200",
+      "method": "POST",
+      "path": "/api/tasks/generate/disease",
+      "note": "200 + data=null + message='No task needed for healthy tree'（英文）"
+    },
+    {
+      "order": 10,
+      "domain": "core",
+      "case": "tasks_generate_environment_shape_only",
+      "method": "POST",
+      "path": "/api/tasks/generate/environment",
+      "note": "shape_only：风险分级由规则常量表决定，Rust 侧需逐字复刻规则"
+    },
+    {
+      "order": 11,
+      "domain": "core",
+      "case": "citrus_disease_upload_shape_only",
+      "method": "POST",
+      "path": "/api/citrus-disease",
+      "note": "shape_only：走 base64 IMAGE 分支；Django 侧 mock 随机识别，Rust 侧真 ONNX"
+    },
+    {
+      "order": 12,
+      "domain": "core",
+      "case": "fertilization_plan_after_state_500",
+      "method": "POST",
+      "path": "/api/generate/fertilization-plan",
+      "note": "重读确认恒 500（成功体形状）"
+    },
+    {
+      "order": 13,
+      "domain": "commerce",
+      "case": "cart_item_delete_b3_ok",
+      "method": "DELETE",
+      "path": "/api/cart/17dfa127-0886-433b-9230-b2cd50706859",
+      "note": "删掉 b3 的 seed 条目（拿到只剩 b1 的车）"
+    },
+    {
+      "order": 14,
+      "domain": "commerce",
+      "case": "cart_item_delete_b1_ok",
+      "method": "DELETE",
+      "path": "/api/v1/cart/c5a24c4d-5bd7-4401-a9c3-3aad3e46e49b",
+      "note": "删掉 b1 的 seed 条目（v1 别名 DELETE）-> 空车"
+    },
+    {
+      "order": 15,
+      "domain": "commerce",
+      "case": "cart_add_ok",
+      "method": "POST",
+      "path": "/api/cart",
+      "note": "空车后加购 b1 商品：others 为空 -> 允许"
+    },
+    {
+      "order": 16,
+      "domain": "commerce",
+      "case": "cart_item_patch_ok",
+      "method": "PATCH",
+      "path": "/api/cart/3b9520c7-cd5e-4843-95be-469b66b7cdf7",
+      "note": ""
+    },
+    {
+      "order": 17,
+      "domain": "commerce",
+      "case": "cart_add_b1_family_ok",
+      "method": "POST",
+      "path": "/api/v1/cart",
+      "note": "v1 别名加购同类 b1 商品：others={b1} == {b1} -> 允许"
+    },
+    {
+      "order": 18,
+      "domain": "commerce",
+      "case": "cart_item_delete_b1_family_ok",
+      "method": "DELETE",
+      "path": "/api/cart/3b9520c7-cd5e-4843-95be-469b66b7cdf7",
+      "note": "再清空一次购物车"
+    },
+    {
+      "order": 19,
+      "domain": "commerce",
+      "case": "addresses_post_buyer_ok",
+      "method": "POST",
+      "path": "/api/addresses",
+      "note": ""
+    },
+    {
+      "order": 20,
+      "domain": "commerce",
+      "case": "address_detail_patch_ok",
+      "method": "PATCH",
+      "path": "/api/addresses/0b14552f-1372-4e1c-9327-221c601d6e0d",
+      "note": ""
+    },
+    {
+      "order": 21,
+      "domain": "commerce",
+      "case": "cart_add_b1_for_order_ok",
+      "method": "POST",
+      "path": "/api/cart",
+      "note": "空车后加入 b1 商品 -> 购物车只剩 b1，可以下单"
+    },
+    {
+      "order": 22,
+      "domain": "commerce",
+      "case": "orders_create_ok",
+      "method": "POST",
+      "path": "/api/orders",
+      "note": ""
+    },
+    {
+      "order": 23,
+      "domain": "commerce",
+      "case": "order_pay_ok",
+      "method": "POST",
+      "path": "/api/orders/061f35dd-4421-48fa-bc2f-6e947395ec87/pay",
+      "note": ""
+    },
+    {
+      "order": 24,
+      "domain": "commerce",
+      "case": "order_cancel_paid_400",
+      "method": "POST",
+      "path": "/api/orders/061f35dd-4421-48fa-bc2f-6e947395ec87/cancel",
+      "note": "已支付订单不可取消：当前订单状态不能取消"
+    },
+    {
+      "order": 25,
+      "domain": "commerce",
+      "case": "order_cancel_pending_ok",
+      "method": "POST",
+      "path": "/api/orders/5b907f4e-c68c-4c14-8c39-8285da0d0ee1/cancel",
+      "note": ""
+    },
+    {
+      "order": 26,
+      "domain": "commerce",
+      "case": "orders_create_empty_cart_400",
+      "method": "POST",
+      "path": "/api/orders",
+      "note": "下单会清空购物车，此时车已空：请选择有效的购物车商品"
+    },
+    {
+      "order": 27,
+      "domain": "commerce",
+      "case": "cart_add_v1_ok",
+      "method": "POST",
+      "path": "/api/v1/cart",
+      "note": "v1 别名加购：空车后加 b1 商品"
+    },
+    {
+      "order": 28,
+      "domain": "commerce",
+      "case": "orders_create_v1_ok",
+      "method": "POST",
+      "path": "/api/v1/orders",
+      "note": ""
+    },
+    {
+      "order": 29,
+      "domain": "commerce",
+      "case": "order_pay_v1_ok",
+      "method": "POST",
+      "path": "/api/v1/orders/34d19331-b084-4790-9064-a07af4c00a73/pay",
+      "note": ""
+    },
+    {
+      "order": 30,
+      "domain": "commerce",
+      "case": "order_cancel_v1_paid_400",
+      "method": "POST",
+      "path": "/api/v1/orders/34d19331-b084-4790-9064-a07af4c00a73/cancel",
+      "note": "别名 cancel 在已支付状态 -> 400"
+    },
+    {
+      "order": 31,
+      "domain": "commerce",
+      "case": "after_sales_create_ok",
+      "method": "POST",
+      "path": "/api/after-sales",
+      "note": "会把订单状态改为 after_sale"
+    },
+    {
+      "order": 32,
+      "domain": "commerce",
+      "case": "after_sales_v1_create_ok",
+      "method": "POST",
+      "path": "/api/v1/after-sales",
+      "note": "视图不校验订单状态，已取消订单也能提售后"
+    },
+    {
+      "order": 33,
+      "domain": "orchard_trace",
+      "case": "farmer_trees_create_ok",
+      "method": "POST",
+      "path": "/api/v1/farmer/orchards/cf76b166-e6a5-4088-a971-f50850f76e82/trees",
+      "note": ""
+    },
+    {
+      "order": 34,
+      "domain": "orchard_trace",
+      "case": "farmer_trees_create_duplicate_500",
+      "method": "POST",
+      "path": "/api/v1/farmer/orchards/cf76b166-e6a5-4088-a971-f50850f76e82/trees",
+      "note": "同果园 tree_number 唯一约束在 DB 层 -> IntegrityError 冒泡 -> 500（DRF 异常体形状，无 timestamp）"
+    },
+    {
+      "order": 35,
+      "domain": "orchard_trace",
+      "case": "farmer_upload_image_shape_only",
+      "method": "POST",
+      "path": "/api/v1/farmer/upload-image",
+      "note": "shape_only：返回绝对 URL（含 host 与随机文件名）"
+    },
+    {
+      "order": 36,
+      "domain": "orchard_trace",
+      "case": "farmer_batch_create_shape_only",
+      "method": "POST",
+      "path": "/api/v1/farmer/batches/create",
+      "note": "shape_only：code/trace_code 由 uuid 生成，Rust 侧无法逐字复现"
+    },
+    {
+      "order": 37,
+      "domain": "orchard_trace",
+      "case": "farmer_batch_create_second_ok",
+      "method": "POST",
+      "path": "/api/v1/farmer/batches/create",
+      "note": "title 不唯一；只有 code/trace_code 随机"
+    },
+    {
+      "order": 38,
+      "domain": "orchard_trace",
+      "case": "farmer_product_create_ok",
+      "method": "POST",
+      "path": "/api/v1/farmer/products",
+      "note": ""
+    },
+    {
+      "order": 39,
+      "domain": "orchard_trace",
+      "case": "farmer_product_create_without_batch_400",
+      "method": "POST",
+      "path": "/api/v1/farmer/products",
+      "note": "必须关联供货批次：上架商品必须关联一个供货批次"
+    },
+    {
+      "order": 40,
+      "domain": "orchard_trace",
+      "case": "farmer_product_patch_ok",
+      "method": "PATCH",
+      "path": "/api/v1/farmer/products/0fa00dc3-2d5c-437a-a933-6f67f1b53d3a",
+      "note": ""
+    },
+    {
+      "order": 41,
+      "domain": "orchard_trace",
+      "case": "farmer_harvest_archive_create_ok",
+      "method": "POST",
+      "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/harvest-archives",
+      "note": ""
+    },
+    {
+      "order": 42,
+      "domain": "orchard_trace",
+      "case": "farmer_trace_event_create_ok",
+      "method": "POST",
+      "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/trace-events",
+      "note": "哈希链：previous_hash/evidence_hash 依赖上一条事件"
+    },
+    {
+      "order": 43,
+      "domain": "orchard_trace",
+      "case": "farmer_quality_sample_create_shape_only",
+      "method": "POST",
+      "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/quality-samples",
+      "note": "shape_only：写入同时追加 TraceEvent（哈希链依赖时间序列）"
+    },
+    {
+      "order": 44,
+      "domain": "orchard_trace",
+      "case": "farmer_health_records_create_ok",
+      "method": "POST",
+      "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/health-records",
+      "note": "同 quality-samples 实现"
+    },
+    {
+      "order": 45,
+      "domain": "agent",
+      "case": "agent_inquiry_ok_public",
+      "method": "POST",
+      "path": "/api/agent/inquiry",
+      "note": ""
+    },
+    {
+      "order": 46,
+      "domain": "agent",
+      "case": "agent_risk_alert_ok",
+      "method": "GET",
+      "path": "/api/agent/risk-alert",
+      "note": ""
+    },
+    {
+      "order": 47,
+      "domain": "agent",
+      "case": "agent_chat_report_ok",
+      "method": "POST",
+      "path": "/api/agent/chat",
+      "note": "LLM 关闭 -> 规则兜底；intent=report"
+    },
+    {
+      "order": 48,
+      "domain": "agent",
+      "case": "agent_feedback_post_ok",
+      "method": "POST",
+      "path": "/api/agent/feedback",
+      "note": ""
+    },
+    {
+      "order": 49,
+      "domain": "agent",
+      "case": "agent_approval_create_ok",
+      "method": "POST",
+      "path": "/api/agent/approvals",
+      "note": ""
+    },
+    {
+      "order": 50,
+      "domain": "agent",
+      "case": "agent_approval_decision_approve_ok",
+      "method": "POST",
+      "path": "/api/agent/approvals/5d9ee466-f6d7-4a89-8d1f-384c10e94183/decision",
+      "note": "seed 审批单 payload.action 非 create_task -> exec_note 为空"
+    },
+    {
+      "order": 51,
+      "domain": "agent",
+      "case": "agent_approval_decision_repeat_500",
+      "method": "POST",
+      "path": "/api/agent/approvals/5d9ee466-f6d7-4a89-8d1f-384c10e94183/decision",
+      "note": "已批准不能重复处理（应为 400）实际 500"
+    },
+    {
+      "order": 52,
+      "domain": "agent",
+      "case": "agent_approval_decision_reject_ok",
+      "method": "POST",
+      "path": "/api/agent/approvals/c3c5af4a-0876-45e2-b456-819229f25d48/decision",
+      "note": ""
+    }
+  ],
+  "alias_conclusion": {
+    "checked": 18,
+    "equal": 16,
+    "mismatch": [
+      {
+        "domain": "auth",
+        "alias_path": "/api/v1/auth/register",
+        "alias_case": "v1_register_ok_farmer",
+        "alias_status": 200,
+        "primary_path": "/api/register",
+        "primary_case": "register_ok_buyer",
+        "primary_status": 200,
+        "method": "POST",
+        "status_equal": true,
+        "normalized_equal": false,
+        "shape_equal": false,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [
+          ".data.user.email: 'qa-register@example.com' != None",
+          ".data.user.latitude: None != 25.1",
+          ".data.user.longitude: None != 115.1",
+          ".data.user.orchard_address: None != '赣州市信丰县 QA 果园'",
+          ".data.user.role: 'buyer' != 'farmer'",
+          ".data.user.username: 'qa_register_buyer' != 'qa_register_farmer'"
+        ],
+        "note": "存在差异，见 diff"
+      },
+      {
+        "domain": "orchard_trace",
+        "alias_path": "/api/v1/traces/CGJ-BATCH-XF2026",
+        "alias_case": "traces_lookup_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/traces/CGJ-BATCH-XF2026",
+        "primary_case": "traces_lookup_batch_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": false,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id",
+          "$.data.integrity.checkedAt"
+        ],
+        "diff": [
+          ".data.integrity.checkedAt: '2026-09-20T14:05:43.004202+00:00' != '2026-09-20T14:05:43.098202+00:00'"
+        ],
+        "note": "存在差异，见 diff"
+      }
+    ],
+    "detail": [
+      {
+        "domain": "auth",
+        "alias_path": "/api/user",
+        "alias_case": "user_alias_ok_farmer",
+        "alias_status": 200,
+        "primary_path": "/api/me",
+        "primary_case": "me_ok_farmer",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "auth",
+        "alias_path": "/api/v1/auth/login",
+        "alias_case": "v1_login_ok_farmer",
+        "alias_status": 200,
+        "primary_path": "/api/login",
+        "primary_case": "login_ok_farmer",
+        "primary_status": 200,
+        "method": "POST",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "auth",
+        "alias_path": "/api/v1/auth/register",
+        "alias_case": "v1_register_ok_farmer",
+        "alias_status": 200,
+        "primary_path": "/api/register",
+        "primary_case": "register_ok_buyer",
+        "primary_status": 200,
+        "method": "POST",
+        "status_equal": true,
+        "normalized_equal": false,
+        "shape_equal": false,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [
+          ".data.user.email: 'qa-register@example.com' != None",
+          ".data.user.latitude: None != 25.1",
+          ".data.user.longitude: None != 115.1",
+          ".data.user.orchard_address: None != '赣州市信丰县 QA 果园'",
+          ".data.user.role: 'buyer' != 'farmer'",
+          ".data.user.username: 'qa_register_buyer' != 'qa_register_farmer'"
+        ],
+        "note": "存在差异，见 diff"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/products",
+        "alias_case": "products_list_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/products",
+        "primary_case": "products_list_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/products/0fa00dc3-2d5c-437a-a933-6f67f1b53d3a",
+        "alias_case": "product_detail_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/products/0fa00dc3-2d5c-437a-a933-6f67f1b53d3a",
+        "primary_case": "product_detail_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/products/0fa00dc3-2d5c-437a-a933-6f67f1b53d3a/health-archive",
+        "alias_case": "product_health_archive_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/products/0fa00dc3-2d5c-437a-a933-6f67f1b53d3a/health-archive",
+        "primary_case": "product_health_archive_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id",
+          "$.data.updatedAt",
+          "$.data.orchard.verifiedAt",
+          "$.data.orchardHealth.verifiedAt"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/cart",
+        "alias_case": "cart_v1_get_ok",
+        "alias_status": 200,
+        "primary_path": "/api/cart",
+        "primary_case": "cart_get_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/addresses",
+        "alias_case": "addresses_v1_list_ok",
+        "alias_status": 200,
+        "primary_path": "/api/addresses",
+        "primary_case": "addresses_list_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/orders",
+        "alias_case": "orders_v1_list_ok",
+        "alias_status": 200,
+        "primary_path": "/api/orders",
+        "primary_case": "orders_list_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/orders/105e11d5-4839-4d64-87eb-03e134ff8722",
+        "alias_case": "order_detail_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/orders/105e11d5-4839-4d64-87eb-03e134ff8722",
+        "primary_case": "order_detail_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id",
+          "$.data.order_number"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/orders/105e11d5-4839-4d64-87eb-03e134ff8722/pay",
+        "alias_case": "v1_order_pay_alias_read_405",
+        "alias_status": 405,
+        "primary_path": "/api/orders/105e11d5-4839-4d64-87eb-03e134ff8722/pay",
+        "primary_case": "order_pay_method_not_allowed_405",
+        "primary_status": 405,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/orders/105e11d5-4839-4d64-87eb-03e134ff8722/cancel",
+        "alias_case": "v1_order_cancel_alias_read_405",
+        "alias_status": 405,
+        "primary_path": "/api/orders/105e11d5-4839-4d64-87eb-03e134ff8722/cancel",
+        "primary_case": "order_cancel_method_not_allowed_405",
+        "primary_status": 405,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "commerce",
+        "alias_path": "/api/v1/after-sales",
+        "alias_case": "after_sales_v1_list_ok",
+        "alias_status": 200,
+        "primary_path": "/api/after-sales",
+        "primary_case": "after_sales_list_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "orchard_trace",
+        "alias_path": "/api/v1/orchards",
+        "alias_case": "orchards_list_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/orchards",
+        "primary_case": "orchards_list_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "orchard_trace",
+        "alias_path": "/api/v1/orchards/cf76b166-e6a5-4088-a971-f50850f76e82",
+        "alias_case": "orchard_detail_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/orchards/cf76b166-e6a5-4088-a971-f50850f76e82",
+        "primary_case": "orchard_detail_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "orchard_trace",
+        "alias_path": "/api/v1/supply-batches",
+        "alias_case": "supply_batches_list_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/supply-batches",
+        "primary_case": "supply_batches_list_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "orchard_trace",
+        "alias_path": "/api/v1/supply-batches/a8756f98-4664-4fe6-9df5-fe96758fb818",
+        "alias_case": "supply_batch_detail_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/supply-batches/a8756f98-4664-4fe6-9df5-fe96758fb818",
+        "primary_case": "supply_batch_detail_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": true,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id"
+        ],
+        "diff": [],
+        "note": "屏蔽后结构等价"
+      },
+      {
+        "domain": "orchard_trace",
+        "alias_path": "/api/v1/traces/CGJ-BATCH-XF2026",
+        "alias_case": "traces_lookup_v1_ok",
+        "alias_status": 200,
+        "primary_path": "/api/traces/CGJ-BATCH-XF2026",
+        "primary_case": "traces_lookup_batch_ok",
+        "primary_status": 200,
+        "method": "GET",
+        "status_equal": true,
+        "normalized_equal": false,
+        "shape_equal": true,
+        "normalize_applied": [
+          "$.timestamp",
+          "$..createdAt",
+          "$..updatedAt",
+          "$..created_at",
+          "$..updated_at",
+          "$..timestamp",
+          "$..token",
+          "$..expiresAt",
+          "$..expires_at",
+          "$..tree",
+          "$..harvest_archive",
+          "$..product",
+          "$..order",
+          "$..package",
+          "$..ref_id",
+          "$..id",
+          "$.data.integrity.checkedAt"
+        ],
+        "diff": [
+          ".data.integrity.checkedAt: '2026-09-20T14:05:43.004202+00:00' != '2026-09-20T14:05:43.098202+00:00'"
+        ],
+        "note": "存在差异，见 diff"
+      }
+    ]
+  },
+  "paths": [
+    {
+      "path": "/api/register",
+      "path_template": "api/register",
+      "name": "register_api",
+      "domain": "auth",
+      "view": "api.auth_views.register_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 5,
+          "cases": [
+            "register_farmer_missing_orchard_400",
+            "register_bad_role_400",
+            "register_short_password_400",
+            "register_duplicate_username_400",
+            "register_ok_buyer"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 1,
+        "400": 4
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/login",
+      "path_template": "api/login",
+      "name": "login_api",
+      "domain": "auth",
+      "view": "api.auth_views.login_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 5,
+          "cases": [
+            "login_ok_farmer",
+            "login_missing_password_401",
+            "login_empty_body_401",
+            "login_wrong_password_401",
+            "login_unknown_user_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 1,
+        "401": 4
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/logout",
+      "path_template": "api/logout",
+      "name": "logout_api",
+      "domain": "auth",
+      "view": "api.auth_views.logout_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "logout_no_token_401",
+            "logout_ok",
+            "logout_after_ward_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "401": 2
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 1,
+          "domain": "auth",
+          "case": "logout_ok",
+          "method": "POST",
+          "path": "/api/logout",
+          "note": "scratch 账号登出，不影响复用 token"
+        },
+        {
+          "order": 2,
+          "domain": "auth",
+          "case": "logout_after_ward_401",
+          "method": "POST",
+          "path": "/api/logout",
+          "note": "先删掉 scratch token 再登出 -> 401 登录凭证无效"
+        }
+      ]
+    },
+    {
+      "path": "/api/me",
+      "path_template": "api/me",
+      "name": "me_api",
+      "domain": "auth",
+      "view": "api.auth_views.me_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 5,
+          "cases": [
+            "me_ok_buyer",
+            "me_ok_farmer",
+            "me_no_token_401",
+            "me_malformed_header_401",
+            "me_unknown_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 2,
+        "401": 3
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/auth/register",
+      "path_template": "api/v1/auth/register",
+      "name": "v1_register_api",
+      "domain": "auth",
+      "view": "api.auth_views.register_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 1,
+          "cases": [
+            "v1_register_ok_farmer"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/register",
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/auth/login",
+      "path_template": "api/v1/auth/login",
+      "name": "v1_login_api",
+      "domain": "auth",
+      "view": "api.auth_views.login_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 1,
+          "cases": [
+            "v1_login_ok_farmer"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/login",
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/auth/logout",
+      "path_template": "api/v1/auth/logout",
+      "name": "v1_logout_api",
+      "domain": "auth",
+      "view": "api.auth_views.logout_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "v1_logout_no_token_401",
+            "v1_logout_ok",
+            "v1_logout_after_ward_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "401": 2
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 3,
+          "domain": "auth",
+          "case": "v1_logout_ok",
+          "method": "POST",
+          "path": "/api/v1/auth/logout",
+          "note": "第二个 scratch 账号，验证 v1 别名"
+        },
+        {
+          "order": 4,
+          "domain": "auth",
+          "case": "v1_logout_after_ward_401",
+          "method": "POST",
+          "path": "/api/v1/auth/logout",
+          "note": "别名登出同样走 BearerTokenAuthentication"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/auth/me",
+      "path_template": "api/v1/auth/me",
+      "name": "v1_me_api",
+      "domain": "auth",
+      "view": "api.auth_views.me_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "v1_me_no_token_401"
+          ],
+          "statuses": [
+            401
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 0,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/user",
+      "path_template": "api/user",
+      "name": "get_user_api",
+      "domain": "auth",
+      "view": "api.auth_views.me_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "user_alias_ok_farmer",
+            "user_alias_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/me",
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/products",
+      "path_template": "api/products",
+      "name": "product_list_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.product_list_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 4,
+          "cases": [
+            "products_list_ok",
+            "products_list_search_ok",
+            "products_list_sku_filter_ok",
+            "products_list_after_state_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 4
+      },
+      "covered": true,
+      "covered_200": 4,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/products/<uuid:product_id>",
+      "path_template": "api/products/<uuid:product_id>",
+      "name": "product_detail_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.product_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "product_detail_ok",
+            "product_detail_unknown_404"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "product_id": "00000000-0000-4000-8000-000000000000"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/products/<uuid:product_id>/health-archive",
+      "path_template": "api/products/<uuid:product_id>/health-archive",
+      "name": "product_health_archive_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.product_health_archive_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "product_health_archive_ok",
+            "product_health_archive_unknown_404"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "product_id": "00000000-0000-4000-8000-000000000000"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/orchards",
+      "path_template": "api/orchards",
+      "name": "orchard_list_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.orchard_list_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "orchards_list_ok",
+            "orchards_list_search_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 2
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/orchards/<uuid:orchard_id>",
+      "path_template": "api/orchards/<uuid:orchard_id>",
+      "name": "orchard_detail_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.orchard_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "orchard_detail_ok",
+            "orchard_detail_unknown_404",
+            "orchard_detail_bad_uuid_404"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "404": 2
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "orchard_id": "not-a-uuid"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/supply-batches",
+      "path_template": "api/supply-batches",
+      "name": "supply_batch_list_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.supply_batch_list_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "supply_batches_list_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/supply-batches/<uuid:batch_id>",
+      "path_template": "api/supply-batches/<uuid:batch_id>",
+      "name": "supply_batch_detail_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.supply_batch_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "supply_batch_detail_ok",
+            "supply_batch_detail_unknown_404"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "batch_id": "00000000-0000-4000-8000-000000000000"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/traces/<str:trace_code>",
+      "path_template": "api/traces/<str:trace_code>",
+      "name": "trace_lookup_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.trace_lookup_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 6,
+          "cases": [
+            "traces_lookup_batch_ok",
+            "traces_lookup_tree_number_ok",
+            "traces_lookup_tree_code_ok",
+            "traces_lookup_package_ok",
+            "traces_lookup_unknown_404",
+            "traces_lookup_after_state_ok"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        }
+      ],
+      "cases": 6,
+      "status_histogram": {
+        "200": 5,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 5,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "trace_code": "CGJ-BATCH-XF2026"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/cart",
+      "path_template": "api/cart",
+      "name": "cart_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.cart_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 4,
+          "cases": [
+            "cart_get_ok",
+            "cart_get_no_token_401",
+            "cart_get_farmer_403",
+            "cart_get_empty_ok"
+          ],
+          "statuses": [
+            200,
+            401,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 4,
+          "cases": [
+            "cart_post_missing_product_400",
+            "cart_post_bad_uuid_400",
+            "cart_add_ok",
+            "cart_add_b1_for_order_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 8,
+      "status_histogram": {
+        "200": 4,
+        "400": 2,
+        "401": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 4,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 15,
+          "domain": "commerce",
+          "case": "cart_add_ok",
+          "method": "POST",
+          "path": "/api/cart",
+          "note": "空车后加购 b1 商品：others 为空 -> 允许"
+        },
+        {
+          "order": 21,
+          "domain": "commerce",
+          "case": "cart_add_b1_for_order_ok",
+          "method": "POST",
+          "path": "/api/cart",
+          "note": "空车后加入 b1 商品 -> 购物车只剩 b1，可以下单"
+        }
+      ]
+    },
+    {
+      "path": "/api/cart/<uuid:item_id>",
+      "path_template": "api/cart/<uuid:item_id>",
+      "name": "cart_item_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.cart_item_api",
+      "enumeration": "ok",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "method_case_counts": [
+        {
+          "method": "PATCH",
+          "case_count": 3,
+          "cases": [
+            "cart_item_patch_unknown_404",
+            "cart_item_patch_farmer_403",
+            "cart_item_patch_ok"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        },
+        {
+          "method": "DELETE",
+          "case_count": 2,
+          "cases": [
+            "cart_item_delete_b3_ok",
+            "cart_item_delete_b1_family_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 3,
+        "403": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 3,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "item_id": "3b9520c7-cd5e-4843-95be-469b66b7cdf7"
+      },
+      "mutation_cases": [
+        {
+          "order": 13,
+          "domain": "commerce",
+          "case": "cart_item_delete_b3_ok",
+          "method": "DELETE",
+          "path": "/api/cart/17dfa127-0886-433b-9230-b2cd50706859",
+          "note": "删掉 b3 的 seed 条目（拿到只剩 b1 的车）"
+        },
+        {
+          "order": 16,
+          "domain": "commerce",
+          "case": "cart_item_patch_ok",
+          "method": "PATCH",
+          "path": "/api/cart/3b9520c7-cd5e-4843-95be-469b66b7cdf7",
+          "note": ""
+        },
+        {
+          "order": 18,
+          "domain": "commerce",
+          "case": "cart_item_delete_b1_family_ok",
+          "method": "DELETE",
+          "path": "/api/cart/3b9520c7-cd5e-4843-95be-469b66b7cdf7",
+          "note": "再清空一次购物车"
+        }
+      ]
+    },
+    {
+      "path": "/api/addresses",
+      "path_template": "api/addresses",
+      "name": "address_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.address_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "addresses_list_ok",
+            "addresses_list_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "addresses_post_missing_fields_400",
+            "addresses_post_buyer_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 2,
+        "400": 1,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 19,
+          "domain": "commerce",
+          "case": "addresses_post_buyer_ok",
+          "method": "POST",
+          "path": "/api/addresses",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/addresses/<uuid:address_id>",
+      "path_template": "api/addresses/<uuid:address_id>",
+      "name": "address_detail_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.address_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "method_case_counts": [
+        {
+          "method": "PATCH",
+          "case_count": 2,
+          "cases": [
+            "address_detail_patch_unknown_404",
+            "address_detail_patch_ok"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        },
+        {
+          "method": "DELETE",
+          "case_count": 1,
+          "cases": [
+            "address_detail_delete_unknown_404_alias2"
+          ],
+          "statuses": [
+            404
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "404": 2
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "address_id": "0b14552f-1372-4e1c-9327-221c601d6e0d"
+      },
+      "mutation_cases": [
+        {
+          "order": 20,
+          "domain": "commerce",
+          "case": "address_detail_patch_ok",
+          "method": "PATCH",
+          "path": "/api/addresses/0b14552f-1372-4e1c-9327-221c601d6e0d",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/addresses",
+      "path_template": "api/v1/addresses",
+      "name": "v1_address_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.address_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "addresses_v1_list_ok",
+            "addresses_list_farmer_403"
+          ],
+          "statuses": [
+            200,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 1,
+          "cases": [
+            "addresses_v1_post_farmer_403"
+          ],
+          "statuses": [
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "403": 2
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/addresses",
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/addresses/<uuid:address_id>",
+      "path_template": "api/v1/addresses/<uuid:address_id>",
+      "name": "v1_address_detail_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.address_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "method_case_counts": [
+        {
+          "method": "PATCH",
+          "case_count": 1,
+          "cases": [
+            "address_detail_patch_farmer_403"
+          ],
+          "statuses": [
+            403
+          ]
+        },
+        {
+          "method": "DELETE",
+          "case_count": 1,
+          "cases": [
+            "address_detail_delete_unknown_404"
+          ],
+          "statuses": [
+            404
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "403": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 0,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "address_id": "1f3101bc-9893-4444-b994-81663f7f5e42"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/orders",
+      "path_template": "api/orders",
+      "name": "order_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "orders_list_ok",
+            "orders_list_no_token_401",
+            "orders_list_farmer_403"
+          ],
+          "statuses": [
+            200,
+            401,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 4,
+          "cases": [
+            "orders_post_missing_address_400",
+            "orders_post_unknown_address_404",
+            "orders_create_ok",
+            "orders_create_empty_cart_400"
+          ],
+          "statuses": [
+            200,
+            400,
+            404
+          ]
+        }
+      ],
+      "cases": 7,
+      "status_histogram": {
+        "200": 2,
+        "400": 2,
+        "401": 1,
+        "403": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 22,
+          "domain": "commerce",
+          "case": "orders_create_ok",
+          "method": "POST",
+          "path": "/api/orders",
+          "note": ""
+        },
+        {
+          "order": 26,
+          "domain": "commerce",
+          "case": "orders_create_empty_cart_400",
+          "method": "POST",
+          "path": "/api/orders",
+          "note": "下单会清空购物车，此时车已空：请选择有效的购物车商品"
+        }
+      ]
+    },
+    {
+      "path": "/api/orders/<uuid:order_id>",
+      "path_template": "api/orders/<uuid:order_id>",
+      "name": "order_detail_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "order_detail_ok",
+            "order_detail_unknown_404"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "order_id": "00000000-0000-4000-8000-000000000000"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/orders/<uuid:order_id>/pay",
+      "path_template": "api/orders/<uuid:order_id>/pay",
+      "name": "order_pay_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_pay_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "order_pay_completed_400",
+            "order_pay_no_token_401",
+            "order_pay_ok"
+          ],
+          "statuses": [
+            200,
+            400,
+            401
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "400": 1,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "order_id": "061f35dd-4421-48fa-bc2f-6e947395ec87"
+      },
+      "mutation_cases": [
+        {
+          "order": 23,
+          "domain": "commerce",
+          "case": "order_pay_ok",
+          "method": "POST",
+          "path": "/api/orders/061f35dd-4421-48fa-bc2f-6e947395ec87/pay",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/orders/<uuid:order_id>/cancel",
+      "path_template": "api/orders/<uuid:order_id>/cancel",
+      "name": "order_cancel_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_cancel_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 4,
+          "cases": [
+            "order_cancel_completed_400",
+            "order_cancel_farmer_403",
+            "order_cancel_paid_400",
+            "order_cancel_pending_ok"
+          ],
+          "statuses": [
+            200,
+            400,
+            403
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 1,
+        "400": 2,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "order_id": "5b907f4e-c68c-4c14-8c39-8285da0d0ee1"
+      },
+      "mutation_cases": [
+        {
+          "order": 24,
+          "domain": "commerce",
+          "case": "order_cancel_paid_400",
+          "method": "POST",
+          "path": "/api/orders/061f35dd-4421-48fa-bc2f-6e947395ec87/cancel",
+          "note": "已支付订单不可取消：当前订单状态不能取消"
+        },
+        {
+          "order": 25,
+          "domain": "commerce",
+          "case": "order_cancel_pending_ok",
+          "method": "POST",
+          "path": "/api/orders/5b907f4e-c68c-4c14-8c39-8285da0d0ee1/cancel",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/after-sales",
+      "path_template": "api/after-sales",
+      "name": "after_sale_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.after_sale_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "after_sales_list_ok",
+            "after_sales_list_no_token_401",
+            "after_sales_list_farmer_403"
+          ],
+          "statuses": [
+            200,
+            401,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "after_sales_post_missing_fields_400",
+            "after_sales_create_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 2,
+        "400": 1,
+        "401": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 31,
+          "domain": "commerce",
+          "case": "after_sales_create_ok",
+          "method": "POST",
+          "path": "/api/after-sales",
+          "note": "会把订单状态改为 after_sale"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/supply-batches",
+      "path_template": "api/v1/supply-batches",
+      "name": "v1_supply_batch_list_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.supply_batch_list_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "supply_batches_list_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/supply-batches",
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/supply-batches/<uuid:batch_id>",
+      "path_template": "api/v1/supply-batches/<uuid:batch_id>",
+      "name": "v1_supply_batch_detail_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.supply_batch_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "supply_batch_detail_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/supply-batches/<uuid:batch_id>",
+      "path_params_used": {
+        "batch_id": "a8756f98-4664-4fe6-9df5-fe96758fb818"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/traces/<str:trace_code>",
+      "path_template": "api/v1/traces/<str:trace_code>",
+      "name": "v1_trace_lookup_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.trace_lookup_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "traces_lookup_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/traces/<str:trace_code>",
+      "path_params_used": {
+        "trace_code": "CGJ-BATCH-XF2026"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/orchards",
+      "path_template": "api/v1/orchards",
+      "name": "v1_orchard_list_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.orchard_list_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "orchards_list_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/orchards",
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/orchards/<uuid:orchard_id>",
+      "path_template": "api/v1/orchards/<uuid:orchard_id>",
+      "name": "v1_orchard_detail_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.orchard_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "orchard_detail_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/orchards/<uuid:orchard_id>",
+      "path_params_used": {
+        "orchard_id": "cf76b166-e6a5-4088-a971-f50850f76e82"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/products",
+      "path_template": "api/v1/products",
+      "name": "v1_product_list_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.product_list_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "products_list_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/products",
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/products/<uuid:product_id>",
+      "path_template": "api/v1/products/<uuid:product_id>",
+      "name": "v1_product_detail_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.product_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "product_detail_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/products/<uuid:product_id>",
+      "path_params_used": {
+        "product_id": "0fa00dc3-2d5c-437a-a933-6f67f1b53d3a"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/products/<uuid:product_id>/health-archive",
+      "path_template": "api/v1/products/<uuid:product_id>/health-archive",
+      "name": "v1_product_health_archive_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.product_health_archive_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "product_health_archive_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/products/<uuid:product_id>/health-archive",
+      "path_params_used": {
+        "product_id": "0fa00dc3-2d5c-437a-a933-6f67f1b53d3a"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/cart",
+      "path_template": "api/v1/cart",
+      "name": "v1_cart_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.cart_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "cart_v1_get_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "cart_post_zero_quantity_400",
+            "cart_add_b1_family_ok",
+            "cart_add_v1_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 3,
+        "400": 1
+      },
+      "covered": true,
+      "covered_200": 3,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/cart",
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 17,
+          "domain": "commerce",
+          "case": "cart_add_b1_family_ok",
+          "method": "POST",
+          "path": "/api/v1/cart",
+          "note": "v1 别名加购同类 b1 商品：others={b1} == {b1} -> 允许"
+        },
+        {
+          "order": 27,
+          "domain": "commerce",
+          "case": "cart_add_v1_ok",
+          "method": "POST",
+          "path": "/api/v1/cart",
+          "note": "v1 别名加购：空车后加 b1 商品"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/cart/<uuid:item_id>",
+      "path_template": "api/v1/cart/<uuid:item_id>",
+      "name": "v1_cart_item_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.cart_item_api",
+      "enumeration": "ok",
+      "methods": [
+        "PATCH",
+        "DELETE"
+      ],
+      "method_case_counts": [
+        {
+          "method": "PATCH",
+          "case_count": 1,
+          "cases": [
+            "v1_cart_item_patch_farmer_403"
+          ],
+          "statuses": [
+            403
+          ]
+        },
+        {
+          "method": "DELETE",
+          "case_count": 2,
+          "cases": [
+            "cart_item_delete_unknown_404",
+            "cart_item_delete_b1_ok"
+          ],
+          "statuses": [
+            200,
+            404
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "403": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "item_id": "c5a24c4d-5bd7-4401-a9c3-3aad3e46e49b"
+      },
+      "mutation_cases": [
+        {
+          "order": 14,
+          "domain": "commerce",
+          "case": "cart_item_delete_b1_ok",
+          "method": "DELETE",
+          "path": "/api/v1/cart/c5a24c4d-5bd7-4401-a9c3-3aad3e46e49b",
+          "note": "删掉 b1 的 seed 条目（v1 别名 DELETE）-> 空车"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/orders",
+      "path_template": "api/v1/orders",
+      "name": "v1_order_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "orders_v1_list_ok",
+            "orders_v1_list_after_state_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "v1_orders_post_missing_address_400",
+            "orders_create_v1_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 3,
+        "400": 1
+      },
+      "covered": true,
+      "covered_200": 3,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/orders",
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 28,
+          "domain": "commerce",
+          "case": "orders_create_v1_ok",
+          "method": "POST",
+          "path": "/api/v1/orders",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/orders/<uuid:order_id>",
+      "path_template": "api/v1/orders/<uuid:order_id>",
+      "name": "v1_order_detail_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "order_detail_v1_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 1,
+      "status_histogram": {
+        "200": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/orders/<uuid:order_id>",
+      "path_params_used": {
+        "order_id": "105e11d5-4839-4d64-87eb-03e134ff8722"
+      },
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/orders/<uuid:order_id>/pay",
+      "path_template": "api/v1/orders/<uuid:order_id>/pay",
+      "name": "v1_order_pay_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_pay_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "order_pay_unknown_404",
+            "order_pay_farmer_403",
+            "order_pay_v1_ok"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "403": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "order_id": "34d19331-b084-4790-9064-a07af4c00a73"
+      },
+      "mutation_cases": [
+        {
+          "order": 29,
+          "domain": "commerce",
+          "case": "order_pay_v1_ok",
+          "method": "POST",
+          "path": "/api/v1/orders/34d19331-b084-4790-9064-a07af4c00a73/pay",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/orders/<uuid:order_id>/cancel",
+      "path_template": "api/v1/orders/<uuid:order_id>/cancel",
+      "name": "v1_order_cancel_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.order_cancel_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "order_cancel_unknown_404",
+            "order_cancel_v1_paid_400"
+          ],
+          "statuses": [
+            400,
+            404
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "400": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 0,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "order_id": "34d19331-b084-4790-9064-a07af4c00a73"
+      },
+      "mutation_cases": [
+        {
+          "order": 30,
+          "domain": "commerce",
+          "case": "order_cancel_v1_paid_400",
+          "method": "POST",
+          "path": "/api/v1/orders/34d19331-b084-4790-9064-a07af4c00a73/cancel",
+          "note": "别名 cancel 在已支付状态 -> 400"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/after-sales",
+      "path_template": "api/v1/after-sales",
+      "name": "v1_after_sale_api",
+      "domain": "commerce",
+      "view": "api.commerce_views.after_sale_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 1,
+          "cases": [
+            "after_sales_v1_list_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "after_sales_post_unknown_order_400",
+            "after_sales_v1_create_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 2,
+        "400": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": "/api/after-sales",
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 32,
+          "domain": "commerce",
+          "case": "after_sales_v1_create_ok",
+          "method": "POST",
+          "path": "/api/v1/after-sales",
+          "note": "视图不校验订单状态，已取消订单也能提售后"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/orchards",
+      "path_template": "api/v1/farmer/orchards",
+      "name": "farmer_orchards_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_orchards_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "farmer_orchards_ok",
+            "farmer_orchards_no_token_401",
+            "farmer_orchards_buyer_403"
+          ],
+          "statuses": [
+            200,
+            401,
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "401": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/farmer/orchards/<uuid:orchard_id>/trees",
+      "path_template": "api/v1/farmer/orchards/<uuid:orchard_id>/trees",
+      "name": "farmer_tree_archive_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_tree_archive_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "farmer_trees_ok",
+            "farmer_trees_foreign_orchard_404",
+            "farmer_trees_buyer_403"
+          ],
+          "statuses": [
+            200,
+            403,
+            404
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "farmer_trees_create_missing_fields_400",
+            "farmer_trees_create_ok",
+            "farmer_trees_create_duplicate_500"
+          ],
+          "statuses": [
+            200,
+            400,
+            500
+          ]
+        }
+      ],
+      "cases": 6,
+      "status_histogram": {
+        "200": 2,
+        "400": 1,
+        "403": 1,
+        "404": 1,
+        "500": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "farmer_trees_create_duplicate_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {
+        "orchard_id": "cf76b166-e6a5-4088-a971-f50850f76e82"
+      },
+      "mutation_cases": [
+        {
+          "order": 33,
+          "domain": "orchard_trace",
+          "case": "farmer_trees_create_ok",
+          "method": "POST",
+          "path": "/api/v1/farmer/orchards/cf76b166-e6a5-4088-a971-f50850f76e82/trees",
+          "note": ""
+        },
+        {
+          "order": 34,
+          "domain": "orchard_trace",
+          "case": "farmer_trees_create_duplicate_500",
+          "method": "POST",
+          "path": "/api/v1/farmer/orchards/cf76b166-e6a5-4088-a971-f50850f76e82/trees",
+          "note": "同果园 tree_number 唯一约束在 DB 层 -> IntegrityError 冒泡 -> 500（DRF 异常体形状，无 timestamp）"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/batches",
+      "path_template": "api/v1/farmer/batches",
+      "name": "farmer_batches_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_batches_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "farmer_batches_ok",
+            "farmer_batches_buyer_403",
+            "farmer_batches_after_state_ok"
+          ],
+          "statuses": [
+            200,
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 2,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/v1/farmer/batches/create",
+      "path_template": "api/v1/farmer/batches/create",
+      "name": "farmer_batch_create_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_batch_create_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 6,
+          "cases": [
+            "farmer_batch_create_missing_orchard_404",
+            "farmer_batch_create_foreign_orchard_404",
+            "farmer_batch_create_no_token_401",
+            "farmer_batch_create_buyer_403",
+            "farmer_batch_create_shape_only",
+            "farmer_batch_create_second_ok"
+          ],
+          "statuses": [
+            200,
+            401,
+            403,
+            404
+          ]
+        }
+      ],
+      "cases": 6,
+      "status_histogram": {
+        "200": 2,
+        "401": 1,
+        "403": 1,
+        "404": 2
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [
+        "farmer_batch_create_shape_only"
+      ],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 36,
+          "domain": "orchard_trace",
+          "case": "farmer_batch_create_shape_only",
+          "method": "POST",
+          "path": "/api/v1/farmer/batches/create",
+          "note": "shape_only：code/trace_code 由 uuid 生成，Rust 侧无法逐字复现"
+        },
+        {
+          "order": 37,
+          "domain": "orchard_trace",
+          "case": "farmer_batch_create_second_ok",
+          "method": "POST",
+          "path": "/api/v1/farmer/batches/create",
+          "note": "title 不唯一；只有 code/trace_code 随机"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/upload-image",
+      "path_template": "api/v1/farmer/upload-image",
+      "name": "farmer_image_upload_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_image_upload_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "farmer_upload_no_file_400",
+            "farmer_upload_buyer_403",
+            "farmer_upload_image_shape_only"
+          ],
+          "statuses": [
+            200,
+            400,
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "400": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [
+        "farmer_upload_image_shape_only"
+      ],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 35,
+          "domain": "orchard_trace",
+          "case": "farmer_upload_image_shape_only",
+          "method": "POST",
+          "path": "/api/v1/farmer/upload-image",
+          "note": "shape_only：返回绝对 URL（含 host 与随机文件名）"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/products",
+      "path_template": "api/v1/farmer/products",
+      "name": "farmer_product_list_create_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_product_list_create_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "farmer_products_ok",
+            "farmer_products_buyer_403"
+          ],
+          "statuses": [
+            200,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "farmer_products_post_missing_fields_400",
+            "farmer_product_create_ok",
+            "farmer_product_create_without_batch_400"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 2,
+        "400": 2,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 38,
+          "domain": "orchard_trace",
+          "case": "farmer_product_create_ok",
+          "method": "POST",
+          "path": "/api/v1/farmer/products",
+          "note": ""
+        },
+        {
+          "order": 39,
+          "domain": "orchard_trace",
+          "case": "farmer_product_create_without_batch_400",
+          "method": "POST",
+          "path": "/api/v1/farmer/products",
+          "note": "必须关联供货批次：上架商品必须关联一个供货批次"
+        }
+      ]
+    },
+    {
+      "path": "/api/agent/context",
+      "path_template": "api/agent/context",
+      "name": "agent_context_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_context_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "agent_context_ok",
+            "agent_context_buyer_ok",
+            "agent_context_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 2,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/agent/daily-report",
+      "path_template": "api/agent/daily-report",
+      "name": "agent_daily_report_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_daily_report_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "agent_daily_report_farmer_ok",
+            "agent_daily_report_buyer_ok",
+            "agent_daily_report_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 2,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/agent/select",
+      "path_template": "api/agent/select",
+      "name": "agent_select_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_select_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "agent_select_missing_query_500",
+            "agent_select_ok_public"
+          ],
+          "statuses": [
+            200,
+            500
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "500": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "agent_select_missing_query_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/agent/inquiry",
+      "path_template": "api/agent/inquiry",
+      "name": "agent_inquiry_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_inquiry_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "agent_inquiry_missing_query_500",
+            "agent_inquiry_ok_public"
+          ],
+          "statuses": [
+            200,
+            500
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "500": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "agent_inquiry_missing_query_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 45,
+          "domain": "agent",
+          "case": "agent_inquiry_ok_public",
+          "method": "POST",
+          "path": "/api/agent/inquiry",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/agent/risk-alert",
+      "path_template": "api/agent/risk-alert",
+      "name": "agent_risk_alert_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_risk_alert_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "agent_risk_alert_no_token_401",
+            "agent_risk_alert_ok"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 46,
+          "domain": "agent",
+          "case": "agent_risk_alert_ok",
+          "method": "GET",
+          "path": "/api/agent/risk-alert",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/agent/repurchase",
+      "path_template": "api/agent/repurchase",
+      "name": "agent_repurchase_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_repurchase_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "agent_repurchase_buyer_ok",
+            "agent_repurchase_farmer_ok",
+            "agent_repurchase_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 2,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/agent/chat",
+      "path_template": "api/agent/chat",
+      "name": "agent_chat_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_chat_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "agent_chat_missing_query_500",
+            "agent_chat_no_token_401",
+            "agent_chat_report_ok"
+          ],
+          "statuses": [
+            200,
+            401,
+            500
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "401": 1,
+        "500": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "agent_chat_missing_query_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 47,
+          "domain": "agent",
+          "case": "agent_chat_report_ok",
+          "method": "POST",
+          "path": "/api/agent/chat",
+          "note": "LLM 关闭 -> 规则兜底；intent=report"
+        }
+      ]
+    },
+    {
+      "path": "/api/agent/approvals",
+      "path_template": "api/agent/approvals",
+      "name": "agent_approval_create_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_approval_create_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "agent_approval_create_missing_title_500",
+            "agent_approval_create_no_token_401",
+            "agent_approval_create_ok"
+          ],
+          "statuses": [
+            200,
+            401,
+            500
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "401": 1,
+        "500": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "agent_approval_create_missing_title_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 49,
+          "domain": "agent",
+          "case": "agent_approval_create_ok",
+          "method": "POST",
+          "path": "/api/agent/approvals",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/agent/feedback",
+      "path_template": "api/agent/feedback",
+      "name": "agent_feedback_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_feedback_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "agent_feedback_get_buyer_ok",
+            "agent_feedback_get_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "agent_feedback_post_missing_rating_500",
+            "agent_feedback_post_bad_rating_500",
+            "agent_feedback_post_ok"
+          ],
+          "statuses": [
+            200,
+            500
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 2,
+        "401": 1,
+        "500": 2
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "agent_feedback_post_missing_rating_500",
+        "agent_feedback_post_bad_rating_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 48,
+          "domain": "agent",
+          "case": "agent_feedback_post_ok",
+          "method": "POST",
+          "path": "/api/agent/feedback",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/agent/approvals/list",
+      "path_template": "api/agent/approvals/list",
+      "name": "agent_approval_list_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_approval_list_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 4,
+          "cases": [
+            "agent_approval_list_mine_ok",
+            "agent_approval_list_pending_ok",
+            "agent_approval_list_no_token_401",
+            "agent_approval_list_after_state_ok"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 3,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 3,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/agent/approvals/<uuid:approval_id>/decision",
+      "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
+      "name": "agent_approval_decision_api",
+      "domain": "agent",
+      "view": "api.agent_views.agent_approval_decision_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 6,
+          "cases": [
+            "agent_approval_decision_unknown_500",
+            "agent_approval_decision_bad_value_500",
+            "agent_approval_decision_no_token_401",
+            "agent_approval_decision_approve_ok",
+            "agent_approval_decision_repeat_500",
+            "agent_approval_decision_reject_ok"
+          ],
+          "statuses": [
+            200,
+            401,
+            500
+          ]
+        }
+      ],
+      "cases": 6,
+      "status_histogram": {
+        "200": 2,
+        "401": 1,
+        "500": 3
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "agent_approval_decision_unknown_500",
+        "agent_approval_decision_bad_value_500",
+        "agent_approval_decision_repeat_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {
+        "approval_id": "c3c5af4a-0876-45e2-b456-819229f25d48"
+      },
+      "mutation_cases": [
+        {
+          "order": 50,
+          "domain": "agent",
+          "case": "agent_approval_decision_approve_ok",
+          "method": "POST",
+          "path": "/api/agent/approvals/5d9ee466-f6d7-4a89-8d1f-384c10e94183/decision",
+          "note": "seed 审批单 payload.action 非 create_task -> exec_note 为空"
+        },
+        {
+          "order": 51,
+          "domain": "agent",
+          "case": "agent_approval_decision_repeat_500",
+          "method": "POST",
+          "path": "/api/agent/approvals/5d9ee466-f6d7-4a89-8d1f-384c10e94183/decision",
+          "note": "已批准不能重复处理（应为 400）实际 500"
+        },
+        {
+          "order": 52,
+          "domain": "agent",
+          "case": "agent_approval_decision_reject_ok",
+          "method": "POST",
+          "path": "/api/agent/approvals/c3c5af4a-0876-45e2-b456-819229f25d48/decision",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/products/<uuid:product_id>",
+      "path_template": "api/v1/farmer/products/<uuid:product_id>",
+      "name": "farmer_product_detail_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_product_detail_api",
+      "enumeration": "ok",
+      "methods": [
+        "PUT",
+        "PATCH"
+      ],
+      "method_case_counts": [
+        {
+          "method": "PUT",
+          "case_count": 1,
+          "cases": [
+            "farmer_product_put_buyer_403"
+          ],
+          "statuses": [
+            403
+          ]
+        },
+        {
+          "method": "PATCH",
+          "case_count": 4,
+          "cases": [
+            "farmer_product_patch_foreign_404",
+            "farmer_product_patch_empty_body_ok",
+            "farmer_product_patch_no_token_401",
+            "farmer_product_patch_ok"
+          ],
+          "statuses": [
+            200,
+            401,
+            404
+          ]
+        }
+      ],
+      "cases": 5,
+      "status_histogram": {
+        "200": 2,
+        "401": 1,
+        "403": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "product_id": "0fa00dc3-2d5c-437a-a933-6f67f1b53d3a"
+      },
+      "mutation_cases": [
+        {
+          "order": 40,
+          "domain": "orchard_trace",
+          "case": "farmer_product_patch_ok",
+          "method": "PATCH",
+          "path": "/api/v1/farmer/products/0fa00dc3-2d5c-437a-a933-6f67f1b53d3a",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/batches/<uuid:batch_id>/harvest-archives",
+      "path_template": "api/v1/farmer/batches/<uuid:batch_id>/harvest-archives",
+      "name": "farmer_harvest_archive_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_harvest_archive_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "farmer_harvest_archives_ok",
+            "farmer_harvest_archives_buyer_403"
+          ],
+          "statuses": [
+            200,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "farmer_harvest_archives_post_missing_fields_400",
+            "farmer_harvest_archive_create_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 2,
+        "400": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "batch_id": "a8756f98-4664-4fe6-9df5-fe96758fb818"
+      },
+      "mutation_cases": [
+        {
+          "order": 41,
+          "domain": "orchard_trace",
+          "case": "farmer_harvest_archive_create_ok",
+          "method": "POST",
+          "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/harvest-archives",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/batches/<uuid:batch_id>/trace-events",
+      "path_template": "api/v1/farmer/batches/<uuid:batch_id>/trace-events",
+      "name": "farmer_trace_event_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_trace_event_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "farmer_trace_events_post_missing_fields_400",
+            "farmer_trace_events_buyer_403",
+            "farmer_trace_event_create_ok"
+          ],
+          "statuses": [
+            200,
+            400,
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "400": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "batch_id": "a8756f98-4664-4fe6-9df5-fe96758fb818"
+      },
+      "mutation_cases": [
+        {
+          "order": 42,
+          "domain": "orchard_trace",
+          "case": "farmer_trace_event_create_ok",
+          "method": "POST",
+          "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/trace-events",
+          "note": "哈希链：previous_hash/evidence_hash 依赖上一条事件"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/batches/<uuid:batch_id>/quality-samples",
+      "path_template": "api/v1/farmer/batches/<uuid:batch_id>/quality-samples",
+      "name": "farmer_quality_sample_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_quality_sample_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "farmer_quality_samples_ok",
+            "farmer_quality_samples_buyer_403"
+          ],
+          "statuses": [
+            200,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "farmer_quality_samples_post_missing_fields_400",
+            "farmer_quality_sample_create_shape_only"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 2,
+        "400": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [
+        "farmer_quality_sample_create_shape_only"
+      ],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "batch_id": "a8756f98-4664-4fe6-9df5-fe96758fb818"
+      },
+      "mutation_cases": [
+        {
+          "order": 43,
+          "domain": "orchard_trace",
+          "case": "farmer_quality_sample_create_shape_only",
+          "method": "POST",
+          "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/quality-samples",
+          "note": "shape_only：写入同时追加 TraceEvent（哈希链依赖时间序列）"
+        }
+      ]
+    },
+    {
+      "path": "/api/v1/farmer/batches/<uuid:batch_id>/health-records",
+      "path_template": "api/v1/farmer/batches/<uuid:batch_id>/health-records",
+      "name": "farmer_product_health_record_api",
+      "domain": "orchard_trace",
+      "view": "api.commerce_views.farmer_quality_sample_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "farmer_health_records_ok",
+            "farmer_health_records_foreign_batch_404",
+            "farmer_health_records_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401,
+            404
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 1,
+          "cases": [
+            "farmer_health_records_create_ok"
+          ],
+          "statuses": [
+            200
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 2,
+        "401": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {
+        "batch_id": "a8756f98-4664-4fe6-9df5-fe96758fb818"
+      },
+      "mutation_cases": [
+        {
+          "order": 44,
+          "domain": "orchard_trace",
+          "case": "farmer_health_records_create_ok",
+          "method": "POST",
+          "path": "/api/v1/farmer/batches/a8756f98-4664-4fe6-9df5-fe96758fb818/health-records",
+          "note": "同 quality-samples 实现"
+        }
+      ]
+    },
+    {
+      "path": "/api/home",
+      "path_template": "api/home",
+      "name": "home_api",
+      "domain": "core",
+      "view": "api.views.home_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "home_ok_farmer",
+            "home_no_token_401",
+            "home_buyer_403"
+          ],
+          "statuses": [
+            200,
+            401,
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "401": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/growth-tracking",
+      "path_template": "api/growth-tracking",
+      "name": "growth_tracking_api",
+      "domain": "core",
+      "view": "api.views.growth_tracking_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "growth_tracking_ok",
+            "growth_tracking_buyer_403"
+          ],
+          "statuses": [
+            200,
+            403
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/diagnose",
+      "path_template": "api/diagnose",
+      "name": "diagnose_api",
+      "domain": "core",
+      "view": "api.views.diagnose_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "diagnose_shape_only",
+            "diagnose_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [
+        "diagnose_shape_only"
+      ],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/temperature-humidity",
+      "path_template": "api/temperature-humidity",
+      "name": "temperature_humidity_api",
+      "domain": "core",
+      "view": "api.views.temperature_humidity_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET",
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "temperature_humidity_get_ok",
+            "temperature_humidity_buyer_403",
+            "temperature_humidity_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401,
+            403
+          ]
+        },
+        {
+          "method": "POST",
+          "case_count": 4,
+          "cases": [
+            "temperature_humidity_post_bad_type_400",
+            "temperature_humidity_post_out_of_range_400",
+            "temperature_humidity_post_bad_time_400",
+            "temperature_humidity_post_ok"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 7,
+      "status_histogram": {
+        "200": 2,
+        "400": 3,
+        "401": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 5,
+          "domain": "core",
+          "case": "temperature_humidity_post_ok",
+          "method": "POST",
+          "path": "/api/temperature-humidity",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/generate",
+      "path_template": "api/generate",
+      "name": "generate_api",
+      "domain": "core",
+      "view": "api.views.generate_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "generate_ok",
+            "generate_no_token_401"
+          ],
+          "statuses": [
+            200,
+            401
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "401": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/generate/fertilization-plan",
+      "path_template": "api/generate/fertilization-plan",
+      "name": "fertilization_plan_api",
+      "domain": "core",
+      "view": "api.views.fertilization_plan_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "fertilization_plan_always_500",
+            "fertilization_plan_after_state_500"
+          ],
+          "statuses": [
+            500
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "500": 2
+      },
+      "covered": true,
+      "covered_200": 0,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [
+        "fertilization_plan_always_500",
+        "fertilization_plan_after_state_500"
+      ],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 12,
+          "domain": "core",
+          "case": "fertilization_plan_after_state_500",
+          "method": "POST",
+          "path": "/api/generate/fertilization-plan",
+          "note": "重读确认恒 500（成功体形状）"
+        }
+      ]
+    },
+    {
+      "path": "/api/citrus-disease",
+      "path_template": "api/citrus-disease",
+      "name": "citrus_disease_api",
+      "domain": "core",
+      "view": "api.views.citrus_disease_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "citrus_disease_no_image_400",
+            "citrus_disease_buyer_403",
+            "citrus_disease_upload_shape_only"
+          ],
+          "statuses": [
+            200,
+            400,
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "400": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [
+        "citrus_disease_upload_shape_only"
+      ],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 11,
+          "domain": "core",
+          "case": "citrus_disease_upload_shape_only",
+          "method": "POST",
+          "path": "/api/citrus-disease",
+          "note": "shape_only：走 base64 IMAGE 分支；Django 侧 mock 随机识别，Rust 侧真 ONNX"
+        }
+      ]
+    },
+    {
+      "path": "/api/recognition-records",
+      "path_template": "api/recognition-records",
+      "name": "recognition_records_api",
+      "domain": "core",
+      "view": "api.views.recognition_records_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 2,
+          "cases": [
+            "recognition_records_shape_only",
+            "recognition_records_buyer_403"
+          ],
+          "statuses": [
+            200,
+            403
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [
+        "recognition_records_shape_only"
+      ],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/disease-treatment",
+      "path_template": "api/disease-treatment",
+      "name": "get_disease_treatment_api",
+      "domain": "core",
+      "view": "api.views.get_disease_treatment_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 4,
+          "cases": [
+            "disease_treatment_known_ok",
+            "disease_treatment_unknown_ok",
+            "disease_treatment_missing_param_400",
+            "disease_treatment_buyer_403"
+          ],
+          "statuses": [
+            200,
+            400,
+            403
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 2,
+        "400": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/tasks",
+      "path_template": "api/tasks",
+      "name": "get_tasks_api",
+      "domain": "core",
+      "view": "api.views.get_tasks_api",
+      "enumeration": "ok",
+      "methods": [
+        "GET"
+      ],
+      "method_case_counts": [
+        {
+          "method": "GET",
+          "case_count": 3,
+          "cases": [
+            "tasks_list_ok",
+            "tasks_list_no_token_401",
+            "tasks_list_buyer_403"
+          ],
+          "statuses": [
+            200,
+            401,
+            403
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "401": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": []
+    },
+    {
+      "path": "/api/tasks/add",
+      "path_template": "api/tasks/add",
+      "name": "add_task_api",
+      "domain": "core",
+      "view": "api.views.add_task_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 4,
+          "cases": [
+            "tasks_add_missing_fields_400",
+            "tasks_add_no_token_401",
+            "tasks_add_buyer_403",
+            "tasks_add_ok"
+          ],
+          "statuses": [
+            200,
+            400,
+            401,
+            403
+          ]
+        }
+      ],
+      "cases": 4,
+      "status_histogram": {
+        "200": 1,
+        "400": 1,
+        "401": 1,
+        "403": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 6,
+          "domain": "core",
+          "case": "tasks_add_ok",
+          "method": "POST",
+          "path": "/api/tasks/add",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "path": "/api/tasks/complete",
+      "path_template": "api/tasks/complete",
+      "name": "complete_task_api",
+      "domain": "core",
+      "view": "api.views.complete_task_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "tasks_complete_missing_id_400",
+            "tasks_complete_unknown_404",
+            "tasks_complete_ok"
+          ],
+          "statuses": [
+            200,
+            400,
+            404
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 1,
+        "400": 1,
+        "404": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 7,
+          "domain": "core",
+          "case": "tasks_complete_ok",
+          "method": "POST",
+          "path": "/api/tasks/complete",
+          "note": "依赖 tasks_add_ok 捕获的 task_id；completed_at 是朴素时间（无偏移）"
+        }
+      ]
+    },
+    {
+      "path": "/api/tasks/generate/disease",
+      "path_template": "api/tasks/generate/disease",
+      "name": "generate_task_from_disease_api",
+      "domain": "core",
+      "view": "api.views.generate_task_from_disease_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 3,
+          "cases": [
+            "tasks_generate_disease_missing_param_400",
+            "tasks_generate_disease_ok",
+            "tasks_generate_disease_healthy_200"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 3,
+      "status_histogram": {
+        "200": 2,
+        "400": 1
+      },
+      "covered": true,
+      "covered_200": 2,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 8,
+          "domain": "core",
+          "case": "tasks_generate_disease_ok",
+          "method": "POST",
+          "path": "/api/tasks/generate/disease",
+          "note": ""
+        },
+        {
+          "order": 9,
+          "domain": "core",
+          "case": "tasks_generate_disease_healthy_200",
+          "method": "POST",
+          "path": "/api/tasks/generate/disease",
+          "note": "200 + data=null + message='No task needed for healthy tree'（英文）"
+        }
+      ]
+    },
+    {
+      "path": "/api/tasks/generate/environment",
+      "path_template": "api/tasks/generate/environment",
+      "name": "generate_task_from_environment_api",
+      "domain": "core",
+      "view": "api.views.generate_task_from_environment_api",
+      "enumeration": "ok",
+      "methods": [
+        "POST"
+      ],
+      "method_case_counts": [
+        {
+          "method": "POST",
+          "case_count": 2,
+          "cases": [
+            "tasks_generate_environment_missing_params_400",
+            "tasks_generate_environment_shape_only"
+          ],
+          "statuses": [
+            200,
+            400
+          ]
+        }
+      ],
+      "cases": 2,
+      "status_histogram": {
+        "200": 1,
+        "400": 1
+      },
+      "covered": true,
+      "covered_200": 1,
+      "partial": false,
+      "blocked": false,
+      "blocked_reason": "",
+      "mismatched_status_cases": [],
+      "shape_only_cases": [
+        "tasks_generate_environment_shape_only"
+      ],
+      "server_error_cases": [],
+      "alias_of": null,
+      "path_params_used": {},
+      "mutation_cases": [
+        {
+          "order": 10,
+          "domain": "core",
+          "case": "tasks_generate_environment_shape_only",
+          "method": "POST",
+          "path": "/api/tasks/generate/environment",
+          "note": "shape_only：风险分级由规则常量表决定，Rust 侧需逐字复刻规则"
+        }
+      ]
+    }
+  ]
+}
