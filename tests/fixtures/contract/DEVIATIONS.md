@@ -18,6 +18,8 @@
 | **D7** | 蓝本 `choices` 不生成 SQL `CHECK` | Django 只建裸 `varchar`，Python 层校验 | **我方可保留 CHECK**（更严格） | CHECK 不进 HTTP 契约；夹具取值均来自同一批 `TextChoices`，不会误伤 |
 | **D8** | 蓝本不生成 SQL `DEFAULT` | 默认值由 Python 层兜底 | **我方可保留 DEFAULT** | 不进 HTTP 契约；且 W1 漏列时行为与 Django 的 Python 默认一致 |
 | **D9** | 蓝本外键不带 `ON DELETE` | 级联在 Python 层（`on_delete`） | **我方按 `on_delete` 写 CASCADE/SET NULL/RESTRICT，并加 `DEFERRABLE INITIALLY DEFERRED`** | 保证数据一致性；`DEFERRABLE` 让夹具乱序导入在单事务内也成立 |
+| **D10** | `login` 凭据错误分支的信封形状 | 蓝本源码（`serializers.ValidationError`）看似该走 DRF 异常体（**无** timestamp），但实测录到的是 `{code:401, message:{"non_field_errors":["Invalid credentials"]}, data:null, timestamp:…}`——**成功体形状、message 是对象、带 timestamp** | **取夹具** | 这是 App 实际收到的字节。`views_auth.rs` 已用 ⚠️ 注释标出该反直觉点 |
+| **D11** | 字符串长度校验 | 蓝本靠 DB 约束（`VARCHAR(150)` 等），超长会变成 500 | **待补：在契约层加 `max_length` 校验返回 400** | 目前 `username > 150` / `password > 128` / `email` 超长会撞列宽变 500，与蓝本行为也不一致。属已知缺口 |
 
 ## 安全问题（已记录，未处理）
 
@@ -26,6 +28,7 @@
 | **S1** | `navel_backend_git/api/agent_service.py:17` 硬编码 DeepSeek API Key | 明文密钥进版本库。Rust 侧必须走 `config.toml` / 环境变量，**不得**照抄 |
 | **S2** | `requirements.txt` 缺 `requests` | `agent_service.py` 依赖它，Django 环境实际缺依赖。已在本地 venv 补装，未改仓库文件 |
 | **S3** | `navel_backend_git` 仓库把 `__pycache__/*.pyc`（43 个）与 `media/`（24 个）提交进了 git，且无 `.gitignore` | 清理时**必须** `git checkout -- .` 还原，否则会删掉被跟踪文件 |
+| **S4** | 蓝本对 `register` / `login` / agent 系接口**不挂**鉴权 | 已按契约保留为匿名可调（否则 App 行为不一致）。但 v1 注册完全裸奔，建议切换后单独收口 |
 
 ## 已裁定：W2 网页端范围（用户 2026-09-20 决策）
 
