@@ -97,8 +97,18 @@ impl AppConfig {
     pub fn load(path: &str) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)
             .map_err(|e| anyhow::anyhow!("读取配置文件失败({}): {}", path, e))?;
-        let config: AppConfig =
+        let mut config: AppConfig =
             toml::from_str(&content).map_err(|e| anyhow::anyhow!("解析配置文件失败: {}", e))?;
+
+        // 契约回放时把连接串指向独立的 scratch schema，避免测试数据写进现网 `public`。
+        // 形如：
+        // postgres://user:pass@host:port/db?options=-csearch_path%3Dcompat_test
+        if let Ok(url) = std::env::var("COMPAT_DATABASE_URL")
+            && !url.trim().is_empty()
+        {
+            config.database.postgres_url = url;
+        }
+
         Ok(config)
     }
 }
