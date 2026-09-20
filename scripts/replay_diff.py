@@ -143,8 +143,11 @@ def mutation_order_crosscheck(index: dict, domains: dict[str, dict]) -> list[str
 
 def parse_expr(expr: str):
     rest = expr[1:] if expr.startswith("$") else expr
-    if rest.startswith("."):
-        return [("rollup", rest.lstrip("."))]
+    # 只有 "$..key"（双点）才是 rollup（任意层级按键名全量屏蔽）。
+    # 写成单点会把 "$.data.order_number" 误判成 rollup，key 变成 "data.order_number"，
+    # 于是所有多级路径的屏蔽**静默失效**——四个域都踩过这个坑。
+    if rest.startswith(".."):
+        return [("rollup", rest[2:])]
     segs: list[tuple] = []
     i = 0
     while i < len(rest):
