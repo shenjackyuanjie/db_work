@@ -13,6 +13,12 @@
 //!    `compat.rs`——`Router::merge` 遇到路径级 fallback 会 panic，且多个域会互相覆盖。
 //! 3. **测试缝**：`AppState` 的构造会加载两个 ONNX 模型，单测里没法廉价构造。所以每个
 //!    端点拆成「薄 axum 包装 + `*_impl(&PgPool, ...)`」，单测直接打 scratch schema。
+//!
+//! **D11（字段长度校验）**：`register` 的 `username` / `email` / `orchard_address` 在蓝本里
+//! 由 `ModelSerializer` 从模型字段带出了 `max_length`（150 / 254 / 255），超长是 **400**
+//! 而不是撞 `VARCHAR` 列宽的 500；`password` **没有**上限（序列化器显式声明覆盖了模型的
+//! `128`）。长度上限与文案都是**实测**蓝本序列化器拿到的，见 [`USERNAME_MAX_LENGTH`] 与
+//! [`max_length_message`] 的注释 —— 不要凭直觉补。
 
 use axum::{
     Router,
@@ -24,6 +30,7 @@ use axum::{
 use chrono::Utc;
 use serde_json::{Map, Value, json};
 use sqlx::{PgPool, Postgres, Row, Transaction};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 use crate::server::AppState;
@@ -41,7 +48,6 @@ use super::{
 const ERR_REQUIRED: &str = "该字段是必填项。";
 const ERR_NULL: &str = "该字段不能为 null。";
 const ERR_BLANK: &str = "该字段不能为空。";
-const ERR_MIN_LENGTH_6: &str = "请确保这个字段至少包含 6 个字符。";
 const ERR_INVALID_EMAIL: &str = "请输入合法的邮件地址。";
 const ERR_INVALID_NUMBER: &str = "请填写合法的数字。";
 const ERR_INVALID_CREDENTIALS: &str = "Invalid credentials";
@@ -54,6 +60,57 @@ const MSG_LOGOUT_SUCCESS: &str = "Logout successful";
 /// Django `choices` 的两个合法 role。
 const ROLE_FARMER: &str = "farmer";
 const ROLE_BUYER: &str = "buyer";
+
+// --------------------------------------------------------------------------------------
+// register 的字段长度上下限（`DEVIATIONS.md` **D11**，逐条实测自蓝本）
+// --------------------------------------------------------------------------------------
+//
+// 判据是 `UserRegistrationSerializer` 实际带上了哪些长度约束，而不是"模型列多宽"。
+// 实测脚本直接打蓝本的序列化器（`serializer.is_valid()`），结论如下：
+
+/// `username`：模型 `CharField(max_length=150)`，`ModelSerializer` 自动带上限。
+/// 实测：150 个字符通过、151 个报错。
+const USERNAME_MAX_LENGTH: usize = 150;
+
+/// `email`：模型 `EmailField()`，Django 的默认 `max_length=254`。
+/// 实测：总长 254 通过、255 报错。
+const EMAIL_MAX_LENGTH: usize = 254;
+
+/// `orchard_address`：模型 `CharField(max_length=255)`。实测 255 通过、256 报错。
+const ORCHARD_ADDRESS_MAX_LENGTH: usize = 255;
+
+/// `password`：序列化器**显式**写 `CharField(min_length=6)`，它**覆盖**了模型的
+/// `max_length=128` —— 即蓝本对**口令没有上限**。
+///
+/// 实测：129 / 300 字符的口令 `is_valid=True`；蓝本 `make_password` 之后落库的是定长哈希，
+/// 不会撞列宽、也不会 500。
+///
+/// ⚠️ 所以这里**只**建下限。给口令补一个 `max_length` 不是"补全缺口"，而是**制造新偏差**。
+const PASSWORD_MIN_LENGTH: usize = 6;
+
+/// `UserRegistrationSerializer.Meta.fields` 的声明序 —— 错误字典的键序就是它。
+const REGISTRATION_FIELDS: &[&str] = &[
+    "username",
+    "email",
+    "password",
+    "role",
+    "orchard_address",
+    "latitude",
+    "longitude",
+];
+
+/// `UserLoginSerializer` 的字段序。
+const LOGIN_FIELDS: &[&str] = &["username", "password"];
+
+/// DRF zh-hans 的 `MaxLengthValidator` 文案（实测 `请确保这个字段不能超过 150 个字符。`）。
+fn max_length_message(limit: usize) -> String {
+    format!("请确保这个字段不能超过 {limit} 个字符。")
+}
+
+/// DRF zh-hans 的 `MinLengthValidator` 文案（实测 `请确保这个字段至少包含 6 个字符。`）。
+fn min_length_message(limit: usize) -> String {
+    format!("请确保这个字段至少包含 {limit} 个字符。")
+}
 
 /// `UserSerializer` 需要的那组列；三处查询共用，避免列清单漂移。
 const USER_COLUMNS: &str = r#"u.id, u.username, u.email, u.role, u.orchard_address,
@@ -182,7 +239,7 @@ fn json_error(message: &str) -> Response {
 pub(crate) async fn register_impl(pool: &PgPool, body: &Value) -> ApiResult {
     let request = UserRegistrationBody::from_value(body);
 
-    let mut errors = FieldErrors::default();
+    let mut errors = FieldErrors::new(REGISTRATION_FIELDS);
     let validated = match validate_registration(pool, &request, &mut errors).await {
         Some(validated) => validated,
         None => return Ok(errors.into_response(StatusCode::BAD_REQUEST)),
@@ -297,10 +354,13 @@ pub(crate) async fn login_impl(pool: &PgPool, body: &Value) -> ApiResult {
     let request = UserLoginBody::from_value(body);
 
     // DRF 会把两个字段的错误**一起**收集，所以不能遇到第一个就 return。
-    let mut errors = FieldErrors::default();
-    let username = required_char_field(&request.username, "username", &mut errors);
-    let password = required_char_field(&request.password, "password", &mut errors);
-    let (Ok(username), Ok(password)) = (username, password) else {
+    // 两个字段都**没有**长度上下限：蓝本 `UserLoginSerializer` 是普通 `serializers.Serializer`，
+    // `username` / `password` 都只写 `required=True`（实测 400 字符也 `is_valid=True`，
+    // 只是查不到用户 → 401 `Invalid credentials`）。所以这里传 `None`，别"顺手"补上限。
+    let mut errors = FieldErrors::new(LOGIN_FIELDS);
+    let username = required_char_field(&request.username, "username", None, None, &mut errors);
+    let password = required_char_field(&request.password, "password", None, None, &mut errors);
+    let (Some(username), Some(password)) = (username, password) else {
         return Ok(errors.into_response(StatusCode::UNAUTHORIZED));
     };
 
@@ -387,81 +447,122 @@ struct ValidatedRegistration {
     longitude: Option<f64>,
 }
 
-/// DRF 的字段错误字典：`{"字段": ["文案"]}`，**插入序 = 字段声明序**。
+/// DRF 的字段错误字典：`{"字段": ["文案"]}`。
 ///
-/// `serde_json` 开了 `preserve_order`，所以这个序会原样落到响应体里。
-#[derive(Debug, Default)]
-struct FieldErrors(Map<String, Value>);
+/// 两个**实测**行为约束（证据见 `DEVIATIONS.md` D11）：
+///
+/// 1. **键序 = 序列化器的字段声明序**（`Meta.fields`），**不是**报错顺序 —— 所以内部按
+///    收集序存、渲染时按 [`FieldErrors::order`] 重排。`serde_json` 开了 `preserve_order`，
+///    重排后的序会原样落到响应体里。
+/// 2. **同一个字段可以有多条文案**：DRF 的 `run_validators` 会把该字段**全部** validator
+///    的错误聚合起来（实测：300 个 `z` 的 email 同时报「不能超过 254 个字符」与
+///    「请输入合法的邮件地址」两条）。
+#[derive(Debug)]
+struct FieldErrors {
+    /// `HashMap` 而不是 `serde_json::Map`（后者只实例化给 `Value`）；键序由 `order` 兜底，
+    /// 不依赖这里的迭代序。
+    entries: HashMap<String, Vec<String>>,
+    order: &'static [&'static str],
+}
 
 impl FieldErrors {
+    fn new(order: &'static [&'static str]) -> Self {
+        Self {
+            entries: HashMap::new(),
+            order,
+        }
+    }
+
+    /// 追加一条错误（同字段可多条，**不覆盖**）。
     fn push(&mut self, field: &str, message: &str) {
-        self.0.insert(field.to_string(), json!([message]));
+        self.entries
+            .entry(field.to_string())
+            .or_default()
+            .push(message.to_string());
     }
 
     fn is_empty(&self) -> bool {
-        self.0.is_empty()
+        self.entries.is_empty()
     }
 
     /// 校验失败走**成功体形状**（带 `timestamp`），只是 HTTP 状态码是 4xx。
     fn into_response(self, status: StatusCode) -> Response {
-        api_response(status, status.as_u16(), Value::Object(self.0), Value::Null)
+        let mut message = Map::new();
+
+        for field in self.order {
+            if let Some(messages) = self.entries.get(*field) {
+                message.insert(
+                    (*field).to_string(),
+                    Value::Array(messages.iter().map(|text| json!(text)).collect()),
+                );
+            }
+        }
+
+        api_response(status, status.as_u16(), Value::Object(message), Value::Null)
     }
 }
 
+/// 记一条字段错误并返回 `None`，让 `return push_error(...)` 能直接用在「本该返回
+/// `Option<T>`」的分支上。
+fn push_error<T>(errors: &mut FieldErrors, field: &str, message: &str) -> Option<T> {
+    errors.push(field, message);
+    None
+}
+
+/// DRF 的字段级校验是**逐字段独立**的：某个字段失败只终止**该字段**，其它字段照样校验，
+/// 最终错误字典里可以有多个键（实测：超长 `username` + 超长 `email` -> 两个键都在）。
+/// 所以下面**不能**遇到第一个错就 `return`。
 async fn validate_registration(
     pool: &PgPool,
     request: &UserRegistrationBody,
     errors: &mut FieldErrors,
 ) -> Option<ValidatedRegistration> {
-    let username = match required_char_field(&request.username, "username", errors) {
-        Ok(value) => value,
-        Err(()) => return None,
-    };
+    let username = required_char_field(
+        &request.username,
+        "username",
+        None,
+        Some(USERNAME_MAX_LENGTH),
+        errors,
+    );
+    let email = optional_email_field(&request.email, "email", errors);
+    let password = required_char_field(
+        &request.password,
+        "password",
+        Some(PASSWORD_MIN_LENGTH),
+        None,
+        errors,
+    );
+    let role = choice_field(&request.role, "role", errors);
+    let orchard_address = optional_char_field(
+        &request.orchard_address,
+        "orchard_address",
+        Some(ORCHARD_ADDRESS_MAX_LENGTH),
+        errors,
+    );
+    let latitude = optional_float_field(&request.latitude, "latitude", errors);
+    let longitude = optional_float_field(&request.longitude, "longitude", errors);
 
-    let email = match optional_char_field(&request.email, "email", errors) {
-        Ok(None) => None,
-        Ok(Some(text)) if is_email_like(&text) => Some(text),
-        Ok(Some(_)) => {
-            errors.push("email", ERR_INVALID_EMAIL);
-            return None;
-        }
-        Err(()) => return None,
-    };
+    // `UniqueValidator` 是 `username` 字段自己的 validator：DRF 的 `run_validators` 排在
+    // `to_internal_value` 之后，所以**只在字段自身校验通过时才跑**；但它与其它的字段错误
+    // **并存**（实测：重复用户名 + 短口令 -> `username`、`password` 两个键都在）。
+    // 键序由 `FieldErrors::order` 兜底，所以这里查库的时机不影响响应体的键序。
+    if let Some(value) = &username {
+        ensure_username_available(pool, value, errors).await;
+    }
 
-    let password = match required_char_field(&request.password, "password", errors) {
-        Ok(value) if value.chars().count() >= 6 => value,
-        Ok(_) => {
-            errors.push("password", ERR_MIN_LENGTH_6);
-            return None;
-        }
-        Err(()) => return None,
-    };
-
-    let role = match choice_field(&request.role, "role", errors) {
-        Ok(value) => value,
-        Err(()) => return None,
-    };
-
-    let mut orchard_address =
-        match optional_char_field(&request.orchard_address, "orchard_address", errors) {
-            Ok(value) => value,
-            Err(()) => return None,
-        };
-    let mut latitude = match optional_float_field(&request.latitude, "latitude", errors) {
-        Ok(value) => value,
-        Err(()) => return None,
-    };
-    let mut longitude = match optional_float_field(&request.longitude, "longitude", errors) {
-        Ok(value) => value,
-        Err(()) => return None,
-    };
-
-    // `UniqueValidator` 挂在**字段级校验之后**（DRF 把它塞进 `field.validators`，
-    // 但只在字段自身校验通过时才跑），所以这里等其它字段都收完错误再来查库。
-    ensure_username_available(pool, &username, errors).await;
     if !errors.is_empty() {
         return None;
     }
+
+    // 字段级全通过之后，上面的 `Option` 必定都是「成功」态；这里的 `return None` 只是给
+    // 编译器一个出口，实际不可达。
+    let (Some(username), Some(password), Some(role)) = (username, password, role) else {
+        return None;
+    };
+    let email = email.flatten();
+    let mut orchard_address = orchard_address.flatten();
+    let mut latitude = latitude.flatten();
+    let mut longitude = longitude.flatten();
 
     // 字段级全通过后才跑对象级 `validate()`。
     // `attrs.get('orchard_address')` 对缺失 / `null` / `''` 三个态都判为假。
@@ -487,61 +588,141 @@ async fn validate_registration(
     })
 }
 
-/// `serializers.CharField(required=True)`：缺 → required；`null` → null；`""` → blank。
-fn required_char_field(input: &Input, field: &str, errors: &mut FieldErrors) -> Result<String, ()> {
-    match input {
-        Input::Missing => {
-            errors.push(field, ERR_REQUIRED);
-            Err(())
-        }
-        Input::Null => {
-            errors.push(field, ERR_NULL);
-            Err(())
-        }
-        Input::Value(Value::String(text)) if text.is_empty() => {
-            errors.push(field, ERR_BLANK);
-            Err(())
-        }
-        Input::Value(Value::String(text)) => Ok(text.trim().to_string()),
-        Input::Value(_) => {
-            errors.push(field, ERR_BLANK);
-            Err(())
+/// DRF 的长度 validator（`MaxLengthValidator` / `MinLengthValidator`）。
+///
+/// 按**字符数**判，不是字节数（`CharField` 比的是 Python 的 `len(str)`）——
+/// 中文果园地址一个字算一个字符。
+///
+/// DRF 在 `CharField.__init__` 里先 append `MaxLengthValidator` 再 append
+/// `MinLengthValidator`，两者不可能同时命中，所以报第一条就够。
+fn check_length(
+    text: &str,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
+) -> Result<(), String> {
+    let count = text.chars().count();
+
+    if let Some(limit) = max_length {
+        if count > limit {
+            return Err(max_length_message(limit));
         }
     }
+    if let Some(limit) = min_length {
+        if count < limit {
+            return Err(min_length_message(limit));
+        }
+    }
+
+    Ok(())
 }
 
-/// 模型字段派生出来的 `CharField(blank=True, null=True)`：缺 / `null` / `""` 都是 `None`，
-/// 不报错。注意 `''` 会被保留成 `Some("")`，因为对象级 `validate()` 要按「假值」处理它。
+/// `serializers.CharField(required=True)`：缺 → required；`null` → null；`""` → blank。
+///
+/// `min_length` / `max_length` **只在蓝本真的声明了**的时候才传（`None` = 不校验）——
+/// 凭直觉补默认上限会制造偏差，见 `DEVIATIONS.md` **D11**。
+///
+/// 返回 `None` 表示该字段已经报错（文案已并入 `errors`）。调用方**不要**据此提前返回。
+fn required_char_field(
+    input: &Input,
+    field: &str,
+    min_length: Option<usize>,
+    max_length: Option<usize>,
+    errors: &mut FieldErrors,
+) -> Option<String> {
+    let text = match input {
+        Input::Missing => return push_error(errors, field, ERR_REQUIRED),
+        Input::Null => return push_error(errors, field, ERR_NULL),
+        Input::Value(Value::String(text)) if text.is_empty() => {
+            return push_error(errors, field, ERR_BLANK);
+        }
+        Input::Value(Value::String(text)) => text.trim().to_string(),
+        Input::Value(_) => return push_error(errors, field, ERR_BLANK),
+    };
+
+    if let Err(message) = check_length(&text, min_length, max_length) {
+        errors.push(field, &message);
+        return None;
+    }
+
+    Some(text)
+}
+
+/// 模型字段派生出来的 `CharField(blank=True, null=True)`：缺 / `null` / `""` / 全空白都是
+/// 空值，不报错。注意 `''` 会被保留成 `Some("")`，因为对象级 `validate()` 要按「假值」
+/// 处理它。
+///
+/// 返回 `Option<Option<String>>`：**外层 `None` = 字段报错**，内层才是值（可能为空）。
 fn optional_char_field(
     input: &Input,
     field: &str,
+    max_length: Option<usize>,
     errors: &mut FieldErrors,
-) -> Result<Option<String>, ()> {
-    match input {
-        Input::Missing | Input::Null => Ok(None),
-        Input::Value(Value::String(text)) if text.is_empty() => Ok(Some(String::new())),
-        Input::Value(Value::String(text)) => Ok(Some(text.trim().to_string())),
-        Input::Value(_) => {
-            errors.push(field, ERR_BLANK);
-            Err(())
-        }
+) -> Option<Option<String>> {
+    let text = match input {
+        Input::Missing | Input::Null => return Some(None),
+        Input::Value(Value::String(text)) if text.is_empty() => return Some(Some(String::new())),
+        Input::Value(Value::String(text)) => text.trim().to_string(),
+        Input::Value(_) => return push_error(errors, field, ERR_BLANK),
+    };
+
+    if let Err(message) = check_length(&text, None, max_length) {
+        errors.push(field, &message);
+        return None;
     }
+
+    Some(Some(text))
 }
 
-/// `serializers.FloatField(required=False, allow_null=True)`。
+/// `serializers.EmailField(max_length=254, required=False, blank=True, null=True)`。
+///
+/// validator 序是 `MaxLengthValidator(254)` → `EmailValidator`，而 DRF 的 `run_validators`
+/// 会把两者**聚合**：实测 300 个 `z` 报
+/// `["请确保这个字段不能超过 254 个字符。", "请输入合法的邮件地址。"]` —— 两条都要留。
+///
+/// 返回 `Option<Option<String>>`，同 [`optional_char_field`]。
+fn optional_email_field(
+    input: &Input,
+    field: &str,
+    errors: &mut FieldErrors,
+) -> Option<Option<String>> {
+    let text = match input {
+        Input::Missing | Input::Null => return Some(None),
+        // ⚠️ 这里**刻意不**把空串当「空值直接放过」：蓝本 `allow_blank=True` 会让 `''`
+        // 通过（实测 `email: ''` 是合法的），但当前实现把它当「非法邮件地址」报错。
+        // 这是**既有偏差、不在 D11 范围内**，本次不动它，只保证加长度校验不改变这条路径。
+        Input::Value(Value::String(text)) => text.trim().to_string(),
+        Input::Value(_) => return push_error(errors, field, ERR_BLANK),
+    };
+
+    let mut failed = false;
+
+    if let Err(message) = check_length(&text, None, Some(EMAIL_MAX_LENGTH)) {
+        errors.push(field, &message);
+        failed = true;
+    }
+    if !is_email_like(&text) {
+        errors.push(field, ERR_INVALID_EMAIL);
+        failed = true;
+    }
+
+    if failed {
+        return None;
+    }
+
+    Some(Some(text))
+}
+
+/// `serializers.FloatField(required=False, allow_null=True)`。蓝本没有上下限。
 fn optional_float_field(
     input: &Input,
     field: &str,
     errors: &mut FieldErrors,
-) -> Result<Option<f64>, ()> {
+) -> Option<Option<f64>> {
     match input {
-        Input::Missing | Input::Null => Ok(None),
+        Input::Missing | Input::Null => Some(None),
         other => match other.as_f64() {
-            Some(value) => Ok(Some(value)),
-            None => {
-                errors.push(field, ERR_INVALID_NUMBER);
-                Err(())
-            }
+            Some(value) => Some(Some(value)),
+            None => push_error(errors, field, ERR_INVALID_NUMBER),
         },
     }
 }
@@ -549,24 +730,25 @@ fn optional_float_field(
 /// `serializers.ChoiceField(choices=User.Role.choices, default='farmer')`。
 ///
 /// 缺 / `null` / `''` 都落回默认值 `farmer`（DRF 把 `''` 视作「空值 → 用默认」）。
-fn choice_field(input: &Input, field: &str, errors: &mut FieldErrors) -> Result<&'static str, ()> {
+/// 返回 `None` 表示字段报错（文案已并入 `errors`）。
+fn choice_field(input: &Input, field: &str, errors: &mut FieldErrors) -> Option<&'static str> {
     let raw = match input {
-        Input::Missing | Input::Null => return Ok(ROLE_FARMER),
-        Input::Value(Value::String(text)) if text.is_empty() => return Ok(ROLE_FARMER),
+        Input::Missing | Input::Null => return Some(ROLE_FARMER),
+        Input::Value(Value::String(text)) if text.is_empty() => return Some(ROLE_FARMER),
         Input::Value(Value::String(text)) => text.as_str(),
         Input::Value(other) => {
             let rendered = render_choice(other);
             errors.push(field, &format!("“{rendered}” 不是合法选项。"));
-            return Err(());
+            return None;
         }
     };
 
     match raw {
-        ROLE_FARMER => Ok(ROLE_FARMER),
-        ROLE_BUYER => Ok(ROLE_BUYER),
+        ROLE_FARMER => Some(ROLE_FARMER),
+        ROLE_BUYER => Some(ROLE_BUYER),
         other => {
             errors.push(field, &format!("“{other}” 不是合法选项。"));
-            Err(())
+            None
         }
     }
 }
@@ -748,15 +930,25 @@ mod tests {
         assert!(matches!(auth::bearer_token(&empty), Ok(None)));
     }
 
-    #[test]
-    fn field_errors_keep_drf_declaration_order() {
-        // 用户名字段声明在 password 之前，所以重复 + 短口令时两者都报，且顺序固定。
-        let mut errors = FieldErrors::default();
-        errors.push("username", "a");
-        errors.push("email", "b");
-        errors.push("password", "c");
+    /// 错误字典的键序 = 序列化器字段声明序（**与 push 顺序无关**），且同字段可多条。
+    #[tokio::test]
+    async fn field_errors_render_in_declaration_order() {
+        let mut errors = FieldErrors::new(REGISTRATION_FIELDS);
 
-        let rendered = serde_json::to_string(&Value::Object(errors.0)).unwrap();
+        // 故意按相反顺序 push，渲染时必须回到 `Meta.fields` 声明序。
+        errors.push("password", "c");
+        errors.push("email", "b");
+        errors.push("email", "b2");
+        errors.push("username", "a");
+
+        let (status, body) = body_json(errors.into_response(StatusCode::BAD_REQUEST)).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        assert_eq!(
+            body["message"],
+            json!({"username": ["a"], "email": ["b", "b2"], "password": ["c"]})
+        );
+
+        let rendered = serde_json::to_string(&body["message"]).unwrap();
         let username = rendered.find("username").unwrap();
         let email = rendered.find("email").unwrap();
         let password = rendered.find("password").unwrap();
@@ -852,7 +1044,243 @@ mod tests {
         .await;
 
         assert_eq!(status, StatusCode::BAD_REQUEST);
-        assert_eq!(body["message"]["password"][0], ERR_MIN_LENGTH_6);
+        assert_eq!(
+            body["message"]["password"][0],
+            min_length_message(PASSWORD_MIN_LENGTH)
+        );
+    }
+
+    // --------------------------------------------------------------------------------
+    // D11：字段长度校验
+    // --------------------------------------------------------------------------------
+
+    /// `username > 150` → 400 + DRF 文案，**不是**撞 `VARCHAR(150)` 的 500。
+    #[tokio::test]
+    async fn register_username_over_max_length_is_400() {
+        let pool = pool_or_skip!();
+
+        for excess in [
+            "u".repeat(USERNAME_MAX_LENGTH + 1),
+            "橙".repeat(USERNAME_MAX_LENGTH + 1),
+        ] {
+            let (status, body) = body_json(
+                register_impl(
+                    &pool,
+                    &json!({"username": excess, "password": "qa-pass-123456", "role": "buyer"}),
+                )
+                .await
+                .expect("校验失败是 Ok 分支（成功体形状），不是 ApiReject"),
+            )
+            .await;
+
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+            assert_eq!(
+                body["message"]["username"][0],
+                max_length_message(USERNAME_MAX_LENGTH)
+            );
+            assert_eq!(body["data"], Value::Null);
+            assert!(body["timestamp"].is_i64(), "{body}");
+        }
+    }
+
+    /// 长度按**字符**算而不是字节：151 个汉字必须报超长，但如果实现误按字节判，
+    /// 会在第 51 个汉字就开始报——那时这条用例仍会「红」，不会静默放过。
+    ///
+    /// 反向也钉一次：50 个汉字（150 字节）**不该**报超长。
+    #[tokio::test]
+    async fn register_username_length_counts_characters_not_bytes() {
+        let pool = pool_or_skip!();
+        let username = "橙".repeat(50);
+
+        let (status, body) = body_json(
+            register_impl(
+                &pool,
+                &json!({"username": username, "password": "qa-pass-123456", "role": "buyer"}),
+            )
+            .await
+            .expect("校验失败是 Ok 分支（成功体形状），不是 ApiReject"),
+        )
+        .await;
+
+        // 50 个汉字 = 50 个字符（150 字节）→ 没超字符上限，应当注册成功。
+        assert_eq!(status, StatusCode::OK, "{body}");
+        drop_user(&pool, &username).await;
+    }
+
+    /// `email` 超长：以 `MaxLengthValidator(254)` 为准，**不是**「合法邮件地址」文案。
+    #[tokio::test]
+    async fn register_email_over_max_length_is_400() {
+        let pool = pool_or_skip!();
+        let long_local = "a".repeat(EMAIL_MAX_LENGTH + 1 - "@b.co".len());
+
+        let (status, body) = body_json(
+            register_impl(
+                &pool,
+                &json!({"username": unique_username("w0ba_email"),
+                        "password": "qa-pass-123456", "role": "buyer",
+                        "email": format!("{long_local}@b.co")}),
+            )
+            .await
+            .expect("校验失败是 Ok 分支（成功体形状），不是 ApiReject"),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+        assert_eq!(
+            body["message"]["email"][0],
+            max_length_message(EMAIL_MAX_LENGTH)
+        );
+    }
+
+    /// `email` 又超长又格式非法：DRF 的 `run_validators` 会**聚合**两条文案，
+    /// 顺序是 `MaxLengthValidator` → `EmailValidator`。
+    #[tokio::test]
+    async fn register_email_reports_length_and_shape_together() {
+        let pool = pool_or_skip!();
+
+        let (status, body) = body_json(
+            register_impl(
+                &pool,
+                &json!({"username": unique_username("w0ba_email2"),
+                        "password": "qa-pass-123456", "role": "buyer",
+                        "email": "z".repeat(EMAIL_MAX_LENGTH + 1)}),
+            )
+            .await
+            .expect("校验失败是 Ok 分支（成功体形状），不是 ApiReject"),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+        assert_eq!(
+            body["message"]["email"],
+            json!([max_length_message(EMAIL_MAX_LENGTH), ERR_INVALID_EMAIL])
+        );
+    }
+
+    /// `orchard_address > 255` → 400。这个字段也是**客户端可传**且蓝本有 `max_length` 的。
+    #[tokio::test]
+    async fn register_orchard_address_over_max_length_is_400() {
+        let pool = pool_or_skip!();
+
+        let (status, body) = body_json(
+            register_impl(
+                &pool,
+                &json!({"username": unique_username("w0ba_addr"),
+                        "password": "qa-pass-123456", "role": "farmer",
+                        "orchard_address": "赣".repeat(ORCHARD_ADDRESS_MAX_LENGTH + 1)}),
+            )
+            .await
+            .expect("校验失败是 Ok 分支（成功体形状），不是 ApiReject"),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+        assert_eq!(
+            body["message"]["orchard_address"][0],
+            max_length_message(ORCHARD_ADDRESS_MAX_LENGTH)
+        );
+    }
+
+    /// DRF 逐字段独立收集：两个字段同时超长时**两个键都要在**，且键序是声明序。
+    #[tokio::test]
+    async fn register_collects_all_field_errors_at_once() {
+        let pool = pool_or_skip!();
+
+        let (status, body) = body_json(
+            register_impl(
+                &pool,
+                &json!({"username": "u".repeat(USERNAME_MAX_LENGTH + 1),
+                        "password": "123",
+                        "role": "operator",
+                        "email": "z".repeat(EMAIL_MAX_LENGTH + 1)}),
+            )
+            .await
+            .expect("校验失败是 Ok 分支（成功体形状），不是 ApiReject"),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+        assert_eq!(
+            body["message"]["username"][0],
+            max_length_message(USERNAME_MAX_LENGTH)
+        );
+        assert_eq!(
+            body["message"]["password"][0],
+            min_length_message(PASSWORD_MIN_LENGTH)
+        );
+        assert_eq!(body["message"]["role"][0], "“operator” 不是合法选项。");
+        assert_eq!(
+            body["message"]["email"][0],
+            max_length_message(EMAIL_MAX_LENGTH)
+        );
+
+        // 键序 = `Meta.fields` 声明序（username, email, password, role, ...）。
+        let rendered = serde_json::to_string(&body["message"]).unwrap();
+        let positions: Vec<usize> = ["username", "email", "password", "role"]
+            .iter()
+            .map(|key| rendered.find(&format!(r#""{key}""#)).unwrap())
+            .collect();
+        assert!(
+            positions.windows(2).all(|pair| pair[0] < pair[1]),
+            "{rendered}"
+        );
+    }
+
+    /// 反向钉子：蓝本的**口令没有上限**（`CharField(min_length=6)` 覆盖了模型的 `128`），
+    /// 所以 300 字符的口令必须正常注册 —— 而不是 400，更不是撞列宽的 500。
+    ///
+    /// 谁要是"顺手"给口令补一个 `max_length`，这条就会红。
+    #[tokio::test]
+    async fn register_accepts_password_longer_than_column_width() {
+        let pool = pool_or_skip!();
+        let username = unique_username("w0ba_longpw");
+
+        let (status, body) = body_json(
+            register_impl(
+                &pool,
+                &json!({"username": username, "password": "p".repeat(300), "role": "buyer"}),
+            )
+            .await
+            .expect("长口令是合法输入，不是校验失败"),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["message"], MSG_REGISTRATION_SUCCESS);
+
+        // 落库的是定长哈希（Django `make_password` 的形态），不是原始口令。
+        let stored: String =
+            sqlx::query_scalar(r#"SELECT password FROM "user" WHERE username = $1"#)
+                .bind(&username)
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert!(stored.starts_with("pbkdf2_sha256$720000$"), "{stored}");
+        assert!(stored.len() <= 128, "哈希必须能装进 VARCHAR(128)：{stored}");
+
+        drop_user(&pool, &username).await;
+    }
+
+    /// `login` 侧**没有**长度上限：超长只是查不到 → 401 `Invalid credentials`，不是 400/500。
+    #[tokio::test]
+    async fn login_has_no_length_limit() {
+        let pool = pool_or_skip!();
+
+        let (status, body) = body_json(
+            login_impl(
+                &pool,
+                &json!({"username": "u".repeat(500), "password": "p".repeat(500)}),
+            )
+            .await
+            .expect("登录凭据错误是 Ok 分支（成功体形状）"),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::UNAUTHORIZED);
+        assert_eq!(
+            body["message"]["non_field_errors"][0],
+            ERR_INVALID_CREDENTIALS
+        );
     }
 
     /// 注册 400：用户名重复。
