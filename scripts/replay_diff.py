@@ -21,13 +21,23 @@
    这 12 条是蓝本缺陷（`DEVIATIONS.md` 的 D1/D2/D5），**已裁定 Rust 侧修正为正确语义**，
    因此不计失败。
 6. `Z` 与 `+00:00` 视为等价，但单独计数输出到 `offset_style_drift`（D4）。
+7. **运行期 id 回填（T2）**：录制器用 `@capture:<key>` 把回放过程中产生的 id 烘进后续
+   用例的 path / body，真值记在 `index.json.captured_values`。回放器必须**在本次回放里
+   重新捕获**这些 id（`CaptureMap`），否则必然 404 并级联弄脏后续用例。
+   反推映射优先用 `index.capture_plan`（重录后落盘），没有则按「录制值出现在响应的哪条
+   路径」反推。始终观察不到的 key 会记 warning 并让相关用例带 `cause="capture_unresolved:<key>"`。
 
 用法
 ----
-    python db\\scripts\\replay_diff.py --schema compat_test
-    python db\\scripts\\replay_diff.py --schema compat_test --domain auth
+    python db\\scripts\\replay_diff.py --schema compat_test          # 权威跑法：全序列 246 条
+    python db\\scripts\\replay_diff.py --schema compat_test --domain commerce
     python db\\scripts\\replay_diff.py --schema compat_test --case me_ok_buyer
     python db\\scripts\\replay_diff.py --self-check          # 只验比对器自身，不连服务
+
+**单域回放测不准**：夹具的读类期望值里含**前置域 mutation 的效果**（commerce 的写类副作用
+体现在 orchard_trace 的读类里，agent 依赖前面各域），所以「单域 + fresh seed」必然有假失败。
+权威跑法是**在同一个 schema 上、按录制器的域顺序（auth → core → commerce → orchard_trace
+→ agent）、加载一次纯种子态、跑完全部 246 条**。
 """
 
 from __future__ import annotations
@@ -68,6 +78,26 @@ TOKEN_TTL_DAYS = 365
 
 PLACEHOLDER = re.compile(r"^<sha256:[0-9a-f]{16}>$")
 ISO_TZ = re.compile(r"^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)(Z|\+00:00)$")
+
+# --------------------------------------------------------------------------------------
+# T4：必须按「集合」比较的数组（顺序不可复现）
+# --------------------------------------------------------------------------------------
+# 判据是**蓝本的结构性缺失 + 主线的已裁定偏差**，不是「跑不过就放宽」：
+#   * `DEVIATIONS.md` **D6** 已裁定：`category_labels` 由 `serializers.SerializerMethodField`
+#     里的 `.distinct()` 生成，**没有 `order_by`** —— 蓝本自身两次运行的顺序就不同，
+#     裁定「Rust 侧定序输出；比对时按**集合**比较」。这里落实该裁定。
+#   * 商品集合（`product_list_api` / `orchard_detail.products` / `agent_context.products`）：
+#     `_product_queryset()` **没有** `order_by`，而 `CitrusProduct.Meta.ordering =
+#     ['sort_order', '-created_at']` 的 `sort_order` 在夹具里**全部为 0**，顺序退化成
+#     「数据库返回序」：录制在 SQLite 上拿到 rowid（插入序），PG 上是堆序，本就不保证一致。
+#   * 果园 / 供货批次列表同理（`orchard_list_api` / `supply_batch_list_api` 无 `order_by`）。
+# ⟹ 下列**叶子字段名**的数组按**多重集**比较：元素必须一一对应、数量相同，只是不要求同序。
+#    只按叶子名匹配（不限深度、不限前缀），因为这些名字在本契约里是明确无歧义的：
+#    `category_labels` / `items` / `products` 之外没有别的同名字段。
+UNORDERED_LEAVES = ("items", "products", "category_labels")
+UNORDERED_RE = re.compile(
+    r"(?:^|\.)(?:" + "|".join(UNORDERED_LEAVES) + r")$"
+)
 
 
 def token_for(key: str) -> str:
@@ -114,6 +144,204 @@ def seed_phase(index: dict, fixtures: Path) -> dict:
     else:
         result["phase"] = "pre-replay"
     return result
+
+
+def effective_captured(index: dict) -> dict[str, str]:
+    """录制期捕获值 + 录制器预置的 seed 值（后者是稳定 id，直接可用）。"""
+    out = {str(k): str(v) for k, v in (index.get("captured_values") or {}).items()
+           if v is not None and str(v)}
+    seed_approval = index.get("seed_approval_id")
+    if seed_approval:
+        out.setdefault("seed_approval_id", str(seed_approval))
+    return out
+
+
+# --------------------------------------------------------------------------------------
+# T2：录制期「运行期 id」在回放期的重建
+# --------------------------------------------------------------------------------------
+# 录制器用 `@capture:<key>` 把**回放过程中产生**的 id（新建订单/箱码/批次/审批单/购物车
+# 条目…）烘进后续用例的 path 与 body，真值记在 `index.json.captured_values`。
+# 夹具里存的是**录制当时**那个 uuid，回放时再用它就必然 404（并级联弄脏后续用例）。
+#
+# 夹具没有记 `key -> JSON 路径`（且默认不重录），但响应形状是契约一致的，所以这里按
+# 「同一个录制值出现在响应的哪个路径」反推映射：把整份响应 JSON 序列化后找该字符串，
+# 在同一条路径上读回本次回放的值。
+#
+# 优先级：显式映射（index.json.capture_plan，重录后才有）> 响应反推。
+
+
+def _flatten_strings(node, path="$", out=None) -> list[tuple[str, str]]:
+    out = [] if out is None else out
+    if isinstance(node, dict):
+        for k, v in node.items():
+            _flatten_strings(v, f"{path}.{k}", out)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _flatten_strings(v, f"{path}[{i}]", out)
+    elif isinstance(node, str):
+        out.append((path, node))
+    return out
+
+
+def _read_json_path(node, path: str):
+    """读回 `$.a.b[0].c` 形态的路径；路径不存在返回 None。"""
+    segs = re.findall(r"\.([A-Za-z0-9_]+)|\[(\d+)\]", path.lstrip("$"))
+    cur = node
+    for name, index in segs:
+        if name:
+            if not isinstance(cur, dict) or name not in cur:
+                return None
+            cur = cur[name]
+        else:
+            if not isinstance(cur, list) or int(index) >= len(cur):
+                return None
+            cur = cur[int(index)]
+    return cur
+
+
+def _substitute_string(value, subs: dict[str, str]):
+    """只把**整串命中**录制值替换成运行期值（UUID/订单号都不会是别的字段的子串）。"""
+    if isinstance(value, str) and value in subs:
+        return subs[value], value
+    return value, None
+
+
+def _substitute_body(node, subs: dict[str, str], used: list[str]):
+    if isinstance(node, dict):
+        return {k: _substitute_body(v, subs, used) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_substitute_body(v, subs, used) for v in node]
+    new, old = _substitute_string(node, subs)
+    if old is not None:
+        used.append(old)
+    return new
+
+
+class CaptureMap:
+    """把录制期的运行期 id 映射成本次回放的 id。
+
+    - `recorded`：`index.captured_values`（`key -> 录制当时的字符串值`）。
+    - `plan`：`key -> 响应 JSON 路径`（录制器落盘的 `index.capture_plan`）。
+    - `generators`：`key -> [生成它的用例名]`（录制器落盘的 `index.capture_generators`）。
+      老夹具缺这两个字段时按「哪个用例该生成哪些 key」退化，仍拿不到就记 warning。
+    - `seed`：录制器预置的稳定值（`index.seed_approval_id`），不需要替换。
+    - `runtime`：本次回放**观察到**的 `key -> 值`；每个 key 只在第一次观察到时定映射。
+    """
+
+    def __init__(self, captured_values: dict, capture_plan: dict | None = None,
+                 capture_generators: dict | None = None, seed: dict | None = None):
+        self.recorded: dict[str, str] = {}
+        self.seed: dict[str, str] = {str(k): str(v) for k, v in (seed or {}).items() if v}
+        self.plan: dict[str, str] = {str(k): str(v) for k, v in (capture_plan or {}).items()}
+        self.generators: dict[str, list[str]] = {
+            str(k): list(v) for k, v in (capture_generators or {}).items()
+        }
+        for key, value in (captured_values or {}).items():
+            if value is None or str(value) == "":
+                continue
+            self.recorded[str(key)] = str(value)
+        self.runtime: dict[str, str] = {}
+        self.observed: list[str] = []
+        self.note: list[str] = []
+
+    # ---- 回放期 ----------------------------------------------------------------
+    def producers(self, case: dict) -> list[str]:
+        """本用例**该生成**哪些 key。
+
+        `capture_generators`（录制器落盘）是权威。老夹具缺这个字段时才退化：把
+        「录制值恰好等于该用例期望 `$.data.id`」当作生产关系的证据——**只能按值判断**，
+        因为那时没有别的信息；判不出来就退到「谁先观察到谁定」的兜底。
+        """
+        names = self.generators.get(case["name"])
+        if names:
+            return list(names)
+        expected = case.get("expected_body")
+        if not isinstance(expected, dict):
+            return []
+        hint = _read_json_path(expected, "$.data.id")
+        return [k for k, v in self.recorded.items()
+                if isinstance(hint, str) and hint and v == hint]
+
+    def observe(self, case: dict, status: int, body) -> None:
+        """在响应里找到某个 recorded 值所在的路径，把该路径在当前响应里的值记为 runtime。
+
+        **必须限定「谁生成谁」**：契约里 `$.data.id` 是**很多**响应的 id 路径，
+        无条件按路径取值会把购物车条目的 id 塞给 `task_id`（真实踩过，一错错一片）。
+        """
+        if body is None or not isinstance(status, int) or status >= 400:
+            # 失败的响应没有可信的 id；不观察，交给 unresolved 报出来。
+            return
+        for key in self.producers(case):
+            if key not in self.recorded or key in self.runtime:
+                continue
+            path = self.plan.get(key)
+            if path is None:
+                self.note.append(f"警告：{key} 没有 capture_plan，本次无法观察")
+                continue
+            value = _read_json_path(body, path)
+            if isinstance(value, str) and value:
+                self.runtime[key] = value
+                self.observed.append(f"{key}={value}@{path}")
+                self.note.append(f"捕获 {key}: {self.recorded.get(key)} -> {value} @ {path}")
+
+    # ---- 请求前 ----------------------------------------------------------------
+    def subs_for(self, keys) -> tuple[dict[str, str], list[str]]:
+        """给需要的 key 算出替换表；返回 (subs, 未解析的 key 列表)。
+
+        `seed` 里的稳定值（如 `seed_approval_id`）本来就在正确取值上，不需要替换。
+        """
+        subs: dict[str, str] = {}
+        missing: list[str] = []
+        for key in keys:
+            if key in self.seed:
+                continue
+            runtime = self.runtime.get(key)
+            recorded = self.recorded.get(key)
+            if runtime is None:
+                if key not in missing:
+                    missing.append(key)
+                continue
+            if recorded and recorded != runtime:
+                subs[recorded] = runtime
+        return subs, missing
+
+    def substitute(self, payload, subs: dict[str, str]):
+        """把 path 字符串 / body 的 JSON 文本里出现的 recorded 值换成 runtime 值。
+
+        返回 `(新 payload, 命中的 recorded 值清单)`；替换前后保持 JSON 可解析。
+        """
+        if payload is None or not subs:
+            return payload, []
+        if isinstance(payload, (dict, list)):
+            used: list[str] = []
+            return _substitute_body(payload, subs, used), used
+        return payload, []
+
+    def substitute_text(self, path: str, subs: dict[str, str]) -> tuple[str, list[str]]:
+        used = []
+        for recorded, runtime in subs.items():
+            if recorded in path:
+                path = path.replace(recorded, runtime)
+                used.append(recorded)
+        return path, used
+
+    def capture_keys(self, case: dict) -> list[str]:
+        """本用例 payload 里实际出现的 capture key（`@capture:` 与已烘进的值都算）。"""
+        body_json = json.dumps(
+            {"b": case.get("body"), "q": case.get("query")}, ensure_ascii=False
+        )
+        path_text = case.get("path") or ""
+        keys = []
+        for key in self.recorded:
+            if key in self.seed:
+                continue
+            if f"@capture:{key}" in path_text or f"@capture:{key}" in body_json:
+                keys.append(key)
+            elif self.recorded[key] and (
+                self.recorded[key] in path_text or self.recorded[key] in body_json
+            ):
+                keys.append(key)
+        return keys
 
 
 def mutation_order_crosscheck(index: dict, domains: dict[str, dict]) -> list[str]:
@@ -249,7 +477,47 @@ def normalized_tz(value: str) -> str:
     return m.group(1) + "+00:00"
 
 
-def compare(expected, actual, path="$", diffs=None, drift=None, max_diff=12):
+def unordered_at(path: str) -> bool:
+    """该 JSON 路径是否指向一个「顺序不可复现」的数组（见 UNORDERED_LEAVES）。"""
+    return UNORDERED_RE.search(path) is not None
+
+
+def pair_elements(a: list, b: list) -> tuple[list, list, list]:
+    """把两个数组按 `compare` 语义贪心配对；返回 (配对成功, a 中未配对, b 中未配对)。
+
+    ⚠️ 配对时必须以 `unordered=True` 递归：这里传的路径是根 `$`，
+    若不显式带下去，嵌套在元素里的 `category_labels` 会**丢掉「无序」属性**
+    （真实踩过：两个同批次的商品总也配不上，报告里只剩「元素不同」）。
+    """
+    rest = list(b)
+    paired: list[tuple] = []
+    unmatched_a: list = []
+    for item in a:
+        for i, cand in enumerate(rest):
+            if not compare(item, cand, "$", [], [], unordered=True)[0]:
+                paired.append((item, cand))
+                rest.pop(i)
+                break
+        else:
+            unmatched_a.append(item)
+    return paired, unmatched_a, rest
+
+
+def multiset_equal(a: list, b: list) -> bool:
+    """无序相等：元素多重集一致。
+
+    必须用 `compare` 的语义（占位符当通配）逐个配对，**不能**比 JSON 文本——
+    屏蔽后的占位符是按值算的哈希，期望侧与实现侧必然不同，比文本会把
+    「两个元素都被屏蔽」误判成「元素不同」。
+    """
+    if len(a) != len(b):
+        return False
+    _, unmatched_a, unmatched_b = pair_elements(a, b)
+    return not unmatched_a and not unmatched_b
+
+
+def compare(expected, actual, path="$", diffs=None, drift=None, max_diff=12,
+            unordered=False):
     diffs = [] if diffs is None else diffs
     drift = [] if drift is None else drift
     if len(diffs) >= max_diff:
@@ -282,6 +550,22 @@ def compare(expected, actual, path="$", diffs=None, drift=None, max_diff=12):
     if ek == "list":
         if len(expected) != len(actual):
             diffs.append(f"{path}: 数组长度 {len(expected)} != {len(actual)}")
+            return diffs, drift
+        if unordered or unordered_at(path):
+            # D6 / 无 order_by：顺序不参与比较，但元素必须一一对应、数量相同。
+            paired, unmatched_a, unmatched_b = pair_elements(expected, actual)
+            if unmatched_a or unmatched_b:
+                diffs.append(
+                    f"{path}: 无序集合不一致（{len(paired)} 对配对成功，"
+                    f"期望侧 {len(unmatched_a)} 个未配对，实际侧 {len(unmatched_b)} 个未配对）"
+                )
+                # 把**配不上的那一对**的字段级差异带出来，否则报告里只剩一句「不一致」
+                if unmatched_a and unmatched_b:
+                    compare(unmatched_a[0], unmatched_b[0], f"{path}<未配对>",
+                            diffs, drift, max_diff)
+                else:
+                    for extra in (unmatched_a or unmatched_b)[:2]:
+                        diffs.append(f"{path}<未配对>: {short(extra, 200)}")
             return diffs, drift
         for i, (e, a) in enumerate(zip(expected, actual)):
             compare(e, a, f"{path}[{i}]", diffs, drift, max_diff)
@@ -408,9 +692,26 @@ def make_png_8x8() -> bytes:
     return _PNG
 
 
-def build_request(case: dict, base_url: str):
+def build_request(case: dict, base_url: str, captures: CaptureMap | None = None):
     path = case["path"]
     query = case.get("query") or {}
+    body = case.get("body")
+    swapped: list[str] = []
+
+    if captures is not None:
+        subs, missing = captures.subs_for(captures.capture_keys(case))
+        if subs:
+            path, used = captures.substitute_text(path, subs)
+            swapped.extend(used)
+            body, used = captures.substitute(body, subs)
+            swapped.extend(used)
+        if missing:
+            # 该 key 从没在响应里被观察到：**不静默放过**，让调用方给失败带上 cause。
+            case.setdefault("_capture_unresolved", [])
+            for key in missing:
+                if key not in case["_capture_unresolved"]:
+                    case["_capture_unresolved"].append(key)
+
     if case["method"] == "GET" and query:
         path = f"{path}?{urlencode(query)}"
 
@@ -426,11 +727,10 @@ def build_request(case: dict, base_url: str):
         role = case["headers"]["role"] or "farmer_xinfeng"
         headers["Authorization"] = f"Bearer {token_for(role)}"
 
-    body = case.get("body")
     if body is not None and body.get("IMAGE") == "@png_data_uri":
         body = dict(body, IMAGE="data:image/png;base64," + base64.b64encode(make_png_8x8()).decode())
 
-    return base_url + path, headers, body
+    return base_url + path, headers, body, swapped
 
 
 # --------------------------------------------------------------------------------------
@@ -441,17 +741,23 @@ def build_request(case: dict, base_url: str):
 class TokenStore:
     """回放过程中按需重建固定 token；`--no-db` 时退化为空操作。"""
 
-    def __init__(self, dsn: str | None, schema: str | None):
+    def __init__(self, dsn: str | None, schema: str | None,
+                 seed_approval_id: str | None = None):
         self.dsn = dsn
         self.schema = schema
+        self.seed_approval_id = seed_approval_id
         self.enabled = bool(dsn and schema)
         self.log: list[str] = []
 
     def _sql(self, statements: list[str]) -> None:
         psql = find_pg_tool("psql")
+        # 注意：SQL 里有中文（审批单标题），**不能**走 `-c`——psql 在 Windows 控制台
+        # 会用本地代码页解释命令行参数，实测报 `无效的 "UTF8" 编码字节顺序`。
+        # 走 stdin + 显式 client_encoding 才稳。
+        payload = "SET client_encoding TO 'UTF8';\n" + "\n".join(statements) + "\n"
         proc = subprocess.run(
-            [psql, self.dsn, "-v", "ON_ERROR_STOP=1", "-q", "-c", "\n".join(statements)],
-            capture_output=True, text=True, encoding="utf-8",
+            [psql, self.dsn, "-v", "ON_ERROR_STOP=1", "-q", "-f", "-"],
+            input=payload, capture_output=True, text=True, encoding="utf-8",
         )
         if proc.returncode != 0:
             raise SystemExit(f"psql 失败（token 操作）:\n{proc.stderr or proc.stdout}")
@@ -488,6 +794,37 @@ class TokenStore:
         if stmts:
             self._sql(stmts)
             self.log.append("ensure_scratch_users")
+
+    def ensure_seed_approval(self) -> None:
+        """补上录制器在**任何用例之前**预置的那张待决策审批单。
+
+        录制器 `run_capture` 里 `ctx.captured["seed_approval_id"] = seed_approval_id()`
+        会 `AgentApproval.objects.create(...)`，但 seed.json 是**那之前**导出的纯种子态，
+        所以它不在 seed 里；而 agent 域有多条用例用它的 uuid 作路径参数
+        （`agent_approval_decision_approve_ok` / `..._repeat_500` / `..._no_token_401`），
+        不补就是恒 404。字段值照抄夹具里那张单子。
+
+        `created_at` / `updated_at` 用 now()：它们在夹具里被 `$..created_at` 屏蔽，
+        不参与逐值比对（`agent_approval_list_pending_ok` 只比 id/status/note 等）。
+        """
+        if not self.enabled or not self.seed_approval_id:
+            return
+        now = dt.datetime.now(dt.timezone.utc).isoformat()
+        ident = self.seed_approval_id.replace("'", "''")
+        stmts = [
+            "DELETE FROM agent_approval WHERE title = '契约基准：待决策审批单' "
+            "AND ref_type = 'qa' AND ref_id = 'seed-approval';",
+            "INSERT INTO agent_approval "
+            "(id, ticket_type, title, ref_type, ref_id, payload, status, "
+            " created_by_id, decided_by_id, note, created_at, decided_at, updated_at) "
+            "SELECT "
+            f"'{ident}'::uuid, 'other', '契约基准：待决策审批单', 'qa', 'seed-approval', "
+            f"'{{\"action\": \"none\", \"args\": {{}}}}'::jsonb, 'pending', "
+            f"NULL, NULL, '', '{now}', NULL, '{now}' "
+            f"WHERE NOT EXISTS (SELECT 1 FROM agent_approval WHERE id = '{ident}'::uuid);",
+        ]
+        self._sql(stmts)
+        self.log.append("ensure_seed_approval")
 
     def install_all(self) -> None:
         if not self.enabled:
@@ -579,7 +916,8 @@ def needs_drop_token(case: dict) -> str | None:
 # --------------------------------------------------------------------------------------
 
 
-def replay_case(case: dict, base_url: str, session, tokens: TokenStore, max_diff: int) -> dict:
+def replay_case(case: dict, base_url: str, session, tokens: TokenStore, max_diff: int,
+                captures: CaptureMap | None = None) -> dict:
     record = {
         "name": case["name"],
         "kind": case.get("kind"),
@@ -593,6 +931,9 @@ def replay_case(case: dict, base_url: str, session, tokens: TokenStore, max_diff
         "shape_only": bool(case.get("shape_only")),
         "note": case.get("note", ""),
         "pre": [],
+        "capture_substituted": [],
+        "capture_observed": [],
+        "cause": None,
         "diffs": [],
         "shape_problems": [],
         "offset_style_drift": [],
@@ -603,7 +944,15 @@ def replay_case(case: dict, base_url: str, session, tokens: TokenStore, max_diff
         tokens.drop(drop_key)
         record["pre"].append(f"drop_token:{drop_key}")
 
-    url, headers, body = build_request(case, base_url)
+    url, headers, body, swapped = build_request(case, base_url, captures)
+    record["capture_substituted"] = sorted(set(swapped))
+    unresolved = case.pop("_capture_unresolved", [])
+    if unresolved:
+        record["cause"] = "capture_unresolved:" + ",".join(unresolved)
+        record["diffs"].append(
+            f"capture 未解析：{', '.join(unresolved)}（该 key 从未在响应里被观察到，"
+            f"请求仍按录制值发出，结果不可信）"
+        )
     try:
         if case.get("upload"):
             spec = case["upload"]
@@ -639,11 +988,16 @@ def replay_case(case: dict, base_url: str, session, tokens: TokenStore, max_diff
     record["actual_body_sha256"] = hashlib.sha256(resp.content).hexdigest()
     record["actual_body_bytes"] = len(resp.content)
 
-    diffs: list[str] = []
+    if captures is not None:
+        captures.observe(case, resp.status_code, actual_body)
+
+    diffs: list[str] = list(record["diffs"])
     drift: list[str] = []
 
     if resp.status_code != case["expected_status"]:
         diffs.append(f"HTTP 状态：期望 {case['expected_status']}，实际 {resp.status_code}")
+        if record["cause"] is None and resp.status_code == 404 and record["capture_substituted"]:
+            record["cause"] = "capture_substituted_but_404"
 
     expected_ct = case.get("expected_content_type") or ""
     if expected_ct and content_type.split(";")[0] != expected_ct.split(";")[0]:
@@ -781,12 +1135,42 @@ def set_path(node, path: str, value) -> bool:
 # --------------------------------------------------------------------------------------
 
 
+def run_sequence(cases, base_url, tokens, max_diff, captures) -> list[dict]:
+    """按给定顺序回放一遍，返回逐条记录。"""
+    import requests
+
+    session = requests.Session()
+    records: list[dict] = []
+    for domain, case in cases:
+        # 复刻录制器的 ensure_tokens()：每个写类用例前重建 5 个固定 token。
+        if case.get("kind") == "mutation" and tokens.enabled:
+            tokens.install_all()
+        before = len(captures.observed)
+        record = replay_case(case, base_url, session, tokens, max_diff, captures)
+        record["domain"] = domain
+        record["capture_observed"] = captures.observed[before:]
+        records.append(record)
+        mark = {"pass": "  ", "fail": "!!", "expected_deviation": "~~", "transport_error": "!!"}[
+            record["verdict"]
+        ]
+        print(
+            f"{mark}[{domain}] {record['name']:<48} {record['method']:<7} "
+            f"{str(record['expected_status']):<5}-> {str(record['actual_status']):<5} "
+            f"{record['verdict']}"
+            + (f"  cause={record['cause']}" if record["cause"] else "")
+        )
+        for diff in record["diffs"][:6]:
+            print(f"      {diff}")
+    return records
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="契约回放与比对")
     ap.add_argument("--base-url", default="http://127.0.0.1:11000/compat")
     ap.add_argument("--fixtures", default=str(FIXTURES))
     ap.add_argument("--domain", action="append", default=None,
-                    help="只回放这些域（可重复；默认全部）")
+                    help="只回放这些域（可重复）。**不给就是权威跑法**：按 index 域顺序跑全部 246 条。"
+                         "单域跑只有在「同一 schema 上接着已有的全序列状态」才有意义")
     ap.add_argument("--case", action="append", default=None, help="只回放这些用例名")
     ap.add_argument("--schema", default=None,
                     help="scratch schema（用于回放中重建固定 token）；不给则不碰数据库")
@@ -836,37 +1220,40 @@ def main() -> int:
                 continue
             cases.append((domain, case))
 
-    tokens = TokenStore(schema_dsn(base_dsn(), args.schema) if args.schema else None, args.schema)
+    tokens = TokenStore(schema_dsn(base_dsn(), args.schema) if args.schema else None, args.schema,
+                        seed_approval_id=index.get("seed_approval_id"))
 
-    # 录制器在跑**任何**用例之前就补建了 2 个 scratch 账号并装了 5 条固定 token
-    # （`run_capture` 的 ensure_tokens()）。seed.json 是那之前的纯种子态，
-    # 所以这里要复刻一次，否则读类用例（如 me_ok_*）从一开始就 401。
+    # 录制器在跑**任何**用例之前就补建了 2 个 scratch 账号、预置了那张待决策审批单，
+    # 并装了 5 条固定 token（`run_capture` 的 ensure_tokens()）。seed.json 是那之前的
+    # 纯种子态，所以这里要复刻一次，否则读类用例（如 me_ok_*）从一开始就 401、
+    # agent 的 decision 用例恒 404。
     if tokens.enabled:
         tokens.ensure_scratch_users()
+        tokens.ensure_seed_approval()
         tokens.install_all()
-        print(f"[tokens] 初始状态就绪：scratch 账号 2 个 + 固定 token {len(TOKEN_KEYS)} 条")
+        print(f"[tokens] 初始状态就绪：scratch 账号 2 个 + seed 审批单 1 张 + "
+              f"固定 token {len(TOKEN_KEYS)} 条")
 
     import requests
 
-    session = requests.Session()
-    records: list[dict] = []
-    for domain, case in cases:
-        # 复刻录制器的 ensure_tokens()：每个写类用例前重建 5 个固定 token。
-        if case.get("kind") == "mutation" and tokens.enabled:
-            tokens.install_all()
-        record = replay_case(case, args.base_url, session, tokens, args.max_diff)
-        record["domain"] = domain
-        records.append(record)
-        mark = {"pass": "  ", "fail": "!!", "expected_deviation": "~~", "transport_error": "!!"}[
-            record["verdict"]
-        ]
-        print(
-            f"{mark}[{domain}] {record['name']:<48} {record['method']:<7} "
-            f"{str(record['expected_status']):<5}-> {str(record['actual_status']):<5} "
-            f"{record['verdict']}"
+    captures = CaptureMap(
+        effective_captured(index),
+        capture_plan=index.get("capture_plan"),
+        capture_generators=index.get("capture_generators"),
+        seed={"seed_approval_id": index.get("seed_approval_id")},
+    )
+    print(f"[capture] 映射 {len(captures.plan)} 条："
+          + ", ".join(f"{k}<{v}" for k, v in sorted(captures.plan.items())))
+
+    print(f"[pass] 权威回放（{len(cases)} 条，域顺序 {' → '.join(selected_domains)}）…")
+    records = run_sequence(cases, args.base_url, tokens, args.max_diff, captures)
+
+    unobserved = sorted(k for k in captures.recorded if k not in captures.runtime)
+    if unobserved:
+        warnings.append(
+            "capture key 从未在响应里被观察到（相关用例按录制值发出，结果不可信）："
+            + ", ".join(unobserved)
         )
-        for diff in record["diffs"][:6]:
-            print(f"      {diff}")
 
     summary = {
         "total": len(records),
@@ -887,6 +1274,12 @@ def main() -> int:
             "pass": sum(1 for r in subset if r["verdict"] == "pass"),
             "fail": sum(1 for r in subset if r["verdict"] == "fail"),
             "expected_deviation": sum(1 for r in subset if r["verdict"] == "expected_deviation"),
+            "transport_error": sum(1 for r in subset if r["verdict"] == "transport_error"),
+            "shape_only": sum(1 for r in subset if r["shape_only"]),
+            "capture_substituted": sum(1 for r in subset if r["capture_substituted"]),
+            "fails_without_cause": [r["name"] for r in subset
+                                    if r["verdict"] in ("fail", "transport_error")
+                                    and not r["cause"]],
         }
 
     print("\n=== 汇总 ===")
@@ -895,6 +1288,12 @@ def main() -> int:
         f"预期偏差 {summary['expected_deviation']}  传输错误 {summary['transport_error']}  "
         f"shape_only {summary['shape_only']}  tz 漂移 {summary['offset_style_drift']}"
     )
+    print(
+        f"[capture] 录制值 {len(captures.recorded)} 个；本次回放观察到 "
+        f"{len(captures.runtime)} 个；未观察到 {len(unobserved)} 个"
+    )
+    for note in captures.note:
+        print(f"   - {note}")
     for domain, stat in by_domain.items():
         print(f"  {domain:<14} {stat}")
 
@@ -915,6 +1314,13 @@ def main() -> int:
         "fixtures": str(fixtures),
         "seed_phase": phase,
         "warnings": warnings,
+        "capture": {
+            "recorded": captures.recorded,
+            "seed": captures.seed,
+            "runtime": captures.runtime,
+            "unobserved": unobserved,
+            "notes": captures.note,
+        },
         "summary": summary,
         "by_domain": by_domain,
         "cases": records,

@@ -339,6 +339,29 @@ BASE_NORM = [
     "$..token",
     "$..expiresAt",
     "$..expires_at",
+    # ---- T4：实测「每次运行都不同」但原先漏掉的时间/编号字段 ----
+    # 依据：`replay_diff.py` 在**同一份夹具**上重跑时，这些字段的值每次都变
+    # （录制时刻 vs 回放时刻），且它们全部是**写入时刻**或**随机编号**，
+    # 不是种子里可复现的领域值 —— 详见 VERIFICATION.md §T4。
+    "$..paid_at",          # 支付写入时刻（order_pay_ok / order_pay_v1_ok）
+    "$..cancelled_at",     # 取消写入时刻（order_cancel_pending_ok）
+    "$..decided_at",       # 审批决策时刻（agent_approval_decision_*）
+    "$..completed_at",     # tasks_complete_ok 的完成时刻（写入时刻，非种子值）
+    "$..payment_number",   # `PAY<32hex>`，每次支付随机生成
+    "$..trace_code",       # 箱码 / 新建批次·果树追溯码：uuid4 派生
+    "$..harvest_code",     # `CGJ-HV-<10hex>`
+    "$..order_number",     # `NO<时间><6hex>`
+    "$..code",             # 新建批次/果树/箱码的 `code`：uuid4 派生（`farmer_batch_create_*`）
+    # 种子里的「相对时间」字段：`seed_demo_data` 用 `now()` 加减偏移生成，
+    # 所以**录制时刻不同、值就不同**（微秒部分对不上，且它们不在 seed.json 的可复现范围内）。
+    # 依据：重录后这些字段仍然是「每次运行都不同」——实测见 VERIFICATION.md §T4。
+    "$..open_at",          # 批次开始 = now - 30d
+    "$..close_at",         # 批次结束 = now + 60d
+    "$..record_time",      # 温湿度历史点 = now - n d（Django 侧 `dt_offset`）
+    # `agent_risk_alert` 的 `payload.risk_cards[*].batch_risk_scores[*].batch_code`：
+    # 里面装的是**运行期新建批次**（`farmer_batch_create_*`）随机生成的 code，
+    # 不是种子值 —— 不屏蔽就会每次都对不上。
+    "$..batch_code",
     # DRF 的 PrimaryKeyRelatedField 会把外键序列化成裸主键（FruitTreeArchive /
     # HarvestArchive 的 tree / harvest_archive 字段）。这些 id 由 seed 决定，
     # 但 Rust 侧重建 seed 时无法保证同值 -> 按字段名屏蔽。
@@ -1532,6 +1555,8 @@ class Ctx:
         self.by_name = {r["url_name"]: r for r in routes}
         self.tokens: dict[str, str] = {}
         self.captured: dict[str, object] = {}
+        self.capture_plan: dict[str, str] = {}
+        self.capture_generators: dict[str, list[str]] = {}
         self.params_used: dict[str, dict] = {}
         self.mutation_order: list[dict] = []
 
@@ -1762,6 +1787,16 @@ def record_case(ctx: Ctx, c: dict) -> dict:
 
     for key, json_path in (c.get("capture") or {}).items():
         ctx.captured[key] = extract(body, json_path)
+        # 落盘 `key -> 响应 JSON 路径`：回放器必须靠它重建运行期 id（`@capture:<key>` 会被
+        # 烘成录制当时的 uuid，直接用必然 404）。没有这条映射，回放器只能按**值**反推，
+        # 而录制值恰好就是回放时拿不到的那个 id —— 在构造上不可能推出来。
+        # 注意：契约里 `cart_item_b1` 与 `cart_item_b1_2` 的录制值是**同一个 uuid**
+        # （加购走 get_or_create，第二次只是把数量累加），所以按值反推还会歧义；
+        # 这里按「哪个用例的哪条路径」记录，回放时按路径读，天然消歧。
+        ctx.capture_plan[key] = json_path
+        ctx.capture_generators.setdefault(key, [])
+        if c["name"] not in ctx.capture_generators[key]:
+            ctx.capture_generators[key].append(c["name"])
 
     if resp.status_code >= 500:
         entry["server_error"] = True
@@ -1835,6 +1870,119 @@ def _log(domain, rec):
 SEED_EXCLUDED_APPS = {"contenttypes", "auth", "admin", "sessions"}
 
 
+# --------------------------------------------------------------------------------------
+# T3：dumpdata 会把微秒**截断**到毫秒
+# --------------------------------------------------------------------------------------
+# 实测（三段证据见 VERIFICATION.md §T3）：
+#   (1) SQLite 里存的是 6 位小数文本：`2026-09-20 15:25:01.855199`；
+#   (2) Django ORM 读回来 microsecond=855199 完全正常；
+#   (3) 但 `dumpdata` 走 `DjangoJSONEncoder`，其 DateTimeField 分支
+#       显式做 `o.isoformat(sep, timezone)[:23]` —— 只留 3 位小数。
+# 于是 seed.json 里全是 `.xxx` 毫秒，而 DRF 响应体（`dt_z` / `dt_offset`）是 6 位微秒。
+# 两者**本来就是同一批值**（毫秒位相同、只差被截掉的后三位），不是「值不同」，
+# 所以这里把 dumpdata 的输出按模型/主键从 connection 读原始值回填，让 seed 保住微秒。
+# 不这么做就只能把日期时间加进 normalize —— 那是削弱断言，不是修工具。
+
+
+def _field_column_name(field_name: str, columns: set[str]) -> str | None:
+    if field_name in columns:
+        return field_name
+    if f"{field_name}_id" in columns:
+        return f"{field_name}_id"
+    return None
+
+
+def _pk_key(value) -> str:
+    """主键比较键：SQLite 存 UUID 列是 char(32)（无连字符），dumpdata 输出的是带连字符的。
+
+    不能直接字符串相等，否则一条都对不上（实测 97/100 落到 no_row）。
+    """
+    text = str(value).strip().lower()
+    if re.fullmatch(r"[0-9a-f]{8}-?(?:[0-9a-f]{4}-?){3}[0-9a-f]{12}", text):
+        return text.replace("-", "")
+    return text
+
+
+def restore_datetime_precision(objects: list[dict]) -> dict:
+    """把 `dumpdata` 的毫秒截断补回 6 位微秒，返回统计。
+
+    判据是**实测**的：只有实际发生了截断（`raw.isoformat() != dumped`）才回填，
+    并对每个模型给出计数，便于复核。
+    """
+    import datetime as _dt
+
+    from django.apps import apps as django_apps
+    from django.db import connection
+
+    by_model: dict[str, list[dict]] = {}
+    for obj in objects:
+        by_model.setdefault(obj["model"], []).append(obj)
+
+    stats = {
+        "restored": 0,
+        "fields": {},
+        "models": {},
+        "skipped_unknown_model": 0,
+        "skipped_unknown_column": 0,
+        "skipped_no_row": 0,
+    }
+
+    for label, objs in by_model.items():
+        try:
+            model = django_apps.get_model(label)
+        except LookupError:
+            stats["skipped_unknown_model"] += len(objs)
+            continue
+        table = model._meta.db_table
+        datetime_fields = {}
+        for field in model._meta.concrete_fields:
+            if field.get_internal_type() == "DateTimeField":
+                datetime_fields[field.name] = getattr(field, "attname", field.name)
+        if not datetime_fields:
+            continue
+
+        with connection.cursor() as cur:
+            cur.execute(f'SELECT * FROM "{table}"')
+            column_names = [c[0] for c in cur.description]
+            rows = cur.fetchall()
+        columns = set(column_names)
+        by_pk = {_pk_key(r[column_names.index(model._meta.pk.column)]): r for r in rows}
+
+        for obj in objs:
+            row = by_pk.get(_pk_key(obj["pk"]))
+            if row is None:
+                stats["skipped_no_row"] += 1
+                continue
+            for field_name, attname in datetime_fields.items():
+                value = obj["fields"].get(field_name)
+                if not isinstance(value, str):
+                    continue
+                column = _field_column_name(field_name, columns)
+                if column is None or column not in column_names:
+                    stats["skipped_unknown_column"] += 1
+                    continue
+                raw = row[column_names.index(column)]
+                if raw is None:
+                    continue
+                if isinstance(raw, str):
+                    raw = _dt.datetime.fromisoformat(raw)
+                if not isinstance(raw, _dt.datetime):
+                    continue
+                if raw.tzinfo is None:
+                    # SQLite 后端把 UTC 时间存成 naive 文本；seed 是给 PG timestamptz 用的，
+                    # 打上 UTC 标记让语义无歧义（`load_seed.py` 生成的 SQL 里也会写明偏移）。
+                    raw = raw.replace(tzinfo=_dt.timezone.utc)
+                precise = raw.isoformat()
+                if precise == value:
+                    continue
+                obj["fields"][field_name] = precise
+                stats["restored"] += 1
+                stats["fields"][field_name] = stats["fields"].get(field_name, 0) + 1
+                stats["models"][label] = stats["models"].get(label, 0) + 1
+
+    return stats
+
+
 def dump_seed(out_dir: Path, name: str = "seed.json"):
     from django.apps import apps as django_apps
     from django.core.management import call_command
@@ -1853,6 +2001,10 @@ def dump_seed(out_dir: Path, name: str = "seed.json"):
     objects = json.loads(target.read_text(encoding="utf-8"))
     shutil.rmtree(tmp, ignore_errors=True)
 
+    precision = restore_datetime_precision(objects)
+    print(f"[seed] 微秒回填（dumpdata 截断到毫秒的字段）：{precision['restored']} 处"
+          f"  按字段 {precision['fields']}")
+
     counts: dict[str, int] = {}
     for obj in objects:
         counts[obj["model"]] = counts.get(obj["model"], 0) + 1
@@ -1862,7 +2014,9 @@ def dump_seed(out_dir: Path, name: str = "seed.json"):
             **ENV,
             "captured_at": CAPTURED_AT,
             "dump_command":
-                "dumpdata <business model labels> --format=json --indent=2（保留主键）",
+                "dumpdata <business model labels> --format=json --indent=2（保留主键）"
+                "+ 按主键从 connection 读回原始 datetime（补回 dumpdata 截断的微秒）",
+            "datetime_precision_restored": precision,
             "excluded": [
                 "contenttypes.contenttype", "auth.permission", "auth.group",
                 "admin.logentry", "sessions.session",
@@ -2126,6 +2280,8 @@ def build_index(routes, domain_records, ctx, refs, alias_results, signature, see
         "captured_values": {k: v for k, v in ctx.captured.items()
                             if k != "seed_approval_id"},
         "seed_approval_id": ctx.captured.get("seed_approval_id"),
+        "capture_plan": {k: v for k, v in ctx.capture_plan.items()},
+        "capture_generators": {k: list(v) for k, v in ctx.capture_generators.items()},
         "seed_row_counts": seed_rows,
         "mutation_order": ctx.mutation_order,
         "alias_conclusion": {
