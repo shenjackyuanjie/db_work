@@ -6,4 +6,5 @@
 mod agent_tests;
 mod commerce_tests;
 mod core_tests;
+mod support;
 mod trace_tests;
