@@ -15,7 +15,7 @@ use tracing_subscriber::EnvFilter;
 
 use crate::client::OpenRouterClient;
 
-mod bootstrap;
+pub(crate) mod bootstrap;
 mod handlers_ai;
 mod handlers_commerce;
 mod handlers_core;
@@ -194,6 +194,9 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
             "/store-images/{file_name}",
             get(handlers_store::store_cover_image_handler),
         )
+        // Django 契约兼容层：P0–P4 只挂在影子路径上做逐字节比对，
+        // P5 才提升到 /api/** 与 /api/v1/** 并删除旧自研 handler。
+        .nest("/compat", crate::compat::router())
         .nest("/user", crate::user_routes::router(state.clone()))
         .route(
             "/media/recognition_records/{file_name}",

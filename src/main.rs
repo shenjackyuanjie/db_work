@@ -1,4 +1,5 @@
 mod client;
+mod compat;
 mod config;
 mod inference;
 mod models;
