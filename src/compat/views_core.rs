@@ -9,9 +9,10 @@
 //!    走的是**成功体形状**（带 `timestamp`）。本域唯一命中该分支的是
 //!    [`fertilization_plan_impl`]（`DEVIATIONS.md` **D2**：蓝本漏 import 导致恒 500），
 //!    按裁定修正为设计意图的正常语义，**不复刻 5xx**。
-//! 2. **`completed_at` 无时区偏移**（`DEVIATIONS.md` **D3**）：蓝本用 `datetime.now()`
-//!    写库，序列化出 `2026-09-20T22:20:40.204291` 这种「本地时间、无偏移」的串。
-//!    用 `ser::dt_naive_local` 复刻，**不要**顺手补 `+00:00`。
+//! 2. **`completed_at` 与 `created_at` 同形（带 `Z`）**（`DEVIATIONS.md` **D3**）：
+//!    蓝本 `complete_task_api` 虽然用 `datetime.now()` 写库，但**序列化是 DRF 做的**，
+//!    实测输出 `2026-09-20T23:36:09.294565Z`。原按「无偏移本地串」实现是误判，
+//!    已改用 `ser::dt_z`。
 //! 3. **时间后缀两种形态并存**（`DEVIATIONS.md` **D4**）：走 DRF `JSONEncoder` 的字段是
 //!    `Z`（`created_at` 系），走 `DateTimeField.to_representation` 的是 `+00:00`
 //!    （温湿度 `record_time`）。按字段逐个对齐夹具实测值。
@@ -1424,8 +1425,7 @@ pub(crate) async fn tasks_impl(pool: &PgPool, headers: &HeaderMap) -> ApiResult 
 
 /// `TaskSerializer` 的字段序与序列化规则。
 ///
-/// `created_at` 走 `Z` 形态（D4）；`completed_at` 用**朴素本地时间**（D3）——蓝本
-/// `complete_task_api` 写的是 `datetime.now()`，除该字段外不要用 `dt_naive_local`。
+/// `created_at` / `completed_at` **都**走 DRF `JSONEncoder` 的 `Z` 形态（D3、D4）。
 fn task_payload(row: &sqlx::postgres::PgRow) -> Result<Value, ApiReject> {
     let mut payload = Map::new();
     payload.insert(
@@ -1481,16 +1481,28 @@ fn task_payload(row: &sqlx::postgres::PgRow) -> Result<Value, ApiReject> {
     );
     payload.insert(
         "completed_at".to_string(),
-        match row
-            .try_get::<Option<DateTime<Utc>>, _>("completed_at")
-            .map_err(internal_error)?
-        {
-            Some(value) => Value::String(ser::dt_naive_local(value)),
-            None => Value::Null,
-        },
+        completed_at_value(
+            row.try_get::<Option<DateTime<Utc>>, _>("completed_at")
+                .map_err(internal_error)?,
+        ),
     );
 
     Ok(Value::Object(payload))
+}
+
+/// `completed_at` 的序列化形态（`DEVIATIONS.md` **D3**）。
+///
+/// 蓝本走 DRF `JSONEncoder`，实测输出 `2026-09-20T23:36:09.294565Z`（带 `Z`、6 位微秒，
+/// 与 `created_at` 同形），**不是**无偏移的本地时间串。
+///
+/// ⚠️ 该字段被 `replay_diff.py` 的 `$..completed_at` normalize 屏蔽（它是**写入时刻**，
+/// 逐值不可比），所以端到端回放**看不出**形态错误 —— 形态由
+/// `completed_at_uses_drf_z_form` 单测钉住。
+fn completed_at_value(value: Option<DateTime<Utc>>) -> Value {
+    match value {
+        Some(value) => Value::String(ser::dt_z(value)),
+        None => Value::Null,
+    }
 }
 
 // --------------------------------------------------------------------------------------
@@ -1908,4 +1920,54 @@ pub(crate) fn parse_iso8601(raw: &str) -> Option<DateTime<Utc>> {
         return Some(naive.and_utc());
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `DEVIATIONS.md` **D3**：`completed_at` 与 `created_at` 同形
+    /// （DRF `JSONEncoder` 的 `Z` 形态），**不是**无偏移的本地时间串。
+    ///
+    /// 端到端回放里这个字段被 `$..completed_at` normalize 屏蔽（写入时刻、逐值不可比），
+    /// 所以形态写错也跑得绿 —— 这就是本用例存在的理由。
+    #[test]
+    fn completed_at_uses_drf_z_form() {
+        let at = "2026-09-20T23:36:09.294565Z"
+            .parse::<DateTime<Utc>>()
+            .unwrap();
+        assert_eq!(
+            completed_at_value(Some(at)),
+            json!("2026-09-20T23:36:09.294565Z")
+        );
+
+        // 微秒为 0 时整体省略小数部分，与 Python `isoformat()` 一致。
+        let whole = "2026-09-20T23:36:09Z".parse::<DateTime<Utc>>().unwrap();
+        assert_eq!(
+            completed_at_value(Some(whole)),
+            json!("2026-09-20T23:36:09Z")
+        );
+    }
+
+    /// 反向钉子：两种错的形态都不能出现 —— `+00:00` 与「无偏移朴素串」。
+    #[test]
+    fn completed_at_is_neither_naive_nor_offset() {
+        let at = "2026-09-20T13:41:16.399657Z"
+            .parse::<DateTime<Utc>>()
+            .unwrap();
+
+        let Value::String(rendered) = completed_at_value(Some(at)) else {
+            panic!("completed_at 必须是字符串");
+        };
+        assert!(rendered.ends_with('Z'), "{rendered}");
+        assert!(!rendered.contains('+'), "{rendered}");
+        assert_eq!(rendered, ser::dt_z(at));
+        assert_ne!(rendered, ser::dt_offset(at));
+    }
+
+    /// 未完成的任务是 `null`，不是空串。
+    #[test]
+    fn completed_at_is_null_for_unfinished_tasks() {
+        assert_eq!(completed_at_value(None), Value::Null);
+    }
 }
