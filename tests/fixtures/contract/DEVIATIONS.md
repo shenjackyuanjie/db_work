@@ -27,6 +27,18 @@
 | **S2** | `requirements.txt` 缺 `requests` | `agent_service.py` 依赖它，Django 环境实际缺依赖。已在本地 venv 补装，未改仓库文件 |
 | **S3** | `navel_backend_git` 仓库把 `__pycache__/*.pyc`（43 个）与 `media/`（24 个）提交进了 git，且无 `.gitignore` | 清理时**必须** `git checkout -- .` 还原，否则会删掉被跟踪文件 |
 
+## 已裁定：W2 网页端范围（用户 2026-09-20 决策）
+
+侦察结论：网页端 35 条存活调用中，**能映射到 Django 契约的 0 条**，Rust 独有 31 条，
+契约不兼容 4 条。详见 `db/static/WEB_ENDPOINT_MAP.md`。据此裁定：
+
+| 决定 | 内容 |
+|---|---|
+| **网页端 Rust 独有能力保留为超集，挂 `/web/*`** | 注册审批 + 邀请码、系统设置、客服会话、3D 沙盘几何数据、商品封面上传、后台仪表盘统计——都不塞进逐字兼容 App 的 `/compat` 层，避免污染兼容性目标 |
+| **现货商城收敛到 Django 的 `citrus_product`** | 接受前端改造代价：整数 id → UUID、`price_cents` 分 → Decimal `price`、`stock_quantity` → `stock`、`is_active` → `status` 枚举、商品必挂 `sales_batch`、购物车从 localStorage 迁到服务端 `cart_item`。旧 `store_*` 表据此退役 |
+
+由此 W2 拆成两条并行线：**A「可映射部分直接切」** + **B「超集部分保留 `/web/*`」**。
+
 ## 待确认（需 App 侧或用户确认）
 
 1. **D2 的接口语义**：`/api/generate/fertilization-plan` 在蓝本里恒 500，没有可参照的正确响应。我方按意图实现后，需要确认 App 是否真的没在用、或期望什么形状。

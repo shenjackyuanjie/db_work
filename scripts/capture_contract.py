@@ -1835,7 +1835,7 @@ def _log(domain, rec):
 SEED_EXCLUDED_APPS = {"contenttypes", "auth", "admin", "sessions"}
 
 
-def dump_seed(out_dir: Path):
+def dump_seed(out_dir: Path, name: str = "seed.json"):
     from django.apps import apps as django_apps
     from django.core.management import call_command
 
@@ -1878,7 +1878,7 @@ def dump_seed(out_dir: Path):
         "objects": objects,
     }
     body = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
-    path = out_dir / "seed.json"
+    path = out_dir / name
     path.write_text(body, encoding="utf-8", newline="\n")
     signature = "sha256:" + hashlib.sha256(body.encode("utf-8")).hexdigest()
     print(f"\n[out] {path}  rows={payload['_meta']['total_rows']}")
@@ -2643,9 +2643,17 @@ def main() -> int:
             print("\n[smoke] 自检通过（未写任何文件）")
             return 0
 
+        # 纯种子态必须在回放**之前**导出。夹具的回放协议是「加载 seed → 按序回放」，
+        # 若把回放末态当成起点，依赖初始状态的读类用例（库存 / 可售量 / is_open / 计数）
+        # 必然对不上，写类还会走不同分支。这个顺序错了会让整份夹具失去可比性。
+        seed_dir = Path(args.out)
+        signature, seed_payload = dump_seed(seed_dir, name="seed.json")
+
         domain_records, ctx = run_capture(args, routes, refs)
         alias_results = alias_checks(domain_records)
-        signature, seed_payload = dump_seed(Path(args.out))
+
+        # 回放后的末态单独留档，便于排查「某一步状态为何不同」；不作为回放起点。
+        dump_seed(seed_dir, name="seed_final.json")
 
         for domain, records in domain_records.items():
             payload = {
