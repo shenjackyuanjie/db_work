@@ -8,7 +8,8 @@ use sqlx::{PgPool, Row};
 
 use super::shared::now_millis;
 
-pub(super) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow::Result<()> {
+/// 建库自举。契约层的集成测试会直接调用它，把 30 张契约表建到独立的 scratch schema 上。
+pub(crate) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow::Result<()> {
     for &stmt in legacy_tables::DDL {
         sqlx::query(stmt)
             .execute(pool)
