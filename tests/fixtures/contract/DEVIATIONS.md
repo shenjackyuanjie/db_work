@@ -175,7 +175,24 @@
 1. **D2 的接口语义**：`/api/generate/fertilization-plan` 在蓝本里恒 500，没有可参照的正确响应。我方按意图实现后，需要确认 App 是否真的没在用、或期望什么形状。
 2. **切换窗口**：W2 切换期间 Django 是否继续为 App 提供线上服务（计划假设「是」）。
 
+## 追加登记（2026-09-20 收尾验证）
+
+| ID | 项 | 说明 | 处置 |
+|---|---|---|---|
+| **D14** | `register` 的 `email: ""` | 蓝本 `allow_blank=True` 放行空串，我方回 `请输入合法的邮件地址。` | **待修**：应放行空串 |
+| **D15** | `trace_tests::product_order_is_deterministic_when_created_at_ties` 不清理临时数据 | 会插 2 条 `W1B 商品 N` 且不删；全量跑时 commerce 在 trace 之前所以看不见，单跑子集或重跑会把商品条数顶到 9 造成**假红** | **待修**：测试收尾要清理 |
+| **D16** | 回放有「录制后 20 分钟」时限 | `seed_demo_data` 给 `ORD-DEMO-1003` 的 `expires_at` = 录制时刻 + 20 分钟；超时后任何订单端点触发的 `_expire_stale_orders` 都会取消它并回滚库存（实测会多出 5 条 commerce 假失败） | **写进标准跑法**：权威协议是 `capture → load_seed → replay` 一次跑完（20 分钟内）。这才是「录制与回放须同日完成」的真正原因；种子放置过久需先把该订单窗口推后 |
+
+### 权威跑法 = 切换门槛
+
+`--domain` 不给即**全序列**，按录制器域顺序 `auth → core → commerce → orchard_trace → agent`
+在**同一个 schema** 上跑完全部 251 条。单域配 fresh seed 必然有假失败——夹具的读类期望值
+含前置域写类的效果。完整命令见 `VERIFICATION.md`。
+
+**当前基线：235 pass / 4 fail / 12 expected_deviation。**
+4 条 fail 全部是 D12 记录的夹具顺序不确定性，**不是实现缺陷**。
+
 ## 使用方式
 
 - W1 各域实现时：**夹具 > 本清单 > 个人判断**。夹具与蓝本冲突时以夹具为准，并回来登记。
-- `replay_diff.py` 会把命中 D1/D2 的用例标为 `expected_deviation`，不计入失败。
+- `replay_diff.py` 会把命中 D1/D2/D5 的用例标为 `expected_deviation`，不计入失败。
