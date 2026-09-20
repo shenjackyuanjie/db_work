@@ -54,6 +54,14 @@ DOMAIN_ORDER = ["auth", "core", "commerce", "orchard_trace", "agent"]
 
 # 录制器里 Ctx.install_token 的 key 名单（role 标签与 key 同名）。
 TOKEN_KEYS = ["farmer_xinfeng", "farmer_xunwu", "buyer_zhang", "scratch", "scratch2"]
+# key -> seed 里的真实 username。录制器 `ensure_tokens` 的映射就是这个，别用 key 当用户名。
+TOKEN_USERNAME = {
+    "farmer_xinfeng": "farmer_xinfeng",
+    "farmer_xunwu": "farmer_xunwu",
+    "buyer_zhang": "buyer_zhang",
+    "scratch": "qa_scratch_user",
+    "scratch2": "qa_scratch_user2",
+}
 TOKEN_NAMESPACE = uuid.NAMESPACE_URL
 TOKEN_PREFIX = "contract:"
 TOKEN_TTL_DAYS = 365
@@ -445,6 +453,39 @@ class TokenStore:
         if proc.returncode != 0:
             raise SystemExit(f"psql 失败（token 操作）:\n{proc.stderr or proc.stdout}")
 
+    def ensure_scratch_users(self) -> None:
+        """补上录制器在跑用例**之前**建的两个 scratch 账号。
+
+        它们由 `run_capture` 里的两次 `POST /api/register` 建出来，之后才 `dump_seed`，
+        但 seed.json 是**回放前**导出的纯种子态，所以这两个账号不在里面——而
+        `install_all()` 是「按 username 查 id 再 INSERT」，账号不存在就静默插 0 行，
+        scratch 相关用例于是恒 401。这里按录制时的语义补建（role=buyer）。
+        """
+        if not self.enabled:
+            return
+        now = dt.datetime.now(dt.timezone.utc).isoformat()
+        # 口令复用 seed 里 farmer_xinfeng 的 pbkdf2 串（口令 farmer123），
+        # 只是为了账号本身合法可登录；本域用例不会用它们登录。
+        password = (
+            "pbkdf2_sha256$720000$9v4pzPFovtucXyIxzowUwi$"
+            "x8sLz0Z+Q4brqnHHJSZK+rJ826ILbbSfyPwPzjwjAy0="
+        )
+        stmts = []
+        for key in TOKEN_KEYS:
+            username = TOKEN_USERNAME.get(key)
+            if not username:
+                continue
+            stmts.append(
+                'INSERT INTO "user" (id, username, password, email, role, orchard_address, '
+                "latitude, longitude, created_at, updated_at) "
+                f"SELECT '{uuid.uuid4()}', '{username}', '{password}', '{username}@example.com', "
+                f"'buyer', NULL, NULL, NULL, '{now}', '{now}' "
+                f"WHERE NOT EXISTS (SELECT 1 FROM \"user\" WHERE username = '{username}');"
+            )
+        if stmts:
+            self._sql(stmts)
+            self.log.append("ensure_scratch_users")
+
     def install_all(self) -> None:
         if not self.enabled:
             return
@@ -452,13 +493,15 @@ class TokenStore:
         expires = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=TOKEN_TTL_DAYS)).isoformat()
         stmts = []
         for key in TOKEN_KEYS:
+            # `role` 标签与 seed 里的 username **并不总是同名**：scratch -> qa_scratch_user。
+            username = TOKEN_USERNAME.get(key, key)
             stmts.append(
                 f'DELETE FROM auth_token WHERE user_id = '
-                f'(SELECT id FROM "user" WHERE username = \'{key}\');'
+                f'(SELECT id FROM "user" WHERE username = \'{username}\');'
             )
             stmts.append(
                 f'INSERT INTO auth_token (key, user_id, created_at, expires_at) SELECT '
-                f"'{token_for(key)}', id, '{now}', '{expires}' FROM \"user\" WHERE username = '{key}';"
+                f"'{token_for(key)}', id, '{now}', '{expires}' FROM \"user\" WHERE username = '{username}';"
             )
         self._sql(stmts)
         self.log.append("install_tokens")
@@ -791,6 +834,14 @@ def main() -> int:
             cases.append((domain, case))
 
     tokens = TokenStore(schema_dsn(base_dsn(), args.schema) if args.schema else None, args.schema)
+
+    # 录制器在跑**任何**用例之前就补建了 2 个 scratch 账号并装了 5 条固定 token
+    # （`run_capture` 的 ensure_tokens()）。seed.json 是那之前的纯种子态，
+    # 所以这里要复刻一次，否则读类用例（如 me_ok_*）从一开始就 401。
+    if tokens.enabled:
+        tokens.ensure_scratch_users()
+        tokens.install_all()
+        print(f"[tokens] 初始状态就绪：scratch 账号 2 个 + 固定 token {len(TOKEN_KEYS)} 条")
 
     import requests
 
