@@ -23,7 +23,7 @@ pub(crate) mod bootstrap;
 // **S5 删除这些代码时必须把下面三个 `#[allow(dead_code)]` 一起删掉**——
 // 让它们留在此处会让这三个模块里日后的真死代码隐身。
 #[allow(dead_code)]
-mod handlers_ai;
+pub(crate) mod handlers_ai;
 mod handlers_commerce;
 #[allow(dead_code)]
 mod handlers_core;
