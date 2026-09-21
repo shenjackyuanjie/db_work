@@ -1,7 +1,7 @@
 {
   "domain": "agent",
-  "captured_at": "2026-09-20T15:57:04+00:00",
-  "seed_signature": "sha256:132dd937d0663088674d5c6ab897f160fba737b5a458da0a68790427dc9b0cff",
+  "captured_at": "2026-09-21T04:38:06+00:00",
+  "seed_signature": "sha256:99a4cdbbce0d86efa32ad5fff6386c4e38f85f7c80ce9df54316ba6c97dc6b29",
   "environment": {
     "django_version": "5.0.14",
     "drf_version": "3.15.2",
@@ -43,12 +43,12 @@
         "data": {
           "role": "farmer",
           "user": {
-            "id": "686de717-1bcd-4990-928d-8058ff5054f1",
+            "id": "47d4ab89-b100-4803-b7cd-951bd2011be3",
             "username": "farmer_xinfeng"
           },
           "orchards": [
             {
-              "id": "0afe849f-ddd9-40b3-afc3-b6e75ab1b40b",
+              "id": "f5cd13e5-afe9-4c17-bba4-813280a963e1",
               "code": "GY-XF-DEMO-01",
               "name": "信丰县橙管家合作示范园",
               "status": "verified",
@@ -60,7 +60,7 @@
           ],
           "batches": [
             {
-              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+              "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -69,15 +69,15 @@
               "planned_quantity": 800,
               "sold_quantity": 122,
               "available_quantity": 678,
-              "expected_harvest_start": "2026-09-23",
-              "expected_harvest_end": "2026-09-28",
-              "expected_ship_start": "2026-09-24",
-              "expected_ship_end": "2026-09-29"
+              "expected_harvest_start": "2026-09-24",
+              "expected_harvest_end": "2026-09-29",
+              "expected_ship_start": "2026-09-25",
+              "expected_ship_end": "2026-09-30"
             },
             {
-              "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-              "code": "CGJ-XF-DEMO-01-72929E",
-              "trace_code": "CGJ-56665ABFB890",
+              "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+              "code": "CGJ-XF-DEMO-01-BC8FE4",
+              "trace_code": "CGJ-9C3007BC8777",
               "title": "契约基准批次（第二次）",
               "status": "draft",
               "status_display": "筹备中",
@@ -90,9 +90,9 @@
               "expected_ship_end": ""
             },
             {
-              "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-              "code": "CGJ-XF-DEMO-01-CFAD6B",
-              "trace_code": "CGJ-9B778A646596",
+              "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+              "code": "CGJ-XF-DEMO-01-FB1617",
+              "trace_code": "CGJ-F9D812B6B821",
               "title": "契约基准批次",
               "status": "draft",
               "status_display": "筹备中",
@@ -107,7 +107,7 @@
           ],
           "products": [
             {
-              "id": "276f1ee6-9f7e-4b4b-8454-a51a315935f9",
+              "id": "fe904c84-e67d-4b42-9f2c-e6af4be57055",
               "name": "契约基准商品",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -120,20 +120,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
-              "name": "纽荷尔企业装",
-              "sku_type": "enterprise",
-              "sku_type_display": "企业装",
-              "variety": "纽荷尔脐橙",
-              "origin": "江西赣州信丰县",
-              "price": 159.0,
-              "unit": "20斤/箱",
-              "stock": 200,
-              "status": "on_sale",
-              "sales_batch_code": "CGJ-2026-XF-001"
-            },
-            {
-              "id": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
+              "id": "a0dde2d6-7af4-421c-9a2b-2248961eafb7",
               "name": "纽荷尔试吃装",
               "sku_type": "trial",
               "sku_type_display": "试吃装",
@@ -146,7 +133,20 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "b1cef48a-4436-4232-8c03-bead1de8e521",
+              "id": "9d269741-5548-4212-a20a-72f289d8f960",
+              "name": "纽荷尔企业装",
+              "sku_type": "enterprise",
+              "sku_type_display": "企业装",
+              "variety": "纽荷尔脐橙",
+              "origin": "江西赣州信丰县",
+              "price": 159.0,
+              "unit": "20斤/箱",
+              "stock": 200,
+              "status": "on_sale",
+              "sales_batch_code": "CGJ-2026-XF-001"
+            },
+            {
+              "id": "31a2eb2a-651e-4000-abaf-258e34175d22",
               "name": "赣南纽荷尔家庭装",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -161,36 +161,36 @@
           ],
           "tasks": [
             {
-              "id": "e0cd317e-3112-4d46-a026-5f69fbb67cc0",
+              "id": "836dacb8-4a3a-421f-b2a6-90733ab07543",
               "title": "环境监测-高风险",
               "risk_level": "高风险",
               "task_type": "温湿度监测",
               "is_completed": false,
-              "created_at": "2026-09-20T15:57:10.679490+00:00"
+              "created_at": "2026-09-21T04:38:12.215086+00:00"
             },
             {
-              "id": "0dfeb245-3d11-43ca-a9b3-4ee4eab7ee37",
+              "id": "7128b91e-82df-40ea-91fc-3ec82c8a2f3b",
               "title": "溃疡病治理",
               "risk_level": "高风险",
               "task_type": "疾病识别",
               "is_completed": false,
-              "created_at": "2026-09-20T15:57:10.663490+00:00"
+              "created_at": "2026-09-21T04:38:12.201087+00:00"
             },
             {
-              "id": "a217e613-abd3-4afe-86ba-2e104569349e",
+              "id": "e90b780b-fe8f-48ac-8c34-c28e8cae079e",
               "title": "B区坡地黄龙病复核",
               "risk_level": "高风险",
               "task_type": "病虫害防治",
               "is_completed": false,
-              "created_at": "2026-09-20T15:57:07.985960+00:00"
+              "created_at": "2026-09-21T04:38:09.498785+00:00"
             },
             {
-              "id": "0380f90c-ec38-4df3-8336-17d2f30bb59a",
+              "id": "671db181-1668-48ab-88a7-3879f1e91323",
               "title": "采摘期前糖度抽检",
               "risk_level": "中风险",
               "task_type": "品质抽检",
               "is_completed": false,
-              "created_at": "2026-09-20T15:57:07.985960+00:00"
+              "created_at": "2026-09-21T04:38:09.498783+00:00"
             }
           ],
           "risk_events": [
@@ -198,13 +198,13 @@
               "disease_name": "黄龙病",
               "risk_level": "高风险",
               "area": "B区坡地",
-              "recognition_date": "2026-09-19"
+              "recognition_date": "2026-09-20"
             }
           ]
         },
-        "timestamp": 1789919832265
+        "timestamp": 1789965493814
       },
-      "raw_body_sha256": "5dd5b39d1425b6e985a66cfa2bde4407d42e2b98da9e245202a2bc67c564b171",
+      "raw_body_sha256": "1308dd4743440a006fcbbd614af39f72b715c98646d9c8a91b879ef364ef78ea",
       "raw_body_bytes": 3696,
       "normalize": [
         "$.timestamp",
@@ -274,13 +274,13 @@
         "data": {
           "role": "buyer",
           "user": {
-            "id": "9b964798-568a-4ebb-ad50-c81ea292d768",
+            "id": "255e5693-b985-49c7-aacb-f6810c5d5125",
             "username": "buyer_zhang"
           },
           "orchards": [],
           "batches": [
             {
-              "id": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+              "id": "e41f805f-0a8f-4471-9bcd-fac6aaca3855",
               "code": "CGJ-2026-AY-002",
               "trace_code": "CGJ-BATCH-AY2026",
               "title": "安远山地·红肉脐橙鲜果批次",
@@ -289,13 +289,13 @@
               "planned_quantity": 500,
               "sold_quantity": 60,
               "available_quantity": 440,
-              "expected_harvest_start": "2026-09-27",
-              "expected_harvest_end": "2026-10-02",
-              "expected_ship_start": "2026-09-28",
-              "expected_ship_end": "2026-10-03"
+              "expected_harvest_start": "2026-09-28",
+              "expected_harvest_end": "2026-10-03",
+              "expected_ship_start": "2026-09-29",
+              "expected_ship_end": "2026-10-04"
             },
             {
-              "id": "89197bf2-7798-40c4-8b06-2414773a9444",
+              "id": "45036a8c-2dd4-4fd9-8dbd-8d1307052619",
               "code": "CGJ-2026-XW-003",
               "trace_code": "CGJ-BATCH-XW2026",
               "title": "寻乌家庭农场·朋娜鲜果批次",
@@ -304,13 +304,13 @@
               "planned_quantity": 300,
               "sold_quantity": 45,
               "available_quantity": 255,
-              "expected_harvest_start": "2026-09-25",
-              "expected_harvest_end": "2026-09-30",
-              "expected_ship_start": "2026-09-26",
-              "expected_ship_end": "2026-10-01"
+              "expected_harvest_start": "2026-09-26",
+              "expected_harvest_end": "2026-10-01",
+              "expected_ship_start": "2026-09-27",
+              "expected_ship_end": "2026-10-02"
             },
             {
-              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+              "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -319,15 +319,15 @@
               "planned_quantity": 800,
               "sold_quantity": 122,
               "available_quantity": 678,
-              "expected_harvest_start": "2026-09-23",
-              "expected_harvest_end": "2026-09-28",
-              "expected_ship_start": "2026-09-24",
-              "expected_ship_end": "2026-09-29"
+              "expected_harvest_start": "2026-09-24",
+              "expected_harvest_end": "2026-09-29",
+              "expected_ship_start": "2026-09-25",
+              "expected_ship_end": "2026-09-30"
             }
           ],
           "products": [
             {
-              "id": "276f1ee6-9f7e-4b4b-8454-a51a315935f9",
+              "id": "fe904c84-e67d-4b42-9f2c-e6af4be57055",
               "name": "契约基准商品",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -340,7 +340,7 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "753bf92d-301c-494f-8b5d-715b57294f28",
+              "id": "f801aec7-ca36-43c1-935b-12096dd10649",
               "name": "红肉脐橙家庭装",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -353,7 +353,7 @@
               "sales_batch_code": "CGJ-2026-AY-002"
             },
             {
-              "id": "912e866f-18df-44bc-aced-848c60f3523c",
+              "id": "56871150-e855-4b1a-aba7-9c33a50dc7a5",
               "name": "红肉脐橙企业装",
               "sku_type": "enterprise",
               "sku_type_display": "企业装",
@@ -366,20 +366,7 @@
               "sales_batch_code": "CGJ-2026-AY-002"
             },
             {
-              "id": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
-              "name": "朋娜脐橙精品尝鲜装",
-              "sku_type": "specialty",
-              "sku_type_display": "特色果品",
-              "variety": "朋娜脐橙",
-              "origin": "江西赣州寻乌县",
-              "price": 49.9,
-              "unit": "4斤/箱",
-              "stock": 180,
-              "status": "on_sale",
-              "sales_batch_code": "CGJ-2026-XW-003"
-            },
-            {
-              "id": "2ee35bbd-7459-4fd4-9b07-611925cd7937",
+              "id": "f4b976f3-57f4-4a33-b0e1-56cbc804dfb8",
               "name": "朋娜脐橙礼赠装",
               "sku_type": "gift",
               "sku_type_display": "礼赠装",
@@ -392,20 +379,20 @@
               "sales_batch_code": "CGJ-2026-XW-003"
             },
             {
-              "id": "65960f22-f3b9-4ec3-a2ce-d20287cd8344",
-              "name": "纽荷尔企业装",
-              "sku_type": "enterprise",
-              "sku_type_display": "企业装",
-              "variety": "纽荷尔脐橙",
-              "origin": "江西赣州信丰县",
-              "price": 159.0,
-              "unit": "20斤/箱",
-              "stock": 200,
+              "id": "aef1ee4a-d99f-4b46-ab72-a96982b8e674",
+              "name": "朋娜脐橙精品尝鲜装",
+              "sku_type": "specialty",
+              "sku_type_display": "特色果品",
+              "variety": "朋娜脐橙",
+              "origin": "江西赣州寻乌县",
+              "price": 49.9,
+              "unit": "4斤/箱",
+              "stock": 180,
               "status": "on_sale",
-              "sales_batch_code": "CGJ-2026-XF-001"
+              "sales_batch_code": "CGJ-2026-XW-003"
             },
             {
-              "id": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
+              "id": "a0dde2d6-7af4-421c-9a2b-2248961eafb7",
               "name": "纽荷尔试吃装",
               "sku_type": "trial",
               "sku_type_display": "试吃装",
@@ -418,7 +405,20 @@
               "sales_batch_code": "CGJ-2026-XF-001"
             },
             {
-              "id": "b1cef48a-4436-4232-8c03-bead1de8e521",
+              "id": "9d269741-5548-4212-a20a-72f289d8f960",
+              "name": "纽荷尔企业装",
+              "sku_type": "enterprise",
+              "sku_type_display": "企业装",
+              "variety": "纽荷尔脐橙",
+              "origin": "江西赣州信丰县",
+              "price": 159.0,
+              "unit": "20斤/箱",
+              "stock": 200,
+              "status": "on_sale",
+              "sales_batch_code": "CGJ-2026-XF-001"
+            },
+            {
+              "id": "31a2eb2a-651e-4000-abaf-258e34175d22",
               "name": "赣南纽荷尔家庭装",
               "sku_type": "family",
               "sku_type_display": "家庭装",
@@ -434,9 +434,9 @@
           "tasks": [],
           "risk_events": []
         },
-        "timestamp": 1789919832273
+        "timestamp": 1789965493823
       },
-      "raw_body_sha256": "ef7b95ba63dafd5aee11838f55058e48dbc39bf4fc9597e5a87a56ac6102dab4",
+      "raw_body_sha256": "26657693c7cd5917541d24e09ba7a0e684bdf65edcae0b3e0946947cf0e564f6",
       "raw_body_bytes": 3742,
       "normalize": [
         "$.timestamp",
@@ -569,7 +569,7 @@
         "data": {
           "role": "farmer",
           "report": {
-            "generated_at": "2026-09-20T15:57:12.276582+00:00",
+            "generated_at": "2026-09-21T04:38:13.829314+00:00",
             "overview": {
               "orchard_count": 1,
               "batch_count": 3,
@@ -584,11 +584,11 @@
                 "title": "信丰示范园·纽荷尔鲜果批次",
                 "status_display": "在售",
                 "available_quantity": 678,
-                "expected_harvest_start": "2026-09-23",
-                "expected_ship_start": "2026-09-24"
+                "expected_harvest_start": "2026-09-24",
+                "expected_ship_start": "2026-09-25"
               },
               {
-                "code": "CGJ-XF-DEMO-01-72929E",
+                "code": "CGJ-XF-DEMO-01-BC8FE4",
                 "title": "契约基准批次（第二次）",
                 "status_display": "筹备中",
                 "available_quantity": 20,
@@ -596,7 +596,7 @@
                 "expected_ship_start": ""
               },
               {
-                "code": "CGJ-XF-DEMO-01-CFAD6B",
+                "code": "CGJ-XF-DEMO-01-FB1617",
                 "title": "契约基准批次",
                 "status_display": "筹备中",
                 "available_quantity": 100,
@@ -616,9 +616,9 @@
             ]
           }
         },
-        "timestamp": 1789919832283
+        "timestamp": 1789965493835
       },
-      "raw_body_sha256": "362fc54c8d4cb431a7ee2c066f7fc778110e755712972f30cde6944220280d2a",
+      "raw_body_sha256": "628b4d1f733c4f80fad2c1da8f0e931b7a753968fd4017f7733c9c5cd51054f9",
       "raw_body_bytes": 1211,
       "normalize": [
         "$.timestamp",
@@ -688,9 +688,9 @@
           "message": "经营日报面向果农/经营者，当前角色不可用",
           "report": null
         },
-        "timestamp": 1789919832285
+        "timestamp": 1789965493837
       },
-      "raw_body_sha256": "098c147fd434d1c438c1e3325c422ae5c237ef47794f07aa6c7f888ca7f3a597",
+      "raw_body_sha256": "b0a376b3b0d8200b8c62f4f6c2816d194a08549d29231a144d229fc17fae1d5c",
       "raw_body_bytes": 167,
       "normalize": [
         "$.timestamp",
@@ -894,7 +894,7 @@
           "recommendations": [
             {
               "product": {
-                "id": "b1cef48a-4436-4232-8c03-bead1de8e521",
+                "id": "31a2eb2a-651e-4000-abaf-258e34175d22",
                 "name": "赣南纽荷尔家庭装",
                 "sku_type": "family",
                 "sku_type_display": "家庭装",
@@ -916,7 +916,7 @@
             },
             {
               "product": {
-                "id": "276f1ee6-9f7e-4b4b-8454-a51a315935f9",
+                "id": "fe904c84-e67d-4b42-9f2c-e6af4be57055",
                 "name": "契约基准商品",
                 "sku_type": "family",
                 "sku_type_display": "家庭装",
@@ -937,7 +937,7 @@
             },
             {
               "product": {
-                "id": "753bf92d-301c-494f-8b5d-715b57294f28",
+                "id": "f801aec7-ca36-43c1-935b-12096dd10649",
                 "name": "红肉脐橙家庭装",
                 "sku_type": "family",
                 "sku_type_display": "家庭装",
@@ -958,7 +958,7 @@
             },
             {
               "product": {
-                "id": "08b0cfbc-01bb-4995-aaad-3dabfdd589a8",
+                "id": "aef1ee4a-d99f-4b46-ab72-a96982b8e674",
                 "name": "朋娜脐橙精品尝鲜装",
                 "sku_type": "specialty",
                 "sku_type_display": "特色果品",
@@ -978,7 +978,7 @@
             },
             {
               "product": {
-                "id": "d125db51-6b44-4bbf-a978-98d5c36d4d5a",
+                "id": "a0dde2d6-7af4-421c-9a2b-2248961eafb7",
                 "name": "纽荷尔试吃装",
                 "sku_type": "trial",
                 "sku_type_display": "试吃装",
@@ -997,9 +997,9 @@
             }
           ]
         },
-        "timestamp": 1789919832303
+        "timestamp": 1789965493855
       },
-      "raw_body_sha256": "7adb8aa73a5712585ccbbf4d0876ac7c8f4ecb72a717122772ce6c8696b2fde6",
+      "raw_body_sha256": "09e7cf5056e34a163c497030ae39cf883ee722052b5f61a8a0cf6cf4c0f1676e",
       "raw_body_bytes": 2033,
       "normalize": [
         "$.timestamp",
@@ -1198,9 +1198,9 @@
           "suggestions": [],
           "avoid_note": "复购提醒基于你的授权历史与购买周期；未到周期或商品已下架时不打扰。"
         },
-        "timestamp": 1789919832317
+        "timestamp": 1789965493872
       },
-      "raw_body_sha256": "1076d2f290223af539bd96fade254d8ed7bb192ed022c6c8d051364494934003",
+      "raw_body_sha256": "003fb94a3302dbd3e5da566aeffa271e00528d420e5aef0b65b0c18bd6c583f1",
       "raw_body_bytes": 236,
       "normalize": [
         "$.timestamp",
@@ -1268,9 +1268,9 @@
           "should_remind": false,
           "reason": "复购提醒仅面向购买者"
         },
-        "timestamp": 1789919832319
+        "timestamp": 1789965493874
       },
-      "raw_body_sha256": "9f02e0f79348b09b74b6e84d54af65956a536115ac7a55cd92fecb12bbec2e23",
+      "raw_body_sha256": "bd51a32c850307b7682014952000e06b46c3a34dcc9953be7f78f90a7ed7fd3e",
       "raw_body_bytes": 147,
       "normalize": [
         "$.timestamp",
@@ -1528,7 +1528,7 @@
         "message": "success",
         "data": [
           {
-            "id": "88b14763-36c5-4608-9a8f-f9525457e1d2",
+            "id": "66b45350-ce81-41b7-9e6f-d932915ff591",
             "product_name": "赣南纽荷尔家庭装",
             "batch_code": "CGJ-2026-XF-001",
             "rating": 5,
@@ -1536,10 +1536,10 @@
             "taste": "很甜，果大，水分足",
             "package": "包装完好",
             "note": "很满意，会回购",
-            "created_at": "2026-09-20T15:57:08.008573+00:00"
+            "created_at": "2026-09-21T04:38:09.516472+00:00"
           },
           {
-            "id": "2ad253be-95b2-4afd-b7c1-be50f9b6934f",
+            "id": "5707d2d6-514a-4bd2-8f80-71296022b43d",
             "product_name": "朋娜脐橙精品尝鲜装",
             "batch_code": "CGJ-2026-XW-003",
             "rating": 4,
@@ -1547,12 +1547,12 @@
             "taste": "甜度不错",
             "package": "完好",
             "note": "",
-            "created_at": "2026-09-20T15:57:08.008573+00:00"
+            "created_at": "2026-09-21T04:38:09.516471+00:00"
           }
         ],
-        "timestamp": 1789919832337
+        "timestamp": 1789965493890
       },
-      "raw_body_sha256": "d4dfe93e7f045a189818f6a660e4a82c2a526d4350e7fa734b9f1b7e29a7f886",
+      "raw_body_sha256": "93ff2db0ae85d7c62172105da69e40d67689704ea35453fd9ffe7cf592e324c4",
       "raw_body_bytes": 621,
       "normalize": [
         "$.timestamp",
@@ -1946,9 +1946,9 @@
         "code": 200,
         "message": "success",
         "data": [],
-        "timestamp": 1789919832369
+        "timestamp": 1789965493924
       },
-      "raw_body_sha256": "8706e5b9e25e55436998cdf7bc0251ab233f6713e26d17960db05d7547fe7087",
+      "raw_body_sha256": "b25fadf9da404115c62c98952b56a311a8d7db90c471c80eb0bcf6b50f40ad40",
       "raw_body_bytes": 68,
       "normalize": [
         "$.timestamp",
@@ -2016,7 +2016,7 @@
         "message": "success",
         "data": [
           {
-            "id": "6705f1de-4921-46d8-a2ec-0ef4be787457",
+            "id": "3366b715-b33d-491c-a5a0-6031a3102833",
             "ticket_type": "other",
             "ticket_type_display": "其他",
             "title": "契约基准：待决策审批单",
@@ -2031,13 +2031,13 @@
             "created_by": "",
             "decided_by": "",
             "note": "",
-            "created_at": "2026-09-20T15:57:08.842231+00:00",
+            "created_at": "2026-09-21T04:38:10.274916+00:00",
             "decided_at": ""
           }
         ],
-        "timestamp": 1789919832371
+        "timestamp": 1789965493926
       },
-      "raw_body_sha256": "48e67d29124c49b1f671861d983d8da0f99676664ac235db920308cf5ce08433",
+      "raw_body_sha256": "61f0e378499b53f8911208d40e0e9e1bfbc3991067419b7f5105278fb957e1c0",
       "raw_body_bytes": 443,
       "normalize": [
         "$.timestamp",
@@ -2222,7 +2222,7 @@
       "name": "agent_approval_decision_bad_value_500",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
+      "path": "/api/agent/approvals/3366b715-b33d-491c-a5a0-6031a3102833/decision",
       "method": "POST",
       "kind": "validation",
       "headers": {
@@ -2235,7 +2235,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
+        "approval_id": "3366b715-b33d-491c-a5a0-6031a3102833"
       },
       "expected_status": 500,
       "expected_content_type": "application/json",
@@ -2291,7 +2291,7 @@
       "name": "agent_approval_decision_no_token_401",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
+      "path": "/api/agent/approvals/3366b715-b33d-491c-a5a0-6031a3102833/decision",
       "method": "POST",
       "kind": "auth",
       "headers": {
@@ -2304,7 +2304,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
+        "approval_id": "3366b715-b33d-491c-a5a0-6031a3102833"
       },
       "expected_status": 401,
       "expected_content_type": "application/json",
@@ -2376,9 +2376,9 @@
         "code": 200,
         "message": "success",
         "data": [],
-        "timestamp": 1789919832393
+        "timestamp": 1789965493952
       },
-      "raw_body_sha256": "df8a8d36b6285f7bea793f5b34da5c14b2fa01d32fd56be17369147467dbdc10",
+      "raw_body_sha256": "baf2663d991e87a09a0586aaff32f91933131a0a682a946a90a323171ad55deb",
       "raw_body_bytes": 68,
       "normalize": [
         "$.timestamp",
@@ -2453,7 +2453,7 @@
           "hard_constraints_failed": [],
           "primary": {
             "batch": {
-              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+              "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2462,10 +2462,10 @@
               "planned_quantity": 800,
               "sold_quantity": 122,
               "available_quantity": 678,
-              "expected_harvest_start": "2026-09-23",
-              "expected_harvest_end": "2026-09-28",
-              "expected_ship_start": "2026-09-24",
-              "expected_ship_end": "2026-09-29"
+              "expected_harvest_start": "2026-09-24",
+              "expected_harvest_end": "2026-09-29",
+              "expected_ship_start": "2026-09-25",
+              "expected_ship_end": "2026-09-30"
             },
             "score": 8,
             "risks": [],
@@ -2490,7 +2490,7 @@
           "alternatives": [
             {
               "batch": {
-                "id": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+                "id": "e41f805f-0a8f-4471-9bcd-fac6aaca3855",
                 "code": "CGJ-2026-AY-002",
                 "trace_code": "CGJ-BATCH-AY2026",
                 "title": "安远山地·红肉脐橙鲜果批次",
@@ -2499,10 +2499,10 @@
                 "planned_quantity": 500,
                 "sold_quantity": 60,
                 "available_quantity": 440,
-                "expected_harvest_start": "2026-09-27",
-                "expected_harvest_end": "2026-10-02",
-                "expected_ship_start": "2026-09-28",
-                "expected_ship_end": "2026-10-03"
+                "expected_harvest_start": "2026-09-28",
+                "expected_harvest_end": "2026-10-03",
+                "expected_ship_start": "2026-09-29",
+                "expected_ship_end": "2026-10-04"
               },
               "score": 6,
               "risks": [],
@@ -2524,7 +2524,7 @@
             },
             {
               "batch": {
-                "id": "89197bf2-7798-40c4-8b06-2414773a9444",
+                "id": "45036a8c-2dd4-4fd9-8dbd-8d1307052619",
                 "code": "CGJ-2026-XW-003",
                 "trace_code": "CGJ-BATCH-XW2026",
                 "title": "寻乌家庭农场·朋娜鲜果批次",
@@ -2533,10 +2533,10 @@
                 "planned_quantity": 300,
                 "sold_quantity": 45,
                 "available_quantity": 255,
-                "expected_harvest_start": "2026-09-25",
-                "expected_harvest_end": "2026-09-30",
-                "expected_ship_start": "2026-09-26",
-                "expected_ship_end": "2026-10-01"
+                "expected_harvest_start": "2026-09-26",
+                "expected_harvest_end": "2026-10-01",
+                "expected_ship_start": "2026-09-27",
+                "expected_ship_end": "2026-10-02"
               },
               "score": 6,
               "risks": [],
@@ -2562,17 +2562,17 @@
             "正式报价、合同与锁货走业务流程，智能体不直接执行"
           ],
           "approval": {
-            "id": "e14659b4-d035-4df7-9594-f1622cfb8062",
+            "id": "e05df517-7806-4627-bfb4-24414fb7b31c",
             "ticket_type": "quote",
             "ticket_type_display": "报价单",
             "title": "询价：CGJ-2026-XF-001",
             "ref_type": "sales_batch",
-            "ref_id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+            "ref_id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
             "payload": {
               "query": "采购100箱，5斤装，2027-01-01 前到货",
               "primary": {
                 "batch": {
-                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                  "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2581,10 +2581,10 @@
                   "planned_quantity": 800,
                   "sold_quantity": 122,
                   "available_quantity": 678,
-                  "expected_harvest_start": "2026-09-23",
-                  "expected_harvest_end": "2026-09-28",
-                  "expected_ship_start": "2026-09-24",
-                  "expected_ship_end": "2026-09-29"
+                  "expected_harvest_start": "2026-09-24",
+                  "expected_harvest_end": "2026-09-29",
+                  "expected_ship_start": "2026-09-25",
+                  "expected_ship_end": "2026-09-30"
                 },
                 "score": 8,
                 "risks": [],
@@ -2609,7 +2609,7 @@
               "alternatives": [
                 {
                   "batch": {
-                    "id": "8fb0ef11-0787-44ae-86a7-c7cdbc8bedfa",
+                    "id": "e41f805f-0a8f-4471-9bcd-fac6aaca3855",
                     "code": "CGJ-2026-AY-002",
                     "trace_code": "CGJ-BATCH-AY2026",
                     "title": "安远山地·红肉脐橙鲜果批次",
@@ -2618,10 +2618,10 @@
                     "planned_quantity": 500,
                     "sold_quantity": 60,
                     "available_quantity": 440,
-                    "expected_harvest_start": "2026-09-27",
-                    "expected_harvest_end": "2026-10-02",
-                    "expected_ship_start": "2026-09-28",
-                    "expected_ship_end": "2026-10-03"
+                    "expected_harvest_start": "2026-09-28",
+                    "expected_harvest_end": "2026-10-03",
+                    "expected_ship_start": "2026-09-29",
+                    "expected_ship_end": "2026-10-04"
                   },
                   "score": 6,
                   "risks": [],
@@ -2643,7 +2643,7 @@
                 },
                 {
                   "batch": {
-                    "id": "89197bf2-7798-40c4-8b06-2414773a9444",
+                    "id": "45036a8c-2dd4-4fd9-8dbd-8d1307052619",
                     "code": "CGJ-2026-XW-003",
                     "trace_code": "CGJ-BATCH-XW2026",
                     "title": "寻乌家庭农场·朋娜鲜果批次",
@@ -2652,10 +2652,10 @@
                     "planned_quantity": 300,
                     "sold_quantity": 45,
                     "available_quantity": 255,
-                    "expected_harvest_start": "2026-09-25",
-                    "expected_harvest_end": "2026-09-30",
-                    "expected_ship_start": "2026-09-26",
-                    "expected_ship_end": "2026-10-01"
+                    "expected_harvest_start": "2026-09-26",
+                    "expected_harvest_end": "2026-10-01",
+                    "expected_ship_start": "2026-09-27",
+                    "expected_ship_end": "2026-10-02"
                   },
                   "score": 6,
                   "risks": [],
@@ -2682,13 +2682,13 @@
             "created_by": "",
             "decided_by": "",
             "note": "",
-            "created_at": "2026-09-20T15:57:12.409584+00:00",
+            "created_at": "2026-09-21T04:38:13.966566+00:00",
             "decided_at": ""
           }
         },
-        "timestamp": 1789919832409
+        "timestamp": 1789965493966
       },
-      "raw_body_sha256": "1858fc8e1af0307e04bc5ce3061589df83d8f06398256e02b358ad843877773e",
+      "raw_body_sha256": "c7925e0bc44e44e17c8e0b7f1068e5521d66c64fc5d057eef71dce279e5c900d",
       "raw_body_bytes": 5214,
       "normalize": [
         "$.timestamp",
@@ -2766,11 +2766,11 @@
               "source": {
                 "type": "识别异常",
                 "evidence": "黄龙病（高风险）@B区坡地",
-                "occurred": "2026-09-19"
+                "occurred": "2026-09-20"
               },
               "affected_batches": [
                 {
-                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                  "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2779,15 +2779,15 @@
                   "planned_quantity": 800,
                   "sold_quantity": 122,
                   "available_quantity": 678,
-                  "expected_harvest_start": "2026-09-23",
-                  "expected_harvest_end": "2026-09-28",
-                  "expected_ship_start": "2026-09-24",
-                  "expected_ship_end": "2026-09-29"
+                  "expected_harvest_start": "2026-09-24",
+                  "expected_harvest_end": "2026-09-29",
+                  "expected_ship_start": "2026-09-25",
+                  "expected_ship_end": "2026-09-30"
                 },
                 {
-                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                  "code": "CGJ-XF-DEMO-01-72929E",
-                  "trace_code": "CGJ-56665ABFB890",
+                  "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                  "code": "CGJ-XF-DEMO-01-BC8FE4",
+                  "trace_code": "CGJ-9C3007BC8777",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2800,9 +2800,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                  "code": "CGJ-XF-DEMO-01-CFAD6B",
-                  "trace_code": "CGJ-9B778A646596",
+                  "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                  "code": "CGJ-XF-DEMO-01-FB1617",
+                  "trace_code": "CGJ-F9D812B6B821",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2817,12 +2817,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920155711D84665",
+                  "order_number": "NO20260921043813E87173",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO2026092015571107272C",
+                  "order_number": "NO202609210438126F21C7",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -2840,7 +2840,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-72929E",
+                  "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -2852,7 +2852,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "batch_code": "CGJ-XF-DEMO-01-FB1617",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -2870,7 +2870,7 @@
                 "必要时联系商家协商"
               ],
               "responsible": "果园负责人 / 果农（需人工确认）",
-              "latest_deadline": "2026-09-24",
+              "latest_deadline": "2026-09-25",
               "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
             },
             {
@@ -2878,11 +2878,11 @@
                 "type": "风险任务",
                 "evidence": "环境监测-高风险",
                 "risk_level": "高风险",
-                "occurred": "2026-09-20"
+                "occurred": "2026-09-21"
               },
               "affected_batches": [
                 {
-                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                  "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -2891,15 +2891,15 @@
                   "planned_quantity": 800,
                   "sold_quantity": 122,
                   "available_quantity": 678,
-                  "expected_harvest_start": "2026-09-23",
-                  "expected_harvest_end": "2026-09-28",
-                  "expected_ship_start": "2026-09-24",
-                  "expected_ship_end": "2026-09-29"
+                  "expected_harvest_start": "2026-09-24",
+                  "expected_harvest_end": "2026-09-29",
+                  "expected_ship_start": "2026-09-25",
+                  "expected_ship_end": "2026-09-30"
                 },
                 {
-                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                  "code": "CGJ-XF-DEMO-01-72929E",
-                  "trace_code": "CGJ-56665ABFB890",
+                  "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                  "code": "CGJ-XF-DEMO-01-BC8FE4",
+                  "trace_code": "CGJ-9C3007BC8777",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2912,9 +2912,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                  "code": "CGJ-XF-DEMO-01-CFAD6B",
-                  "trace_code": "CGJ-9B778A646596",
+                  "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                  "code": "CGJ-XF-DEMO-01-FB1617",
+                  "trace_code": "CGJ-F9D812B6B821",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -2929,12 +2929,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920155711D84665",
+                  "order_number": "NO20260921043813E87173",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO2026092015571107272C",
+                  "order_number": "NO202609210438126F21C7",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -2952,7 +2952,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-72929E",
+                  "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -2964,7 +2964,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "batch_code": "CGJ-XF-DEMO-01-FB1617",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -2980,7 +2980,7 @@
                 "复核结果后决定是否暂缓发货"
               ],
               "responsible": "果园负责人 / 果农（需人工确认）",
-              "latest_deadline": "2026-09-24",
+              "latest_deadline": "2026-09-25",
               "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
             },
             {
@@ -2988,11 +2988,11 @@
                 "type": "风险任务",
                 "evidence": "溃疡病治理",
                 "risk_level": "高风险",
-                "occurred": "2026-09-20"
+                "occurred": "2026-09-21"
               },
               "affected_batches": [
                 {
-                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                  "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3001,15 +3001,15 @@
                   "planned_quantity": 800,
                   "sold_quantity": 122,
                   "available_quantity": 678,
-                  "expected_harvest_start": "2026-09-23",
-                  "expected_harvest_end": "2026-09-28",
-                  "expected_ship_start": "2026-09-24",
-                  "expected_ship_end": "2026-09-29"
+                  "expected_harvest_start": "2026-09-24",
+                  "expected_harvest_end": "2026-09-29",
+                  "expected_ship_start": "2026-09-25",
+                  "expected_ship_end": "2026-09-30"
                 },
                 {
-                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                  "code": "CGJ-XF-DEMO-01-72929E",
-                  "trace_code": "CGJ-56665ABFB890",
+                  "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                  "code": "CGJ-XF-DEMO-01-BC8FE4",
+                  "trace_code": "CGJ-9C3007BC8777",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -3022,9 +3022,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                  "code": "CGJ-XF-DEMO-01-CFAD6B",
-                  "trace_code": "CGJ-9B778A646596",
+                  "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                  "code": "CGJ-XF-DEMO-01-FB1617",
+                  "trace_code": "CGJ-F9D812B6B821",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -3039,12 +3039,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920155711D84665",
+                  "order_number": "NO20260921043813E87173",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO2026092015571107272C",
+                  "order_number": "NO202609210438126F21C7",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -3062,7 +3062,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-72929E",
+                  "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -3074,7 +3074,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "batch_code": "CGJ-XF-DEMO-01-FB1617",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -3090,7 +3090,7 @@
                 "复核结果后决定是否暂缓发货"
               ],
               "responsible": "果园负责人 / 果农（需人工确认）",
-              "latest_deadline": "2026-09-24",
+              "latest_deadline": "2026-09-25",
               "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
             },
             {
@@ -3098,11 +3098,11 @@
                 "type": "风险任务",
                 "evidence": "B区坡地黄龙病复核",
                 "risk_level": "高风险",
-                "occurred": "2026-09-20"
+                "occurred": "2026-09-21"
               },
               "affected_batches": [
                 {
-                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                  "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3111,15 +3111,15 @@
                   "planned_quantity": 800,
                   "sold_quantity": 122,
                   "available_quantity": 678,
-                  "expected_harvest_start": "2026-09-23",
-                  "expected_harvest_end": "2026-09-28",
-                  "expected_ship_start": "2026-09-24",
-                  "expected_ship_end": "2026-09-29"
+                  "expected_harvest_start": "2026-09-24",
+                  "expected_harvest_end": "2026-09-29",
+                  "expected_ship_start": "2026-09-25",
+                  "expected_ship_end": "2026-09-30"
                 },
                 {
-                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                  "code": "CGJ-XF-DEMO-01-72929E",
-                  "trace_code": "CGJ-56665ABFB890",
+                  "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                  "code": "CGJ-XF-DEMO-01-BC8FE4",
+                  "trace_code": "CGJ-9C3007BC8777",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -3132,9 +3132,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                  "code": "CGJ-XF-DEMO-01-CFAD6B",
-                  "trace_code": "CGJ-9B778A646596",
+                  "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                  "code": "CGJ-XF-DEMO-01-FB1617",
+                  "trace_code": "CGJ-F9D812B6B821",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -3149,12 +3149,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920155711D84665",
+                  "order_number": "NO20260921043813E87173",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO2026092015571107272C",
+                  "order_number": "NO202609210438126F21C7",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -3172,7 +3172,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-72929E",
+                  "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -3184,7 +3184,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "batch_code": "CGJ-XF-DEMO-01-FB1617",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -3200,7 +3200,7 @@
                 "复核结果后决定是否暂缓发货"
               ],
               "responsible": "果园负责人 / 果农（需人工确认）",
-              "latest_deadline": "2026-09-24",
+              "latest_deadline": "2026-09-25",
               "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
             },
             {
@@ -3208,11 +3208,11 @@
                 "type": "风险任务",
                 "evidence": "采摘期前糖度抽检",
                 "risk_level": "中风险",
-                "occurred": "2026-09-20"
+                "occurred": "2026-09-21"
               },
               "affected_batches": [
                 {
-                  "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                  "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                   "code": "CGJ-2026-XF-001",
                   "trace_code": "CGJ-BATCH-XF2026",
                   "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3221,15 +3221,15 @@
                   "planned_quantity": 800,
                   "sold_quantity": 122,
                   "available_quantity": 678,
-                  "expected_harvest_start": "2026-09-23",
-                  "expected_harvest_end": "2026-09-28",
-                  "expected_ship_start": "2026-09-24",
-                  "expected_ship_end": "2026-09-29"
+                  "expected_harvest_start": "2026-09-24",
+                  "expected_harvest_end": "2026-09-29",
+                  "expected_ship_start": "2026-09-25",
+                  "expected_ship_end": "2026-09-30"
                 },
                 {
-                  "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                  "code": "CGJ-XF-DEMO-01-72929E",
-                  "trace_code": "CGJ-56665ABFB890",
+                  "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                  "code": "CGJ-XF-DEMO-01-BC8FE4",
+                  "trace_code": "CGJ-9C3007BC8777",
                   "title": "契约基准批次（第二次）",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -3242,9 +3242,9 @@
                   "expected_ship_end": ""
                 },
                 {
-                  "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                  "code": "CGJ-XF-DEMO-01-CFAD6B",
-                  "trace_code": "CGJ-9B778A646596",
+                  "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                  "code": "CGJ-XF-DEMO-01-FB1617",
+                  "trace_code": "CGJ-F9D812B6B821",
                   "title": "契约基准批次",
                   "status": "draft",
                   "status_display": "筹备中",
@@ -3259,12 +3259,12 @@
               ],
               "affected_orders": [
                 {
-                  "order_number": "NO20260920155711D84665",
+                  "order_number": "NO20260921043813E87173",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 },
                 {
-                  "order_number": "NO2026092015571107272C",
+                  "order_number": "NO202609210438126F21C7",
                   "status_display": "待发货",
                   "sales_batch_code": "CGJ-2026-XF-001"
                 }
@@ -3282,7 +3282,7 @@
                   "prediction": "预计履约风险「低」(20 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-72929E",
+                  "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                   "score": 40,
                   "level": "中",
                   "probability": 0.4,
@@ -3294,7 +3294,7 @@
                   "prediction": "预计履约风险「中」(40 分)"
                 },
                 {
-                  "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "batch_code": "CGJ-XF-DEMO-01-FB1617",
                   "score": 30,
                   "level": "低",
                   "probability": 0.3,
@@ -3310,13 +3310,13 @@
                 "复核结果后决定是否暂缓发货"
               ],
               "responsible": "果园负责人 / 果农（需人工确认）",
-              "latest_deadline": "2026-09-24",
+              "latest_deadline": "2026-09-25",
               "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
             }
           ],
           "affected_batches": [
             {
-              "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+              "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
               "code": "CGJ-2026-XF-001",
               "trace_code": "CGJ-BATCH-XF2026",
               "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3325,15 +3325,15 @@
               "planned_quantity": 800,
               "sold_quantity": 122,
               "available_quantity": 678,
-              "expected_harvest_start": "2026-09-23",
-              "expected_harvest_end": "2026-09-28",
-              "expected_ship_start": "2026-09-24",
-              "expected_ship_end": "2026-09-29"
+              "expected_harvest_start": "2026-09-24",
+              "expected_harvest_end": "2026-09-29",
+              "expected_ship_start": "2026-09-25",
+              "expected_ship_end": "2026-09-30"
             },
             {
-              "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-              "code": "CGJ-XF-DEMO-01-72929E",
-              "trace_code": "CGJ-56665ABFB890",
+              "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+              "code": "CGJ-XF-DEMO-01-BC8FE4",
+              "trace_code": "CGJ-9C3007BC8777",
               "title": "契约基准批次（第二次）",
               "status": "draft",
               "status_display": "筹备中",
@@ -3346,9 +3346,9 @@
               "expected_ship_end": ""
             },
             {
-              "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-              "code": "CGJ-XF-DEMO-01-CFAD6B",
-              "trace_code": "CGJ-9B778A646596",
+              "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+              "code": "CGJ-XF-DEMO-01-FB1617",
+              "trace_code": "CGJ-F9D812B6B821",
               "title": "契约基准批次",
               "status": "draft",
               "status_display": "筹备中",
@@ -3374,7 +3374,7 @@
               "prediction": "预计履约风险「低」(20 分)"
             },
             {
-              "batch_code": "CGJ-XF-DEMO-01-72929E",
+              "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
               "score": 40,
               "level": "中",
               "probability": 0.4,
@@ -3386,7 +3386,7 @@
               "prediction": "预计履约风险「中」(40 分)"
             },
             {
-              "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+              "batch_code": "CGJ-XF-DEMO-01-FB1617",
               "score": 30,
               "level": "低",
               "probability": 0.3,
@@ -3398,7 +3398,7 @@
             }
           ],
           "approval": {
-            "id": "a28ecb5e-58a5-4659-a64e-5ac22e073175",
+            "id": "a54c1dd1-98fa-42f6-a0a2-089166ca00d6",
             "ticket_type": "risk_action",
             "ticket_type_display": "风险处置",
             "title": "生产风险处置确认（5 项）",
@@ -3410,11 +3410,11 @@
                   "source": {
                     "type": "识别异常",
                     "evidence": "黄龙病（高风险）@B区坡地",
-                    "occurred": "2026-09-19"
+                    "occurred": "2026-09-20"
                   },
                   "affected_batches": [
                     {
-                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                      "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3423,15 +3423,15 @@
                       "planned_quantity": 800,
                       "sold_quantity": 122,
                       "available_quantity": 678,
-                      "expected_harvest_start": "2026-09-23",
-                      "expected_harvest_end": "2026-09-28",
-                      "expected_ship_start": "2026-09-24",
-                      "expected_ship_end": "2026-09-29"
+                      "expected_harvest_start": "2026-09-24",
+                      "expected_harvest_end": "2026-09-29",
+                      "expected_ship_start": "2026-09-25",
+                      "expected_ship_end": "2026-09-30"
                     },
                     {
-                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                      "code": "CGJ-XF-DEMO-01-72929E",
-                      "trace_code": "CGJ-56665ABFB890",
+                      "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                      "code": "CGJ-XF-DEMO-01-BC8FE4",
+                      "trace_code": "CGJ-9C3007BC8777",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3444,9 +3444,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                      "code": "CGJ-XF-DEMO-01-CFAD6B",
-                      "trace_code": "CGJ-9B778A646596",
+                      "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                      "code": "CGJ-XF-DEMO-01-FB1617",
+                      "trace_code": "CGJ-F9D812B6B821",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3461,12 +3461,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920155711D84665",
+                      "order_number": "NO20260921043813E87173",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO2026092015571107272C",
+                      "order_number": "NO202609210438126F21C7",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3484,7 +3484,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-72929E",
+                      "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3496,7 +3496,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "batch_code": "CGJ-XF-DEMO-01-FB1617",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3514,7 +3514,7 @@
                     "必要时联系商家协商"
                   ],
                   "responsible": "果园负责人 / 果农（需人工确认）",
-                  "latest_deadline": "2026-09-24",
+                  "latest_deadline": "2026-09-25",
                   "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
                 },
                 {
@@ -3522,11 +3522,11 @@
                     "type": "风险任务",
                     "evidence": "环境监测-高风险",
                     "risk_level": "高风险",
-                    "occurred": "2026-09-20"
+                    "occurred": "2026-09-21"
                   },
                   "affected_batches": [
                     {
-                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                      "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3535,15 +3535,15 @@
                       "planned_quantity": 800,
                       "sold_quantity": 122,
                       "available_quantity": 678,
-                      "expected_harvest_start": "2026-09-23",
-                      "expected_harvest_end": "2026-09-28",
-                      "expected_ship_start": "2026-09-24",
-                      "expected_ship_end": "2026-09-29"
+                      "expected_harvest_start": "2026-09-24",
+                      "expected_harvest_end": "2026-09-29",
+                      "expected_ship_start": "2026-09-25",
+                      "expected_ship_end": "2026-09-30"
                     },
                     {
-                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                      "code": "CGJ-XF-DEMO-01-72929E",
-                      "trace_code": "CGJ-56665ABFB890",
+                      "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                      "code": "CGJ-XF-DEMO-01-BC8FE4",
+                      "trace_code": "CGJ-9C3007BC8777",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3556,9 +3556,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                      "code": "CGJ-XF-DEMO-01-CFAD6B",
-                      "trace_code": "CGJ-9B778A646596",
+                      "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                      "code": "CGJ-XF-DEMO-01-FB1617",
+                      "trace_code": "CGJ-F9D812B6B821",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3573,12 +3573,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920155711D84665",
+                      "order_number": "NO20260921043813E87173",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO2026092015571107272C",
+                      "order_number": "NO202609210438126F21C7",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3596,7 +3596,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-72929E",
+                      "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3608,7 +3608,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "batch_code": "CGJ-XF-DEMO-01-FB1617",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3624,7 +3624,7 @@
                     "复核结果后决定是否暂缓发货"
                   ],
                   "responsible": "果园负责人 / 果农（需人工确认）",
-                  "latest_deadline": "2026-09-24",
+                  "latest_deadline": "2026-09-25",
                   "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
                 },
                 {
@@ -3632,11 +3632,11 @@
                     "type": "风险任务",
                     "evidence": "溃疡病治理",
                     "risk_level": "高风险",
-                    "occurred": "2026-09-20"
+                    "occurred": "2026-09-21"
                   },
                   "affected_batches": [
                     {
-                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                      "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3645,15 +3645,15 @@
                       "planned_quantity": 800,
                       "sold_quantity": 122,
                       "available_quantity": 678,
-                      "expected_harvest_start": "2026-09-23",
-                      "expected_harvest_end": "2026-09-28",
-                      "expected_ship_start": "2026-09-24",
-                      "expected_ship_end": "2026-09-29"
+                      "expected_harvest_start": "2026-09-24",
+                      "expected_harvest_end": "2026-09-29",
+                      "expected_ship_start": "2026-09-25",
+                      "expected_ship_end": "2026-09-30"
                     },
                     {
-                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                      "code": "CGJ-XF-DEMO-01-72929E",
-                      "trace_code": "CGJ-56665ABFB890",
+                      "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                      "code": "CGJ-XF-DEMO-01-BC8FE4",
+                      "trace_code": "CGJ-9C3007BC8777",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3666,9 +3666,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                      "code": "CGJ-XF-DEMO-01-CFAD6B",
-                      "trace_code": "CGJ-9B778A646596",
+                      "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                      "code": "CGJ-XF-DEMO-01-FB1617",
+                      "trace_code": "CGJ-F9D812B6B821",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3683,12 +3683,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920155711D84665",
+                      "order_number": "NO20260921043813E87173",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO2026092015571107272C",
+                      "order_number": "NO202609210438126F21C7",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3706,7 +3706,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-72929E",
+                      "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3718,7 +3718,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "batch_code": "CGJ-XF-DEMO-01-FB1617",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3734,7 +3734,7 @@
                     "复核结果后决定是否暂缓发货"
                   ],
                   "responsible": "果园负责人 / 果农（需人工确认）",
-                  "latest_deadline": "2026-09-24",
+                  "latest_deadline": "2026-09-25",
                   "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
                 },
                 {
@@ -3742,11 +3742,11 @@
                     "type": "风险任务",
                     "evidence": "B区坡地黄龙病复核",
                     "risk_level": "高风险",
-                    "occurred": "2026-09-20"
+                    "occurred": "2026-09-21"
                   },
                   "affected_batches": [
                     {
-                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                      "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3755,15 +3755,15 @@
                       "planned_quantity": 800,
                       "sold_quantity": 122,
                       "available_quantity": 678,
-                      "expected_harvest_start": "2026-09-23",
-                      "expected_harvest_end": "2026-09-28",
-                      "expected_ship_start": "2026-09-24",
-                      "expected_ship_end": "2026-09-29"
+                      "expected_harvest_start": "2026-09-24",
+                      "expected_harvest_end": "2026-09-29",
+                      "expected_ship_start": "2026-09-25",
+                      "expected_ship_end": "2026-09-30"
                     },
                     {
-                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                      "code": "CGJ-XF-DEMO-01-72929E",
-                      "trace_code": "CGJ-56665ABFB890",
+                      "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                      "code": "CGJ-XF-DEMO-01-BC8FE4",
+                      "trace_code": "CGJ-9C3007BC8777",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3776,9 +3776,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                      "code": "CGJ-XF-DEMO-01-CFAD6B",
-                      "trace_code": "CGJ-9B778A646596",
+                      "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                      "code": "CGJ-XF-DEMO-01-FB1617",
+                      "trace_code": "CGJ-F9D812B6B821",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3793,12 +3793,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920155711D84665",
+                      "order_number": "NO20260921043813E87173",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO2026092015571107272C",
+                      "order_number": "NO202609210438126F21C7",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3816,7 +3816,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-72929E",
+                      "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3828,7 +3828,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "batch_code": "CGJ-XF-DEMO-01-FB1617",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3844,7 +3844,7 @@
                     "复核结果后决定是否暂缓发货"
                   ],
                   "responsible": "果园负责人 / 果农（需人工确认）",
-                  "latest_deadline": "2026-09-24",
+                  "latest_deadline": "2026-09-25",
                   "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
                 },
                 {
@@ -3852,11 +3852,11 @@
                     "type": "风险任务",
                     "evidence": "采摘期前糖度抽检",
                     "risk_level": "中风险",
-                    "occurred": "2026-09-20"
+                    "occurred": "2026-09-21"
                   },
                   "affected_batches": [
                     {
-                      "id": "6109a446-b1ed-467c-982f-87f0c8a70bb0",
+                      "id": "e6c0f2d0-e13e-4fb7-b65a-716bba31cc98",
                       "code": "CGJ-2026-XF-001",
                       "trace_code": "CGJ-BATCH-XF2026",
                       "title": "信丰示范园·纽荷尔鲜果批次",
@@ -3865,15 +3865,15 @@
                       "planned_quantity": 800,
                       "sold_quantity": 122,
                       "available_quantity": 678,
-                      "expected_harvest_start": "2026-09-23",
-                      "expected_harvest_end": "2026-09-28",
-                      "expected_ship_start": "2026-09-24",
-                      "expected_ship_end": "2026-09-29"
+                      "expected_harvest_start": "2026-09-24",
+                      "expected_harvest_end": "2026-09-29",
+                      "expected_ship_start": "2026-09-25",
+                      "expected_ship_end": "2026-09-30"
                     },
                     {
-                      "id": "f3ae12db-14ab-4f09-b2bc-4d58e66bf2c4",
-                      "code": "CGJ-XF-DEMO-01-72929E",
-                      "trace_code": "CGJ-56665ABFB890",
+                      "id": "e7cad651-f9c4-47e0-ac04-dbd4d7fa66d9",
+                      "code": "CGJ-XF-DEMO-01-BC8FE4",
+                      "trace_code": "CGJ-9C3007BC8777",
                       "title": "契约基准批次（第二次）",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3886,9 +3886,9 @@
                       "expected_ship_end": ""
                     },
                     {
-                      "id": "641607af-3467-4f28-9e61-da013bc0ca8d",
-                      "code": "CGJ-XF-DEMO-01-CFAD6B",
-                      "trace_code": "CGJ-9B778A646596",
+                      "id": "8488b48e-3d34-4d63-9f22-600b1b3f3ea0",
+                      "code": "CGJ-XF-DEMO-01-FB1617",
+                      "trace_code": "CGJ-F9D812B6B821",
                       "title": "契约基准批次",
                       "status": "draft",
                       "status_display": "筹备中",
@@ -3903,12 +3903,12 @@
                   ],
                   "affected_orders": [
                     {
-                      "order_number": "NO20260920155711D84665",
+                      "order_number": "NO20260921043813E87173",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     },
                     {
-                      "order_number": "NO2026092015571107272C",
+                      "order_number": "NO202609210438126F21C7",
                       "status_display": "待发货",
                       "sales_batch_code": "CGJ-2026-XF-001"
                     }
@@ -3926,7 +3926,7 @@
                       "prediction": "预计履约风险「低」(20 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-72929E",
+                      "batch_code": "CGJ-XF-DEMO-01-BC8FE4",
                       "score": 40,
                       "level": "中",
                       "probability": 0.4,
@@ -3938,7 +3938,7 @@
                       "prediction": "预计履约风险「中」(40 分)"
                     },
                     {
-                      "batch_code": "CGJ-XF-DEMO-01-CFAD6B",
+                      "batch_code": "CGJ-XF-DEMO-01-FB1617",
                       "score": 30,
                       "level": "低",
                       "probability": 0.3,
@@ -3954,7 +3954,7 @@
                     "复核结果后决定是否暂缓发货"
                   ],
                   "responsible": "果园负责人 / 果农（需人工确认）",
-                  "latest_deadline": "2026-09-24",
+                  "latest_deadline": "2026-09-25",
                   "note": "环境异常不直接扣减可供量；可供量变化需果园/供应链确认后更新。"
                 }
               ],
@@ -3965,13 +3965,13 @@
             "created_by": "farmer_xinfeng",
             "decided_by": "",
             "note": "",
-            "created_at": "2026-09-20T15:57:12.427582+00:00",
+            "created_at": "2026-09-21T04:38:13.982566+00:00",
             "decided_at": ""
           }
         },
-        "timestamp": 1789919832427
+        "timestamp": 1789965493982
       },
-      "raw_body_sha256": "9a8dad0b4129ad56e4666b65d33f1e925c301e595c5cc985283f6337cbb817f9",
+      "raw_body_sha256": "160053bf2524e5dfcc1b6900b2ff0487f96d23536c334b101959931c514e6c95",
       "raw_body_bytes": 27762,
       "normalize": [
         "$.timestamp",
@@ -4050,7 +4050,7 @@
           "data": {
             "role": "farmer",
             "report": {
-              "generated_at": "2026-09-20T15:57:12.438582+00:00",
+              "generated_at": "2026-09-21T04:38:13.994974+00:00",
               "overview": {
                 "orchard_count": 1,
                 "batch_count": 3,
@@ -4065,11 +4065,11 @@
                   "title": "信丰示范园·纽荷尔鲜果批次",
                   "status_display": "在售",
                   "available_quantity": 678,
-                  "expected_harvest_start": "2026-09-23",
-                  "expected_ship_start": "2026-09-24"
+                  "expected_harvest_start": "2026-09-24",
+                  "expected_ship_start": "2026-09-25"
                 },
                 {
-                  "code": "CGJ-XF-DEMO-01-72929E",
+                  "code": "CGJ-XF-DEMO-01-BC8FE4",
                   "title": "契约基准批次（第二次）",
                   "status_display": "筹备中",
                   "available_quantity": 20,
@@ -4077,7 +4077,7 @@
                   "expected_ship_start": ""
                 },
                 {
-                  "code": "CGJ-XF-DEMO-01-CFAD6B",
+                  "code": "CGJ-XF-DEMO-01-FB1617",
                   "title": "契约基准批次",
                   "status_display": "筹备中",
                   "available_quantity": 100,
@@ -4101,9 +4101,9 @@
           "llm": false,
           "escalated": false
         },
-        "timestamp": 1789919832446
+        "timestamp": 1789965494000
       },
-      "raw_body_sha256": "2ef09e84d9a64a6a4c4df46728e6d72aced37faa846d667099cb0ca270b7ab9c",
+      "raw_body_sha256": "7c63c30ddfaa776108d4919704612f2ae8ec98e89d192c500194d2462e8f9055",
       "raw_body_bytes": 1565,
       "normalize": [
         "$.timestamp",
@@ -4176,7 +4176,7 @@
         "code": 200,
         "message": "感谢反馈，已记入偏好与品质反馈",
         "data": {
-          "id": "74cbc945-e3e6-46a7-b966-1b80f044b7db",
+          "id": "2cd738a5-7abe-4aac-8af2-005ab1a6bad8",
           "product_name": "赣南纽荷尔家庭装",
           "batch_code": "CGJ-2026-XF-001",
           "rating": 5,
@@ -4184,11 +4184,11 @@
           "taste": "很甜",
           "package": "完好",
           "note": "契约基准反馈",
-          "created_at": "2026-09-20T15:57:12.451582+00:00"
+          "created_at": "2026-09-21T04:38:14.006973+00:00"
         },
-        "timestamp": 1789919832451
+        "timestamp": 1789965494007
       },
-      "raw_body_sha256": "c561e1bce4f86b07f5b2231f6240a906256a1fb1803202a21fae85e8cea471b2",
+      "raw_body_sha256": "2853738c0af9812e486b5d239f570018b37cf914ed4afbcf3a57d647cc9bc64f",
       "raw_body_bytes": 371,
       "normalize": [
         "$.timestamp",
@@ -4265,7 +4265,7 @@
         "code": 200,
         "message": "审批单已创建，等待人工确认",
         "data": {
-          "id": "54154a77-843a-45ea-8c3e-821ab0b4a144",
+          "id": "15ec187c-2ca0-41d5-a706-fb846459f8de",
           "ticket_type": "restock",
           "ticket_type_display": "品质抽检",
           "title": "契约基准审批单",
@@ -4279,12 +4279,12 @@
           "created_by": "farmer_xinfeng",
           "decided_by": "",
           "note": "",
-          "created_at": "2026-09-20T15:57:12.457584+00:00",
+          "created_at": "2026-09-21T04:38:14.014974+00:00",
           "decided_at": ""
         },
-        "timestamp": 1789919832457
+        "timestamp": 1789965494014
       },
-      "raw_body_sha256": "71fd16a0fad66edc2c5fcd28ebcba638b6b15f4bcd3fdb3893404505b76499bc",
+      "raw_body_sha256": "c822ab90dbb12c1738f0bc0cca429c553148884a746f775f765e71ee35d16705",
       "raw_body_bytes": 463,
       "normalize": [
         "$.timestamp",
@@ -4336,7 +4336,7 @@
       "name": "agent_approval_decision_approve_ok",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
+      "path": "/api/agent/approvals/3366b715-b33d-491c-a5a0-6031a3102833/decision",
       "method": "POST",
       "kind": "mutation",
       "headers": {
@@ -4350,7 +4350,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
+        "approval_id": "3366b715-b33d-491c-a5a0-6031a3102833"
       },
       "expected_status": 200,
       "expected_content_type": "application/json",
@@ -4358,7 +4358,7 @@
         "code": 200,
         "message": "已批准，动作交业务系统执行",
         "data": {
-          "id": "6705f1de-4921-46d8-a2ec-0ef4be787457",
+          "id": "3366b715-b33d-491c-a5a0-6031a3102833",
           "ticket_type": "other",
           "ticket_type_display": "其他",
           "title": "契约基准：待决策审批单",
@@ -4373,12 +4373,12 @@
           "created_by": "",
           "decided_by": "farmer_xinfeng",
           "note": "契约基准批准",
-          "created_at": "2026-09-20T15:57:08.842231+00:00",
-          "decided_at": "2026-09-20T15:57:12.466583+00:00"
+          "created_at": "2026-09-21T04:38:10.274916+00:00",
+          "decided_at": "2026-09-21T04:38:14.020974+00:00"
         },
-        "timestamp": 1789919832466
+        "timestamp": 1789965494020
       },
-      "raw_body_sha256": "c841686a5b1cb1424dca20e2d87e6746cf10ccde6d8a9364be331d58bb31aec5",
+      "raw_body_sha256": "c3b52f1401d75ef2236dc6f95ec392916fea101ce694579260ad0cd2f5cb4756",
       "raw_body_bytes": 538,
       "normalize": [
         "$.timestamp",
@@ -4430,7 +4430,7 @@
       "name": "agent_approval_decision_repeat_500",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/6705f1de-4921-46d8-a2ec-0ef4be787457/decision",
+      "path": "/api/agent/approvals/3366b715-b33d-491c-a5a0-6031a3102833/decision",
       "method": "POST",
       "kind": "mutation",
       "headers": {
@@ -4443,7 +4443,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "6705f1de-4921-46d8-a2ec-0ef4be787457"
+        "approval_id": "3366b715-b33d-491c-a5a0-6031a3102833"
       },
       "expected_status": 500,
       "expected_content_type": "application/json",
@@ -4499,7 +4499,7 @@
       "name": "agent_approval_decision_reject_ok",
       "path_name": "agent_approval_decision_api",
       "path_template": "api/agent/approvals/<uuid:approval_id>/decision",
-      "path": "/api/agent/approvals/54154a77-843a-45ea-8c3e-821ab0b4a144/decision",
+      "path": "/api/agent/approvals/15ec187c-2ca0-41d5-a706-fb846459f8de/decision",
       "method": "POST",
       "kind": "mutation",
       "headers": {
@@ -4513,7 +4513,7 @@
       },
       "upload": null,
       "path_params": {
-        "approval_id": "54154a77-843a-45ea-8c3e-821ab0b4a144"
+        "approval_id": "15ec187c-2ca0-41d5-a706-fb846459f8de"
       },
       "expected_status": 200,
       "expected_content_type": "application/json",
@@ -4521,7 +4521,7 @@
         "code": 200,
         "message": "已拒绝",
         "data": {
-          "id": "54154a77-843a-45ea-8c3e-821ab0b4a144",
+          "id": "15ec187c-2ca0-41d5-a706-fb846459f8de",
           "ticket_type": "restock",
           "ticket_type_display": "品质抽检",
           "title": "契约基准审批单",
@@ -4535,12 +4535,12 @@
           "created_by": "farmer_xinfeng",
           "decided_by": "farmer_xinfeng",
           "note": "契约基准拒绝",
-          "created_at": "2026-09-20T15:57:12.457584+00:00",
-          "decided_at": "2026-09-20T15:57:12.484581+00:00"
+          "created_at": "2026-09-21T04:38:14.014974+00:00",
+          "decided_at": "2026-09-21T04:38:14.039975+00:00"
         },
-        "timestamp": 1789919832485
+        "timestamp": 1789965494040
       },
-      "raw_body_sha256": "7e54c115b618adbd327f0d75d3f49b01859159ec249556ab2ad2a4cbd37da5d4",
+      "raw_body_sha256": "de24dc5e4b12f8164d3865666e0f0f5f53d970b4d2105e47a0635ca815141c33",
       "raw_body_bytes": 498,
       "normalize": [
         "$.timestamp",

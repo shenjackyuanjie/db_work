@@ -2,8 +2,9 @@
 
 - 验证时间（UTC）：`2026-09-20T15:57` 起
 - 分支：`main`（四域契约实现已合并；`cargo check --all-targets` 通过）
-- 权威结果：**251 条用例 → 235 pass / 4 fail / 12 expected_deviation / 0 transport_error**
-- 逐域：auth 27/27 · core 39/42（2 expected_deviation）· commerce **81/81** · orchard_trace **64/65**（1 expected_deviation）· agent 24/36（9 expected_deviation）
+- 权威结果（**W2-0 更新，2026-09-21**）：**251 条用例 → 239 pass / 0 fail / 12 expected_deviation / 0 transport_error**
+- 逐域：auth **27/27** · core **40/42**（2 expected_deviation）· commerce **81/81** · orchard_trace **64/65**（1 expected_deviation）· agent **27/36**（9 expected_deviation）
+- 用例口径：**251 = 矩阵内 246 + 矩阵外探针 5**；`index.case_count`(246) 只统计矩阵内，权威口径是 `index.recorded_case_count`(251)，见 `DEVIATIONS.md` D17
 
 本报告只写**实测**结论，每一项都带复现命令。发现但**没有**修的实现问题全部列在 §5，交主线裁定。
 
@@ -78,11 +79,11 @@ scratch 账号 2 个（`qa_scratch_user`/`qa_scratch_user2`）与预置审批单
 | 域 | 用例 | pass | fail | expected_deviation | shape_only | 说明 |
 |---|---|---|---|---|---|---|
 | auth | 27 | **27** | 0 | 0 | 0 | 全绿 |
-| core | 42 | 39 | **1** | 2 | 4 | 唯一 fail = `tasks_list_ok`（§5.1） |
+| core | 42 | **40** | 0 | 2 | 4 | 全绿（原 1 条 `tasks_list_ok` 顺序失败已由 D12 修掉） |
 | commerce | 81 | **81** | 0 | 0 | 0 | 全绿（含 6 条 capture 回填） |
-| orchard_trace | 65 | 64 | **0** | 1 | 3 | 全绿（含哈希链用例，§3.3） |
-| agent | 36 | 24 | **3** | 9 | 0 | `agent_context_ok` / `agent_feedback_get_buyer_ok` / `agent_risk_alert_ok`（§5） |
-| **合计** | **251** | **235** | **4** | **12** | **7** | `transport_error=0`、`offset_style_drift=0` |
+| orchard_trace | 65 | **64** | 0 | 1 | 3 | 全绿（含哈希链用例，§3.3） |
+| agent | 36 | **27** | 0 | 9 | 0 | 全绿（原 3 条顺序失败已由 D12 修掉） |
+| **合计** | **251** | **239** | **0** | **12** | **7** | `transport_error=0`、`offset_style_drift=0` |
 
 `expected_deviation` = 蓝本缺陷（`DEVIATIONS.md` D1/D2/D5）的 12 条，已裁定 Rust 侧修正为正确语义，
 **不计失败**。
@@ -228,7 +229,11 @@ ORM 读回来 microsecond 完好 —— **截断只发生在序列化**。
 
 ---
 
-## 5. 残留失败逐条归因（4 条，每条都有实证）
+## 5. 残留失败逐条归因（历史：4 条，**均已由 W2-0 修掉，当前 fail = 0**）
+
+> 本节记录的是 D12 的 4 条顺序失败。W2-0 通过**让测试数据确定化**（录制前就把平局时间戳
+> 错开微秒）把它们全部修掉，**实现侧一行未改**。保留本节作为根因证据。
+> 详见 `DEVIATIONS.md` D12 与 `W20_NOTES.md`。
 
 ### 5.1 `core/tasks_list_ok` —— 夹具缺陷（期望的是插入序，不是任何确定性规则）
 
@@ -303,18 +308,19 @@ ORM 读回来 microsecond 完好 —— **截断只发生在序列化**。
   **`2026-09-20T23:43:11.173038`**（无偏移、无 `Z`）。
 - 本轮我已把 `$..completed_at` 加进 normalize（它是**写入时刻**，本就逐值不可比），
   所以这条**不体现为失败**；但形态差异是真实的，`W1A_DELIVERY.md` §3.2 把它记为「D3 逐字复刻」，
-  而实测蓝本并不产生朴素形态 —— **请主线确认 D3 的裁定是否要改**。
+  而实测蓝本并不产生朴素形态 —— **已按此更正 D3：改用 `ser::dt_z` 并补 3 条形态单测**。
 - 影响面：App 侧若对 `completed_at` 做 `new Date()` 解析，`Z` 与无偏移串在部分浏览器下不等价。
 
-### 6.3 `UNORDERED_LEAVES` 是否要补 `$.data`（任务/反馈列表）
+### 6.3 `UNORDERED_LEAVES` 是否要补 `$.data`（任务/反馈列表）—— **W2-0 已用另一种方式解决，结论：不补**
 
-若主线接受 §5 的「夹具把插入序当契约」判断，`$.data` 需要加进 `UNORDERED_LEAVES`，
-那 4 条残留失败会归零。**我没有自己加** —— 那等于把 D6 之外的「顺序不参与比较」也放宽掉，
-属于裁定范围，不在工具职责内。
+W2-0 选择**让数据确定化**（录制时把平局时间戳错开微秒），而不是放宽比对。
+这样列表顺序仍然**逐字比较**，比把 `$.data` 加进 `UNORDERED_LEAVES` 严格得多。
+详见 `DEVIATIONS.md` D12。
 
-### 6.4 `DEVIATIONS.md` D11（字符串长度校验）仍是缺口
+### 6.4 `DEVIATIONS.md` D11（字符串长度校验）—— **已修**
 
-`username>150` / `password>128` / `email` 超长会撞列宽变 500，与蓝本行为也不一致。本轮未涉及。
+已按蓝本 `max_length` 在契约层校验并返回 400（`username` 150 / `email` 254 /
+`orchard_address` 255）。`password` **不加**上限 —— 蓝本序列化器也没有。详见 `DEVIATIONS.md` D11。
 
 ---
 

@@ -20,7 +20,7 @@
 | **D9** | 蓝本外键不带 `ON DELETE` | 级联在 Python 层（`on_delete`） | **我方按 `on_delete` 写 CASCADE/SET NULL/RESTRICT，并加 `DEFERRABLE INITIALLY DEFERRED`** | 保证数据一致性；`DEFERRABLE` 让夹具乱序导入在单事务内也成立 |
 | **D10** | `login` 凭据错误分支的信封形状 | 蓝本源码（`serializers.ValidationError`）看似该走 DRF 异常体（**无** timestamp），但实测录到的是 `{code:401, message:{"non_field_errors":["Invalid credentials"]}, data:null, timestamp:…}`——**成功体形状、message 是对象、带 timestamp** | **取夹具** | 这是 App 实际收到的字节。`views_auth.rs` 已用 ⚠️ 注释标出该反直觉点 |
 | **D11** | 字符串长度校验 | 蓝本靠 DB 约束（`VARCHAR(150)` 等），超长会变成 500 | **✅ 已解决（2026-09-20 收尾）：契约层按蓝本 `max_length` 校验，返回 400** | 原先 `username > 150` / `email > 254` / `orchard_address > 255` 会撞 `VARCHAR` 列宽变 **500**。上限与文案都是**实测**蓝本序列化器拿到的（`请确保这个字段不能超过 N 个字符。`）。**`password` 未加上限** —— 蓝本也没有（见收口记录 §2） |
-| **D12** | 夹具把「平局时的数据库返回序」当成了契约 | 蓝本 `Task` / `AgentFeedback` 的 `Meta.ordering` 只有 `-created_at` 没有次级键；测试库里多条记录 `created_at` **完全相同**，SQLite 按 rowid 返回，PG 按物理顺序返回，两者不同 | **接受为夹具不确定，实现侧不迁就**（不为匹配某个物理顺序而写凑数代码） | 残留 4 条失败全部源于此：`core/tasks_list_ok`、`agent/agent_context_ok`、`agent/agent_feedback_get_buyer_ok`、`agent/agent_risk_alert_ok`。**建议夹具给这些列表补稳定次级键**，或让 seed 不再产生平局。这是夹具自身的不确定性，不是实现缺陷 |
+| **D12** | 夹具把「平局时的数据库返回序」当成了契约 | 蓝本 `Task` / `AgentFeedback` 的 `Meta.ordering` 只有 `-created_at` 没有次级键；`seed_demo_data` 连建多条记录时**本机时钟粒度足以让 `timezone.now()` 返回同一微秒**，于是平局时 SQLite 按 rowid、PG 按物理序，返回顺序不同 | **✅ 已解决（W2-0）：让数据确定化，而不是把列表标成无序** | 实测：3 条 `Task` 都是 `…985960`、2 条 `AgentFeedback` 都是 `…008573`。修法见 W2-0 记录 §1：`capture_contract.py` 新增 `break_tied_timestamps()`，**在 `dump_seed` 之前**按 pk 顺序把平局时间戳错开微秒，并在每个用例前再跑一次（覆盖回放中新建的平局）。真实库里这些时间本是递增的，所以这是让测试数据更贴近真实。修掉全部 4 条：`core/tasks_list_ok`、`agent/agent_context_ok`、`agent/agent_feedback_get_buyer_ok`、`agent/agent_risk_alert_ok` |
 | **D13** | 单测写死了录制实例的字面量 | — | **✅ 已解决（2026-09-20 收尾）：commerce 单测改为从夹具 `expected_body` / `index.json.seed_refs` 派生，或断言结构性质** | 重录夹具后 `commerce_tests.rs` 8 条失败（`10 != 7`、商品/订单/地址/购物车 uuid 字面量、`category_labels` 与 `archiveCode` 字面量）**不是实现回归**。改法与「重录前后两次全绿」的验证见收口记录 §3 |
 
 ## 收口记录（2026-09-20 收尾：D3 / D11 / D13）
@@ -179,8 +179,9 @@
 
 | ID | 项 | 说明 | 处置 |
 |---|---|---|---|
-| **D14** | `register` 的 `email: ""` | 蓝本 `allow_blank=True` 放行空串，我方回 `请输入合法的邮件地址。` | **待修**：应放行空串 |
-| **D15** | `trace_tests::product_order_is_deterministic_when_created_at_ties` 不清理临时数据 | 会插 2 条 `W1B 商品 N` 且不删；全量跑时 commerce 在 trace 之前所以看不见，单跑子集或重跑会把商品条数顶到 9 造成**假红** | **待修**：测试收尾要清理 |
+| **D14** | `register` 的 `email: ""` | 蓝本 `allow_blank=True` 放行空串，我方原回 `请输入合法的邮件地址。` | **✅ 已解决（W2-0）：放行空串，存 `''`（不是 NULL）** | 实测（`scripts/diag_register_email_blank.py`）：`email: ""` → 200、库中 `''`、响应回显 `""`；缺省 / `null` → 存 NULL。成因是 DRF `run_validators` 对空值短路（`EmailValidator` 拿不到 `''`），且 `trim_whitespace=True` 会把纯空白也 strip 成 `''`。单测 `register_accepts_blank_email_and_stores_empty_string` 同时钉住空串与纯空白两种形态 |
+| **D15** | `trace_tests::product_order_is_deterministic_when_created_at_ties` 不清理临时数据 | 会插 2 条 `W1B 商品 N` 且不删，跨次运行累积 | **✅ 已解决（W2-0）：开场清历史残留 + 收尾删自己两条** | 实测未修前同一子集跑两次后 `citrus_product` 从 7 涨到 11；修后连跑两次均绿且 `name LIKE 'W1B%'` 残留为 **0**。（库里另有一条 `契约基准商品`，那是录制器自己的写类用例产生的回放数据，不是残留） |
+| **D17** | `index.json.case_count` 与各域文件用例数不一致（246 vs 251） | — | **✅ 已解决（W2-0）：不是算错，是口径没写明** | 那 5 条是**矩阵外探针**（`DELETE /api/me`、`GET /api/orders/<id>/pay` 等 405 检查）——它们探测的方法不在该 path 的枚举方法集内，故不落进任何 path 条目。现在 `index.json` 同时给出 `recorded_case_count`（251，**权威口径**）、`case_count`（246，矩阵内）、`off_matrix_cases`（5 条名单），汇总行也写明 `cases=251 (矩阵内 246 + 矩阵外探针 5)` |
 | **D16** | 回放有「录制后 20 分钟」时限 | `seed_demo_data` 给 `ORD-DEMO-1003` 的 `expires_at` = 录制时刻 + 20 分钟；超时后任何订单端点触发的 `_expire_stale_orders` 都会取消它并回滚库存（实测会多出 5 条 commerce 假失败） | **写进标准跑法**：权威协议是 `capture → load_seed → replay` 一次跑完（20 分钟内）。这才是「录制与回放须同日完成」的真正原因；种子放置过久需先把该订单窗口推后 |
 
 ### 权威跑法 = 切换门槛
@@ -189,8 +190,9 @@
 在**同一个 schema** 上跑完全部 251 条。单域配 fresh seed 必然有假失败——夹具的读类期望值
 含前置域写类的效果。完整命令见 `VERIFICATION.md`。
 
-**当前基线：235 pass / 4 fail / 12 expected_deviation。**
-4 条 fail 全部是 D12 记录的夹具顺序不确定性，**不是实现缺陷**。
+**当前基线（W2-0 后）：239 pass / 0 fail / 12 expected_deviation（总计 251）。**
+D12 修掉后残留失败归零；12 条 expected_deviation 全是 D1/D2/D5 记录在案的蓝本缺陷。
+**权威用例口径是 251**（各域实际录制数），不是 `index.case_count` 的 246（那个只统计矩阵内，见 D17）。
 
 ## 使用方式
 
