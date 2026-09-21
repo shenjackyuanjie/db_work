@@ -4,7 +4,7 @@
 > `index.json` 缺 6 项必需字段 vs 全含），**采信 `.tmp/contract/` 版本**，已把它的
 > `capture_contract.py` 与全部产物落位到 `db/scripts/` 与 `db/tests/fixtures/contract/`，
 > 并删除非交付物 `probes.json`。下文 §0 的「请二选一」已由该裁定解决，保留原文作为核验证据。
-> 复核方式：`python .tmp/audit_fixtures.py db\tests\fixtures\contract .tmp\contract`。
+> 复核方式：`python db\scripts\audit_fixtures.py db\tests\fixtures\contract <另一套夹具目录>`。
 
 > 本文件是**核验与交割记录**，不是任务书要求的产物本身。任务书要求的 7 个文件见下。
 

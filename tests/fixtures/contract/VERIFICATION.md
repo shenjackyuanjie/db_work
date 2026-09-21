@@ -25,19 +25,26 @@ cd D:\githubs\db_work\db
 # 1) 编译门槛
 cargo check --all-targets
 
-# 2) Rust 单测（**必须 --test-threads=1**，见 §7）
+# 2) 准备 scratch schema 并灌入纯种子态
+#    **这是 DB 单测的前置**：单测直接打 scratch schema，且需要种子行存在
+#    （例如 keep_seed_pending_order_open 要 UPDATE 种子里的订单）。
+#    空 schema 直接跑单测会红 21 条 —— 踩过一次，故把顺序固定成这样。
+#    只在 compat_* 里操作，绝不碰现网 public。
+scripts\pg_env.ps1 -Reset compat_verify
+scripts\pg_env.ps1 -Apply compat_verify          # DDL 从 src/server/bootstrap/*.rs 现场抽取
+& D:\githubs\db_work\.venv-django\Scripts\python.exe scripts\load_seed.py --schema compat_verify
+
+# 3) Rust 单测（**必须 --test-threads=1**，见 §7）
 $env:COMPAT_TEST_SCHEMA='compat_verify'
 cargo test -- --test-threads=1 compat
 
-# 3) 建 scratch schema（只在 compat_* 里操作，绝不碰现网 public）
+# 4) 单测写过库了，回放前重新回到纯种子态
 scripts\pg_env.ps1 -Reset compat_verify
-scripts\pg_env.ps1 -Apply compat_verify          # DDL 从 src/server/bootstrap/*.rs 现场抽取
-
-# 4) 起影子服务
-scripts\pg_env.ps1 -Serve compat_verify -Build -Port 11500
-
-# 5) 载入纯种子态（seed 已保住微秒，见 §3）
+scripts\pg_env.ps1 -Apply compat_verify
 & D:\githubs\db_work\.venv-django\Scripts\python.exe scripts\load_seed.py --schema compat_verify
+
+# 5) 起影子服务（编译产物已被单测预热）
+scripts\pg_env.ps1 -Serve compat_verify -Build -Port 11500
 
 # 6) 权威全序列回放（不带 --domain）
 & D:\githubs\db_work\.venv-django\Scripts\python.exe scripts\replay_diff.py `

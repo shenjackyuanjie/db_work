@@ -1,6 +1,6 @@
 # 序列化契约实证（从 golden fixtures 统计得出，非推测）
 
-统计方式：`python .tmp\datetime_census.py db\tests\fixtures\contract`
+统计方式：`python db\scripts\datetime_census.py db\tests\fixtures\contract`
 样本：五域 251 条用例的全部 `expected_body` 叶子值。
 
 ## 1. 时间（`DateTimeField` 等价物）
