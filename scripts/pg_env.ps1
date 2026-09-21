@@ -37,7 +37,7 @@
     用该 schema 起一个 Rust 服务实例（影子 `/compat` 挂载在该端口上）。
     config.toml 要求 CWD 相对路径，且 ONNX 路径也是相对路径，所以这里在
     $env:TEMP 下造一个运行目录：写一份只改 postgres_url 的 config.toml，
-    并把 `onnx/`、`static/` 以 junction 指回仓库。
+    并把 `onnx/`、`static/`、`storage/` 以 junction 指回仓库（少任何一个都会让静态通道假 404）。
 
 .PARAMETER Port
     -Serve 的监听端口，默认 11000。
@@ -350,15 +350,23 @@ function Invoke-Serve([string]$Schema) {
     }
     if (-not (Test-Path $ExePath)) { throw "找不到 $ExePath，请加 -Build" }
 
-    # 运行目录：config.toml 与 onnx/、static/ 都必须是 CWD 相对路径
+    # 运行目录：config.toml 与 onnx/、static/、storage/ 都必须是 CWD 相对路径。
+    #
+    # ⚠️ `storage` 不能漏：三条**隐式静态通道**全是 cwd 相对路径读的 ——
+    # `/store-images/*` → `storage/store_covers`、`/media/recognition_records/*` → `storage/recognition_records`、
+    # `/uploads/*` → `static/uploads`（这条靠 `static` junction 就够）。
+    # 少了 `storage` junction，前两条在 stock `-Serve` 下**必然 404**，而那是**假失败**：
+    # 它会让人误判「退役改动把静态通道搞坏了」，而其实只是运行目录缺了一个链接。
     if (-not (Test-Path $runDir)) { New-Item -ItemType Directory -Path $runDir -Force | Out-Null }
-    foreach ($link in 'onnx', 'static') {
+    foreach ($link in 'onnx', 'static', 'storage') {
         $target = Join-Path $DbRoot $link
         $path = Join-Path $runDir $link
         if ((Test-Path $path) -and -not (Get-Item $path).LinkType) {
             throw "$path 是真目录而不是 junction，先手工删掉它"
         }
         if (-not (Test-Path $path)) {
+            # `storage/` 是运行期目录、不进版本库，可能还没被创建过。
+            if (-not (Test-Path $target)) { New-Item -ItemType Directory -Path $target -Force | Out-Null }
             New-Item -ItemType Junction -Path $path -Target $target | Out-Null
         }
     }
