@@ -100,7 +100,10 @@ $RepoRoot = Split-Path -Parent $DbRoot
 $ConfigPath = Join-Path $DbRoot 'config.toml'
 $BootstrapDir = Join-Path $DbRoot 'src\server\bootstrap'
 $BackupDir = Join-Path $DbRoot 'backups'
-$ExePath = Join-Path $DbRoot 'target\debug\ai-service.exe'
+# 支持 CARGO_TARGET_DIR：并行开发时各工作流用**独占 target 目录**，避免共用 target 时
+# 互相锁住 `ai-service.exe`（表现为 `link.exe` LNK1104）。默认仍是 <repo>/target。
+$TargetDir = if ($env:CARGO_TARGET_DIR) { $env:CARGO_TARGET_DIR } else { Join-Path $DbRoot 'target' }
+$ExePath = Join-Path $TargetDir 'debug\ai-service.exe'
 
 function Resolve-PgTool([string]$Name) {
     $onPath = Get-Command $Name -ErrorAction Ignore
@@ -174,9 +177,21 @@ $DdlOrder = @(
     @{ File = 'trace_tables.rs';    Const = 'QUALITY_DDL' }
     @{ File = 'commerce_tables.rs'; Const = 'DDL' }
     @{ File = 'agent_tables.rs';    Const = 'DDL' }
+    # 网页超集专用表（不参与契约），也是 `r#"..."#` 常量，必须一起抽，
+    # 否则镜像 schema 会与 `init_database` 的实际建库结果脱节。
+    @{ File = 'web_tables.rs';      Const = 'DDL' }
 )
 
-$Destructive = [regex]'(?im)^\s*(DROP|TRUNCATE|DELETE|ALTER|GRANT|REVOKE|UPDATE|INSERT)\b'
+$Destructive = [regex]'(?im)^\s*(DROP|TRUNCATE|DELETE|GRANT|REVOKE|UPDATE|INSERT)\b'
+
+# ALTER 不是一律禁止：`init_database` 会用**幂等的加法列**给契约表补超集列
+# （`ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin ...`）。
+# 只放行这一种形态；其余 ALTER（DROP COLUMN / TYPE / SET NOT NULL…）仍然拒绝。
+$AdditiveAlter = [regex]'(?is)^ALTER\s+TABLE\s+"[^"]+"\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS\s+\S+\s+\S+.*$'
+
+# `bootstrap.rs` 里以 `sqlx::query(r#"..."#)` 就地执行、且与上面 const 同属 `init_database` 的
+# 加法语句。同样现场抽取、不另抄一份，避免与 `bootstrap.rs` 漂移。
+$AdditivePattern = 'sqlx::query\(\s*r#"(ALTER\s+TABLE\s+"[^"]+"\s+ADD\s+COLUMN\s+IF\s+NOT\s+EXISTS[^"]*)"#'
 
 function Get-BootstrapDdl {
     $statements = [System.Collections.Generic.List[string]]::new()
@@ -205,9 +220,22 @@ function Get-BootstrapDdl {
         Write-Host ("  {0,-20} {1,-14} {2,4}" -f $entry.File, $entry.Const, $found.Count)
     }
 
+    $bootstrapPath = Join-Path $DbRoot 'src\server\bootstrap.rs'
+    $bootstrapText = Get-Content $bootstrapPath -Raw
+    $additive = [regex]::Matches(
+        $bootstrapText,
+        $AdditivePattern,
+        [System.Text.RegularExpressions.RegexOptions]::Singleline
+    )
+    foreach ($m in $additive) { $statements.Add($m.Groups[1].Value.Trim()) }
+    Write-Host ("  {0,-20} {1,-14} {2,4}" -f 'bootstrap.rs', 'additive ALTER', $additive.Count)
+
     foreach ($stmt in $statements) {
         if ($Destructive.IsMatch($stmt)) {
             throw "抽取到的 DDL 里出现破坏性语句，拒绝执行：`n$stmt"
+        }
+        if (($stmt -match '(?i)^\s*ALTER\b') -and (-not $AdditiveAlter.IsMatch($stmt))) {
+            throw "只放行幂等的加法列 ALTER（ADD COLUMN IF NOT EXISTS），拒绝：`n$stmt"
         }
     }
     if ($statements.Count -lt 90) {
