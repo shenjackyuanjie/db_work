@@ -687,10 +687,18 @@ fn optional_email_field(
 ) -> Option<Option<String>> {
     let text = match input {
         Input::Missing | Input::Null => return Some(None),
-        // ⚠️ 这里**刻意不**把空串当「空值直接放过」：蓝本 `allow_blank=True` 会让 `''`
-        // 通过（实测 `email: ''` 是合法的），但当前实现把它当「非法邮件地址」报错。
-        // 这是**既有偏差、不在 D11 范围内**，本次不动它，只保证加长度校验不改变这条路径。
-        Input::Value(Value::String(text)) => text.trim().to_string(),
+        // **D14**：蓝本 `allow_blank=True` 放行空串。实测（`db/scripts/diag_register_email_blank.py`）：
+        // `email: ""` → 200，库中存 `''` 且响应回显 `''`；缺省 / `null` → 存 NULL。
+        // 能被放行的原因是 DRF 的 `run_validators` 对空值直接短路
+        // （`if value in self.empty_values: return`），所以 `EmailValidator` 拿不到 `''`；
+        // 而 `trim_whitespace=True` 会先把纯空白串 strip 成 `''`，故空白串同样放行。
+        Input::Value(Value::String(text)) => {
+            let trimmed = text.trim();
+            if trimmed.is_empty() {
+                return Some(Some(String::new()));
+            }
+            trimmed.to_string()
+        }
         Input::Value(_) => return push_error(errors, field, ERR_BLANK),
     };
 
@@ -1130,6 +1138,45 @@ mod tests {
             body["message"]["email"][0],
             max_length_message(EMAIL_MAX_LENGTH)
         );
+    }
+
+    /// **D14**：`allow_blank=True` 放行空 `email`，且**存 `''` 而不是 NULL**。
+    ///
+    /// 实测蓝本（`db/scripts/diag_register_email_blank.py`）：`email: ""` → 200、
+    /// 库中 `user.email == ''`、响应回显 `""`；而缺省 / `null` → 存 NULL。
+    /// 成因是 DRF 的 `run_validators` 对空值短路，`EmailValidator` 根本拿不到 `''`；
+    /// `trim_whitespace=True` 又会先把纯空白串 strip 成 `''`，故空白串同样放行。
+    #[tokio::test]
+    async fn register_accepts_blank_email_and_stores_empty_string() {
+        let pool = pool_or_skip!();
+
+        for (label, raw_email) in [("空串", ""), ("纯空白", "   ")] {
+            let username = unique_username("w0ba_blank_email");
+
+            let (status, body) = body_json(
+                register_impl(
+                    &pool,
+                    &json!({"username": username, "password": "qa-pass-123456",
+                            "role": "buyer", "email": raw_email}),
+                )
+                .await
+                .expect("空 email 应当放行，是 Ok 分支"),
+            )
+            .await;
+
+            assert_eq!(status, StatusCode::OK, "{label}: {body}");
+            assert_eq!(body["data"]["user"]["email"], "", "{label}: {body}");
+
+            let stored: Option<String> =
+                sqlx::query_scalar(r#"SELECT email FROM "user" WHERE username = $1"#)
+                    .bind(&username)
+                    .fetch_one(&pool)
+                    .await
+                    .expect("查库失败");
+            assert_eq!(stored, Some(String::new()), "{label}：要存 '' 而不是 NULL");
+
+            drop_user(&pool, &username).await;
+        }
     }
 
     /// `email` 又超长又格式非法：DRF 的 `run_validators` 会**聚合**两条文案，
