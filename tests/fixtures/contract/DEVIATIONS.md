@@ -124,6 +124,10 @@
 
 #### §5.1 ⚠️ 回放有「录制后 20 分钟」的时限（`VERIFICATION.md §7` 只说了「跨天」）
 
+> **✅ 已由 W2-0 从根上消除**（见下方 D16）。这里保留原始诊断作为根因证据。
+> 修法是在录制准备阶段把 `pending_*` 挂单的 `expires_at` 推到 +30 天，
+> 使回放不再依赖墙钟；并已用「种子放置 21 分钟后回放仍 239/0/12」实证。
+
 `seed_demo_data` 给 `ORD-DEMO-1003` 的 `expires_at` 是 `now + timedelta(minutes=20)`，
 即「**录制时刻 + 20 分钟**」。超时之后，任何订单端点触发的 `_expire_stale_orders` 都会把它
 取消**并回滚库存**（`红肉脐橙家庭装` 300 → 301），造成 §4 里那 5 条假失败。
@@ -182,7 +186,7 @@
 | **D14** | `register` 的 `email: ""` | 蓝本 `allow_blank=True` 放行空串，我方原回 `请输入合法的邮件地址。` | **✅ 已解决（W2-0）：放行空串，存 `''`（不是 NULL）** | 实测（`scripts/diag_register_email_blank.py`）：`email: ""` → 200、库中 `''`、响应回显 `""`；缺省 / `null` → 存 NULL。成因是 DRF `run_validators` 对空值短路（`EmailValidator` 拿不到 `''`），且 `trim_whitespace=True` 会把纯空白也 strip 成 `''`。单测 `register_accepts_blank_email_and_stores_empty_string` 同时钉住空串与纯空白两种形态 |
 | **D15** | `trace_tests::product_order_is_deterministic_when_created_at_ties` 不清理临时数据 | 会插 2 条 `W1B 商品 N` 且不删，跨次运行累积 | **✅ 已解决（W2-0）：开场清历史残留 + 收尾删自己两条** | 实测未修前同一子集跑两次后 `citrus_product` 从 7 涨到 11；修后连跑两次均绿且 `name LIKE 'W1B%'` 残留为 **0**。（库里另有一条 `契约基准商品`，那是录制器自己的写类用例产生的回放数据，不是残留） |
 | **D17** | `index.json.case_count` 与各域文件用例数不一致（246 vs 251） | — | **✅ 已解决（W2-0）：不是算错，是口径没写明** | 那 5 条是**矩阵外探针**（`DELETE /api/me`、`GET /api/orders/<id>/pay` 等 405 检查）——它们探测的方法不在该 path 的枚举方法集内，故不落进任何 path 条目。现在 `index.json` 同时给出 `recorded_case_count`（251，**权威口径**）、`case_count`（246，矩阵内）、`off_matrix_cases`（5 条名单），汇总行也写明 `cases=251 (矩阵内 246 + 矩阵外探针 5)` |
-| **D16** | 回放有「录制后 20 分钟」时限 | `seed_demo_data` 给 `ORD-DEMO-1003` 的 `expires_at` = 录制时刻 + 20 分钟；超时后任何订单端点触发的 `_expire_stale_orders` 都会取消它并回滚库存（实测会多出 5 条 commerce 假失败） | **写进标准跑法**：权威协议是 `capture → load_seed → replay` 一次跑完（20 分钟内）。这才是「录制与回放须同日完成」的真正原因；种子放置过久需先把该订单窗口推后 |
+| **D16** | 回放有「录制后 20 分钟」时限 | `seed_demo_data` 给 `ORD-DEMO-1003` 的 `expires_at` = 种子时刻 + 20 分钟；超时后任何订单端点触发的 `_expire_stale_orders` 都会取消它并回滚库存（实测曾凭空多出 5 条 commerce 假失败） | **✅ 已解决（W2-0）：把种子的短窗口推后，这条时限从协议里拿掉** | `capture_contract.py` 新增 `extend_short_deadlines()`，在 `dump_seed` 之前把 `pending_*` 挂单的 `expires_at` 推到 +30 天（并在每个用例前再跑一次）；不改 Django 的 `seed_demo_data`。实测余量从 **20 分钟 → 43199 分钟（30.0 天）**，且 `_expire_stale_orders` 当前命中 0 行。**证据：故意让种子放置 21 分钟再回放，仍是 239 / 0 / 12**（见 W20-0 记录与 `REPLAY_wallclock_20min.json`） |
 
 ### 权威跑法 = 切换门槛
 
@@ -193,6 +197,12 @@
 **当前基线（W2-0 后）：239 pass / 0 fail / 12 expected_deviation（总计 251）。**
 D12 修掉后残留失败归零；12 条 expected_deviation 全是 D1/D2/D5 记录在案的蓝本缺陷。
 **权威用例口径是 251**（各域实际录制数），不是 `index.case_count` 的 246（那个只统计矩阵内，见 D17）。
+
+## 追加登记（W2 前端收敛：**能力损失**）
+
+| ID | 项 | 说明 | 处置 |
+|---|---|---|---|
+| **D18** | 后台商品管理**失去 SKU 字段** | 契约表 `citrus_product` 没有 `sku` 列，只有 `sku_type`（试吃装/家庭装/企业装…，语义是「规格类型」**不是** SKU 编码，不能顶替）。旧自研 `store_products.sku` 是唯一来源 | **裁定：从前端删掉 SKU 的展示与表单，不给契约表加列。** 理由：`is_admin` 有真实语义需求才加的加法列，而 SKU 只是旧自研模型的字段，旧表 `store_products` 即将退役、**没有遗留数据需要承接**；为一个新模型里不存在的概念发明列是反方向。影响面：`admin.js:1228`（列表展示）、`admin.js:1577` 周边表单、`store-admin.js:139`（列表）、`store-admin.js:270`（提交体）、`store-admin.html:74` 附近的 `name="sku"` 输入框 |
 
 ## 使用方式
 

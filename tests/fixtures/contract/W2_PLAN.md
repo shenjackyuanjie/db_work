@@ -286,16 +286,35 @@ Ok(Router::new()
   `total_cents`、`order_no`、`status`(旧 5 态)。`store.js:239,259` 的 `line_total_cents`/`total_cents`
   与 `new Date(Number(order.created_at))` 都要改（Django 是 ISO8601 字符串，直接 `new Date(str)`）。
 
-### 2.3 后台商品管理：改打 Django 农户端接口
+### 2.3 后台商品管理 ~~改打 Django 农户端接口~~ → **⛔ 本方案已被推翻**
 
-`/user/admin/store/products`(POST+GET) → **`/api/v1/farmer/products`**（`farmer_product_list_create_api`）
-`/user/admin/store/products/{id}`(PUT) → **`/api/v1/farmer/products/<uuid>`**（`farmer_product_detail_api`）
-`/{id}/toggle` → Django 无对应端点，**用 PATCH 改 `status`**（`on_sale` ↔ `off_sale`）；若契约里详情接口不支持 PATCH，则退化为「先 GET 再 PUT」。
+> **裁定（2026-09-21）：本方案作废。后台商品管理保留 `/web/admin/store/products*` 管理端超集。**
+> 推翻证据与理由见本节末尾「为什么走不通」。原文保留如下，作为决策留痕。
 
-表单需新增 **销售批次选择器**（`sales_batch_id` 必填）：批次列表来自 `/api/v1/farmer/batches`。
+~~`/user/admin/store/products`(POST+GET) → **`/api/v1/farmer/products`**（`farmer_product_list_create_api`）~~
+~~`/user/admin/store/products/{id}`(PUT) → **`/api/v1/farmer/products/<uuid>`**（`farmer_product_detail_api`）~~
+~~`/{id}/toggle` → Django 无对应端点，**用 PATCH 改 `status`**（`on_sale` ↔ `off_sale`）~~
 
-**未选的那条路**：把商品 CRUD 留在 `/web/admin/store/products`（保留自研 `store_products` 表）。
-否掉的原因：与用户裁定 ② 直接冲突，且会让两套商品模型长期共存。
+~~表单需新增 **销售批次选择器**（`sales_batch_id` 必填）：批次列表来自 `/api/v1/farmer/batches`。~~
+
+~~**未选的那条路**：把商品 CRUD 留在 `/web/admin/store/products`（保留自研 `store_products` 表）。~~
+~~否掉的原因：与用户裁定 ② 直接冲突，且会让两套商品模型长期共存。~~
+
+#### 为什么走不通（实测证据，来自 `W2_FRONTEND_HANDOFF.md` §0）
+
+| 证据（均在 `tests/fixtures/contract/orchard_trace.json`） | 内容 |
+|---|---|
+| `farmer_products_buyer_403`、`farmer_product_put_buyer_403` | `/api/v1/farmer/*` 全部 10 条接口对 buyer 返回 **403 `该接口仅限果农使用`** → 它是 `IsFarmer` |
+| `farmer_product_patch_foreign_404` | `farmer_xunwu` 打 `farmer_xinfeng` 的商品 → **404**（按 `seller_id` 隔离，只能管自己的） |
+
+而后台商品管理要**管全平台商品**，操作者身份是 `is_admin` —— `is_admin` 是 `"user"` 的加法列、
+与 `role` **正交**（管理员完全可能是 `role=buyer`）。所以走农户端接口要么「管理员一登录就 403」，
+要么「只能看到自己名下的商品」，后台直接失去意义。
+
+**落实**：`src/web/store_admin.rs` 已实现管理端超集（列表/详情/新建/更新/删除/toggle），
+跨 seller 直接读写 `citrus_product`，全部 `require_admin` 门禁。
+注意本节原先「未选的那条路」里担心的「保留自研 `store_products` 表」并**没有发生** ——
+超集读写的是**契约表 `citrus_product`**，所以商品模型仍然是统一的，`store_products` 照常退役。
 
 ### 2.4 隐式静态通道（**最容易漏**，单独一节）
 
@@ -718,6 +737,99 @@ pub(crate) fn build_clear_cookie() -> Option<HeaderValue>
 
 - `seed_approval_id` 捕获键从未被观察到（S1 §5.1 已记录），回放时会显式告警。
 
+#### 交接（S2 停在此处；`admin.rs` 已转给新 agent）
+
+**已完成**：`session.rs`（`web::session` 8 passed）· `support.rs`（5 passed）·
+`orchard.rs` 两条 overview（6 passed）· 识别落库双写（实证见上）。
+**未完成**：`/web/citrus-disease-v2`（一行路由，但被一次可见性卡住，见下）·
+`src/web/admin.rs`（10 条）。
+
+**前端 reader 判据表在「阶段 1」那一节，保持有效，S4 直接照它做。**
+
+##### ⛔ `/web/citrus-disease-v2`：不是「加一行路由」，还需要 `handlers_ai.rs` 的**第三处**可见性放开
+
+我原本的计划是**直接把现有 handler 挂到我的路由上**（零签名猜测、零重复、响应天然透传）：
+
+```rust
+.route("/citrus-disease-v2",
+       post(crate::server::handlers_ai::citrus_disease_advanced_handler))
+```
+
+**实测编译不过**，试了两种路径都失败：
+
+| 写法 | 结果 |
+|---|---|
+| `handlers_ai::citrus_disease_advanced_handler` | `E0603 function import ... is private`（`handlers_ai.rs` 里是私有 `use` 再导出） |
+| `handlers_ai::advanced::citrus_disease_advanced_handler` | `E0603 module advanced is private` |
+
+**修法（在 `src/server/handlers_ai.rs`，一行）**：把引入该 handler 的
+`use advanced::citrus_disease_advanced_handler;` 改成
+`pub(crate) use advanced::citrus_disease_advanced_handler;`。
+改完之后，上面那行路由就是完整实现——**不需要写包装函数、不需要碰推理**。
+
+我**已经回退**了那行路由，所以主仓库当前是绿的（`cargo check --all-targets` exit 0）。
+**没有**为了塞进去而复制 `advanced.rs` 的推理/落库逻辑。
+
+为什么它在 `/web/*` 而不是 `/api/*`：响应比 Django `/api/citrus-disease` 多 6 个字段
+（`is_citrus_leaf`/`citrus_type`/`is_healthy`/`severity`/`treatment_suggestion`/`preventive_measures`/
+`image_quality_warning`），属识别超集，留在 `/api/**` 会污染逐字兼容目标。
+形状要求：**原样透传**（`analyze.js:212` 读 `data.data`，即信封里的 `data`），别重新包装。
+
+##### ⚠️ S5 阻断项（S2 发现，务必登记进 S5 清单）
+
+`handlers_ai` 的认证走 `user_routes::ensure_authenticated`，读的是 **`app_sessions` + `app_users`**，
+**不是** `auth_token` / `"user"`（`handlers_ai/request.rs:34-39`、`reports.rs:21,68,162`）。
+**这两张表一删，`/api/citrus-disease-v2` 立刻 401** —— 而它是识别记录的**唯一**写入方
+（契约层的 `/api/citrus-disease` 按蓝本行为不落库）。S5 删表前必须先把这些认证点换成
+`compat::auth::authenticate` 或 `web::session::current_user`。
+
+现象特征：任何「只有契约表数据」的环境里它都会 401——S2 做双写实证时就得先向旧表植入一行
+`app_users` + `app_sessions` 才能打通。
+
+##### `admin.rs` 交接清单（10 条）
+
+接手前只需读 `user_routes/admin/{management,pending,settings}.rs` 与 `handlers_core/pages.rs:120`。
+
+| `/web/*` 路径 | 方法 | 旧路径 | 前端 | 表 |
+|---|---|---|---|---|
+| `/system-status` | GET | `/api/system-status` | `index.js:143` | `app_system_settings`（保留） |
+| `/admin/settings/get` | POST | `/user/admin/settings/get` | `admin.js:1063` | 同上 |
+| `/admin/settings/update` | POST | `/user/admin/settings/update` | `admin.js:1079` | 同上 |
+| `/admin/set_admin` | POST | `/user/admin/set_admin` | `admin.js:165` | `"user".is_admin`（加法列） |
+| `/admin/users/list` | POST | `/user/admin/users/list` | `admin.js:277` | `"user"` |
+| `/admin/invitations/create` | POST | `/user/admin/invitations/create` | `admin.js:146` | `app_invitations`（保留） |
+| `/admin/invitations/list` | POST | `/user/admin/invitations/list` | `admin.js:266` | 同上 |
+| `/admin/pending/list` | POST | `/user/admin/pending/list` | `admin.js:255` | `app_pending_users`（保留） |
+| `/admin/pending/approve` | POST | `/user/admin/pending/approve` | `admin.js:288` | 读 `app_pending_users` → 写 `"user"` |
+| `/admin/pending/reject` | POST | `/user/admin/pending/reject` | `admin.js:300` | `app_pending_users` |
+
+三条形状 / 数据要点：
+
+1. **全部用超集信封**（`admin.js:10-19` 的 `unwrapApiPayload` + `readErrorMessage`），
+   且**成功时 `data` 不能是 null**，否则 `unwrapApiPayload` 会回落到整个信封。
+   `session.rs` 已提供 `app_ok` / `app_err` / `unauthorized` / `forbidden` → 直接用；
+   鉴权用 `require_admin(&state, &headers)`（失败体已是 401 `请先登录` / 403 `当前账号无管理权限`）。
+2. 账号类改读写契约表 `"user"`（保留字双引号）；管理员标记是加法列 `is_admin`。
+   `app_pending_users.created_at` 是 **epoch 秒**，而 `admin.js:1023` 的 `parseTime` 按 `<1e12` 判为秒
+   ——所以原样输出秒是对的，别乘 1000。
+3. **待审批通过**要把 `app_pending_users` 那行落到 `"user"`（旧实现写 `app_users`）。
+   `"user"` 必填列：`id`(UUID) / `username` / `password` / `role` / `created_at` / `updated_at`；
+   `app_pending_users.requested_role` 是 `admin`/`user` 字面量 → 映射成 `is_admin`，
+   `role` 按网页语义写 `farmer`（与 `/web/session/register` 一致）。
+
+##### S2 收口时已验证的状态
+
+| 项 | 结果 |
+|---|---|
+| `cargo check --all-targets` | **exit 0**（回退那行路由后复核过） |
+| `cargo test -- --test-threads=1 compat` | **126 passed / 0 failed**（`compat_s2`，reset+apply+load_seed 之后） |
+| `cargo test -- web::{session,support,orchard}` | 8 / 5 / 6 passed |
+| **全序列回放**（双写改动后） | **239 / 0 / 12** |
+| 双写实证 | `web 0→1`、`contract 4→5`、`user_resolved=t`、`app_diagnosis_records=0` |
+
+> 回退 `/web/citrus-disease-v2` 那行路由**之后没有重跑**回放与完整单测：该回退把工作树恢复成
+> 上一次验证时的完全相同状态（只多了一处文档改动），因此上表数字代表当前树。
+
 
 ---
 
@@ -881,13 +993,19 @@ S3 开工时还不知道「自测优先用独占 schema」这条约定（S4 起�
 `GET /api/orders`、`GET /api/addresses`、`POST /api/cart` **全部 403 `该接口仅限购买者使用`** ——
 **这是契约层 `IsBuyer` 的正确行为，不是 bug**，两个文件顶部注释都写明了这个前提。
 
-### 探针抓出的一条真实产品约束（值得让 S5 / 产品知悉）
+### 探针抓出的一条真实产品约束 + 一处 **UX-only** 附加行为
 
 跨批次加购会 **400 `一次只能结算同一果园供货批次，请先完成或清空当前购物车`**。
 后端文案可执行，但在商城页是**软死路**（用户得自己到侧栏逐个删），所以我在 `store.js` 加了
 客户端预判：车中批次与目标批次不同时弹**明确到批次号**的确认框，同意则清空后重加。
 已单独实测该路径：`加入第 1 批次 200` → `直接跨批次 400` → `清空后再加第 2 批次 200`、
-最终车中批次正确。**这一处是我主动加的行为，不属于纯端点替换，若认为超出范围可回退。**
+最终车中批次正确。
+
+> **性质：UX-only 附加行为，不是契约。**（主线 2026-09-21 裁定保留。）两条边界必须守住：
+> ① **服务端仍是唯一权威**——那条「一次只能结算同一果园供货批次」的校验没有被绕过，
+> 客户端只是提前告知，**不存在「客户端规则与服务端规则不一致导致脏数据」的风险**；
+> ② 确认框文案**必须带批次号**（`购物车已有「A」批次的商品…是否清空后加入「B」批次？`），
+> 否则用户无法判断自己在选什么。若将来契约放宽单批次限制，这里应同步删除，不要留成孤儿逻辑。
 
 ### 其它实现决定
 
@@ -938,3 +1056,92 @@ S3 开工时还不知道「自测优先用独占 schema」这条约定（S4 起�
 - 支付是契约层的 **mock** 支付（无真实网关），`paid_at` 直接写入，这符合 `W2_PLAN.md` §3 的现状。
 - 我在 `compat_s3` 留下：1 笔已支付订单、1 笔已取消订单（都是实测产生）；购物车已清空、已登出。
   独占 schema，不影响其它流。
+
+---
+
+## S3 追加：后台商品 CRUD（响应 §2.3 被推翻后的裁定）
+
+> 作者：W2-S4-2（同一 agent）。改动文件：`src/web/store_admin.rs`（+文档）。
+
+### 为什么补这一块
+
+`W2_PLAN.md` §2.3 原方案（后台商品管理改打 `/api/v1/farmer/products`）**被推翻**，
+详见 §2.3 里新增的「为什么走不通」一节。两个实测反证：
+
+| 证据 | 文件:行（夹具） | 内容 |
+|---|---|---|
+| `farmer_products_buyer_403` | `tests/fixtures/contract/orchard_trace.json` | buyer 打 `/api/v1/farmer/products` → **403 `该接口仅限果农使用`** → `IsFarmer` |
+| `farmer_product_put_buyer_403` | 同上 | buyer 打 `PUT /api/v1/farmer/products/<uuid>` → 403 |
+| `farmer_product_patch_foreign_404` | 同上 | `farmer_xunwu` 打 `farmer_xinfeng` 的商品 → **404**（按 `seller_id` 自我隔离） |
+
+`is_admin` 是 `"user"` 的加法列、与 `role` **正交**，管理员可能是 `role=buyer`；而后台要管**全平台**商品。
+→ 保留管理端超集，**跨 seller 直接读写契约表 `citrus_product`**（不是旧表 `store_products`，商品模型仍统一）。
+
+### 实现的 6 条路径（全部 `require_admin`）
+
+| 路径 | 方法 | 说明 |
+|---|---|---|
+| `/web/admin/store/products` | GET / POST | 列表（按 `sort_order ASC, created_at DESC`，对齐 Django `Meta.ordering`）/ 新建 |
+| `/web/admin/store/products/{id}` | GET / PATCH / PUT / DELETE | 详情 / 部分更新 / 全量更新 / 删除 |
+| `/web/admin/store/products/{id}/toggle` | POST | `on_sale` ↔ `off_sale`（`draft` 视为未上架 → 首次 toggle 即上架） |
+
+**请求体同时接受旧字段名与 Django 原生名**（`price_cents`|`price`、`stock_quantity`|`stock`、
+`unit_label`|`unit`、`cover_image`|`cover_image_url`）——这样 S4-3 在商品表单上可以做**纯路径替换**，
+不必同时改请求体，风险面最小。
+
+**响应镜像只读派生别名**：`price_cents`（×100 四舍五入）、`stock_quantity`、`unit_label`、
+`cover_image`、`is_active`。**这直接消掉 S4-3 最大的翻车点** ——
+`admin.js:1492` 与 `store-admin.js` 的 `money()` 是 `Number(x)/100`（按「分」），
+而契约的 `price` 是 `NUMERIC` 字符串，不镜像就会把一个 168 元的商品显示成 **¥1.68**。
+别名只读、不存库，**已登记进 §4「旧表退役」的 S5 清单思路**（与 `order_no`/`total_cents` 同一批）。
+
+### 三个刻意的设计决定
+
+1. **新建默认 `status = 'on_sale'`**（偏离 Django 模型的 `draft` 默认）。理由：旧后台商品表单里**没有状态字段**，
+   而 `/api/products` 只返回 `on_sale`；若沿用 `draft`，管理员建完商品在商城页看不到，必然被当成 bug。
+2. **`origin` 从批次所属果园推出**（`concat_ws('', orchard.province, orchard.city, orchard.county)`）。
+   理由：`citrus_product.origin` 是 `NOT NULL`，而旧后台表单没有这个字段——不推就会插库失败变 500。
+   顺带把 `seller_id` 也设为批次果园的 `owner_id`。
+3. **删除是真删**（不是软删）。参考 `"order"`/`order_item` 的关系：`order_item.product_id` 是 `SET NULL`，
+   且订单明细里存了 `product_name` 快照，所以**历史订单不受影响**；但 `cart_item` 与
+   `batch_quality_sample` 是 `CASCADE`，删商品会连带清掉它们——已在这一节点注。
+
+### 实测（`compat_s3` / 端口 11630，全部实际响应）
+
+| 步骤 | 结果 |
+|---|---|
+| 列表 | 200，7 件；别名与原生一致：`price='168.00'` / `price_cents=16800`（**100 倍误差检查通过**） |
+| 新建（**用旧字段名** `price_cents/stock_quantity/unit_label`） | 200 `商品已创建`；`price='168.00'`、`price_cents=16800`、`origin='江西省赣州市安远县'`（从批次果园推出）、`seller='farmer_anyuan'` |
+| 详情 | 200 |
+| 更新（PUT，Django 原生名） | 200 `商品已更新`；`price='99.50'` / `price_cents=9950` |
+| 更新（PATCH，**只传 `stock_quantity`**） | 200；`stock=3`，且 `price` 与 `name` **保持不变**（部分更新正确） |
+| toggle ×2 | `off_sale`(`已下架`, `is_active=false`) → `on_sale` |
+| 删除 → 再查详情 | 200 `商品已删除` → **404** |
+| **批次不存在** | **400 `销售批次不存在`**（不是 500，外键违例没冒出来） |
+| 缺 `sales_batch_id` | 400 `必须选择销售批次（sales_batch_id）` |
+| 缺名称 / 价格 0 | 400 `商品名称不能为空` / `商品价格必须大于 0` |
+| 非法 uuid / 更新不存在的商品 | 404 `商品不存在` |
+| **封面上传** | 200，值 `/store-images/<uuid>.png`（**前缀正确**），列表回读一致 |
+| buyer 打 6 条商品路径 | **全部 403 `当前账号无管理权限`**；对照 `GET /api/products` 仍 200（公开） |
+
+`cargo +nightly fmt --check` exit 0、`cargo check --all-targets` **0 error**、
+`cargo test -- --test-threads=1 compat` **126 passed / 0 failed**。
+
+### 两条从 `d28eb074` 转来的约束（我核对后**部分采纳**，理由见交接文档 §8）
+
+- ✅ **读取类端点不能挂 `Json` extractor**（`admin.js` 的 `postJson` 无 body 时不发 `Content-Type`，
+  axum 会 415/400 拒掉）—— 我核对了自己 7 个无 body 的读取端点，**都没有 `Json`**，合规。
+- ⚠️ **「时间一律输出秒」这条对我不成立**：`admin.js` 里**两套约定并存** ——
+  `formatDate(unixSeconds)`（`admin.js:73`，用于邀请码/用户列表，属 `admin.rs`）要**秒**；
+  而 `new Date(Number(x))`（`admin.js:1700`、`store-admin.js:164`，用于商城订单，属本文件）
+  要**毫秒**。若按「一律秒」改，两个前端会显示成 **1970 年**。详见交接文档 §8.2。
+- 补充：`store-admin.js:290` 用 `p.id === Number(...)` 做**整数比较**，UUID 下恒 `NaN`、静默失效（交接文档 §8.3）。
+
+### 环境纪律（我踩过的两件事）
+
+1. **共享 crate 必须任何时候可编译**：我这次「先加路由、下一条消息才加 handler」，在中间窗口里
+   `cargo check` 报了 6 个 `E0425`，**卡住了另外两条流**。以后半成品要么一次落地，要么先把路由注释掉标 `TODO`，
+   绝不留「路由挂着但函数不存在」的中间态。
+2. **共享 schema 的种子会漂**：别的流重录夹具后 `seed.json` 变了，而我本地 `compat_test` 还是旧种子
+   → 单测报 **9 条失败**（**不是代码回归**）。重灌种子即复原（126 passed / 0 failed）。
+   规则：共享 schema 上的单测一红，先重灌种子再怀疑代码。
