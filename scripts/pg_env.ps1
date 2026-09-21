@@ -238,8 +238,16 @@ function Get-BootstrapDdl {
             throw "只放行幂等的加法列 ALTER（ADD COLUMN IF NOT EXISTS），拒绝：`n$stmt"
         }
     }
-    if ($statements.Count -lt 90) {
-        throw "抽取到的语句只有 $($statements.Count) 条，明显不完整（期望 >= 90），拒绝执行"
+    # 每个分组必须非空（见上面的 `$($entry.File)::$($entry.Const) 是空的`）已经能抓住
+    # 「正则失效导致某个文件一条都抽不出来」。这里只再兜一层**总量**下限。
+    #
+    # ⚠️ 别把下限写成「当前条数 + 一点余量」那种魔法数字：它会被**合法的 DDL 退役**打死。
+    # 实证：S5/G2 删掉 9 张旧表后总量 91 → 82，而当时的阈值是 90，于是 `-Apply` 直接报
+    # 「抽取到的语句只有 82 条…拒绝执行」，把 VERIFICATION.md 的第 2 步整条堵死。
+    # 现在的下限 60 是按**契约层的量级**定的（30 张契约表约 66 条，且契约层是冻结的、
+    # 不该变少），所以它只在「契约表整块抽丢」时才会触发。
+    if ($statements.Count -lt 60) {
+        throw "抽取到的语句只有 $($statements.Count) 条，明显不完整（期望 >= 60，契约层约 66 条），拒绝执行"
     }
     return $statements
 }
