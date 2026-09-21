@@ -565,3 +565,272 @@ Select-String -Path db\src\*.rs -Recurse -Pattern 'store_products|commerce_|app_
    S1 只建表。
 5. 并行开发的环境约定：`$env:CARGO_TARGET_DIR` 指向**被忽略的 `target/` 之内**的子目录
    （如 `db\target\s2`）。`target-s1` 这种仓库根下的目录**不在 `.gitignore` 里**，会污染 `git status`。
+
+---
+
+## S2 执行记录（网页会话 + 超集平移）
+
+> 作者：W2-S2。验收用**独占** schema `compat_s2` / 端口 11112。
+
+### 阶段 1：`src/web/session.rs` 完成，验收全绿
+
+| 项 | 结果 |
+|---|---|
+| `rustfmt +nightly --edition 2024 src/web/session.rs` | exit 0（**只格式化自己的文件**，S3 正在改 `store_admin.rs`/`dashboard.rs`） |
+| `cargo check --all-targets` | **exit 0**（仅 S1 删除后留下的 dead-code 警告） |
+| `cargo test -- --test-threads=1 compat` | **126 passed / 0 failed**（先 `-Reset` + `-Apply` + `load_seed`，空 schema 会红 21 条） |
+| `cargo test -- web::session` | **8 passed / 0 failed** |
+| `-Reset` + `-Apply compat_s2` | **105 条语句 / 53 张表**（含 `web_tables` 2 条 + 加法列 1 条） |
+| **全序列回放**（`.../compat`） | **239 pass / 0 fail / 12 expected_deviation / 0 transport_error / 0 tz 漂移** |
+| 逐域 | auth 27/27、core 40+2dev、commerce 81/81、orchard_trace 64+1dev、agent 27+9dev |
+| `/api/login`、`/api/v1/auth/login` | 均 **200**，契约形状（`{code,message:"Login successful",data:{token,expiresAt,…}}`） |
+| `/web/session/validate`（未登录） | **200 扁平体** `{"valid":false,"maintenance_mode":false,"open_registration":true}` |
+
+**复用 `compat::auth` 没有把契约层带坏**：回放仍是 239/0/12，与 S1 的基线一致。
+
+### 解除的阻塞
+
+`src/compat.rs:17` 的 `mod auth;` 曾是私有的，`crate::web::session` 无法访问 `compat::auth`：
+`cargo check` 当时**恰好 1 个错误**（`E0603 module auth is private`）。父 agent 已改为
+`pub(crate) mod auth;`。**刻意没有**复制那 ~170 行口令校验/会话逻辑——一旦与 compat 版本漂移，
+App 与网页的登录行为就会不一致。
+
+### ⚠️ 唯一主动改语义的地方：`/web/session/logout` 恒 200（**S4 前端切换必读**）
+
+旧 `/user/logout` 在「没有 token」时返回 **400**，而 `app-shell.js:170` 对 `!response.ok` 会抛
+「退出失败，请重试。」。「token 过期后再点一次退出」是常见路径，把正常路径变成错误提示不可接受。
+现在无 token / token 无效 / 已过期都返回 **200** `{"status":"logged out","deleted":N}` 并清 cookie。
+旧的 `{"error":"Missing token"}` / `{"error":"Invalid token"}` 两个 4xx 分支**不再存在**。
+
+### ⚠️ 裸 JSON vs 信封：取决于前端 reader，不取决于我们（**S3 必读**）
+
+搞反会让页面 JS 直接 TypeError。实测判据：
+
+| 前端 reader | 解包行为 | 端点必须返回 |
+|---|---|---|
+| `store-support.js:18-31` → `return b`，`:40` 读 `b.messages` | **不解包、不回落** | **裸 JSON**；错误体也要有顶层 `message`（`:28` 读 `b.message`） |
+| `store-admin.js:40-50` → `return b.data ?? b` | 两种都吃 | 裸或信封皆可，错误体要有顶层 `message` |
+| `admin.js:10-19` `unwrapApiPayload` + `readErrorMessage`，配 `postJson` 返回的 `resp.data` | 取 `payload.data` | **必须信封**，且**成功时 `data` 不能是 null**（否则 `unwrapApiPayload` 回落成整个信封） |
+| `index.js:33-34`、`orchard-3d.js:109-110` 同 `unwrapApiPayload` | 取 `payload.data` | 裸或信封皆可 |
+| `app-shell.js:70` `body.data ?? body` | 两种都吃 | 裸或信封皆可 |
+
+对应到端点：
+- `/web/support`、`/web/admin/support` → **裸**（沿用 `user_routes/store_workspace.rs` 现有形状）
+- `/web/admin/**`（设置 / 邀请码 / 待审批 / 用户列表 / 仪表盘）→ **信封**（`user_routes::auth::app_response` 形状）
+- `/web/orchard/*`、`/web/citrus-disease-v2` → **裸**（沿用 `admin/orchard.rs`、`handlers_ai` 现有形状）
+- `/web/session/validate` → **扁平体 + 恒 200**（见下）
+
+### `/web/session/validate` 必须扁平 + 恒 200（证据）
+
+`index.js:196-198` 把**整个 body** 交给 `applySystemStatus(data)` 并直接读 `data.valid`；
+套一层 `{code,message,data}` 会**同时**打坏登录页的系统状态与 valid 判定。前端读取点全集：
+
+- `valid`：`app-shell.js:71`、`analyze.js:60`、`store.js:117`、`cart.js:105`、`admin.js:132`、`store-admin.js:386`、`orchard-3d.js:827`、`commerce.js:77`
+- `username`：`app-shell.js:72,88`、`store.js:104`、`cart.js:93`、`admin.js:214,1777`、`store-admin.js:388`、`orchard-3d.js:900,908`、`index.js:174`
+- `is_admin`：`app-shell.js:76,88,93`、`analyze.js:74`、`admin.js:132`、`store-admin.js:386`、`orchard-3d.js:907`、`index.js:165`、`store.js:108`、`cart.js:97`
+- `maintenance_mode` / `open_registration`：`index.js:175`、`index.js:244`
+
+### 数据面与角色映射（父 agent 已确认）
+
+- 会话落 `auth_token`，用户落 `"user"`；**不再碰** `app_users` / `app_sessions`。
+- 网页注册表单只问 `admin`/`user`（`index.js:252`），而 `"user".role` 只有 `farmer`/`buyer`
+  → 写 `role='farmer'` + `is_admin=<是否申请管理员>`。
+  **副作用（已认可）**：网页注册出来的账号同时也能调 App 的果农接口——与「网页 = 果园运营控制台」一致。
+- `app_pending_users` / `app_invitations` 是保留表，审批分流逻辑一字未改。
+- 历史 blake3 / argon2 哈希在首次成功登录后自动迁移为 `pbkdf2_sha256$720000$…`。
+
+### 供 S3 复用的接口（都在 `src/web/session.rs`，`pub(crate)`）
+
+```rust
+pub(crate) async fn require_admin(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<AuthUser, Response>   // 失败体：401 `请先登录` / 403 `当前账号无管理权限`
+
+pub(crate) fn app_response(code: u16, message: impl Into<String>, data: Value) -> Value
+pub(crate) fn app_ok(message: impl Into<String>, data: Value) -> Response
+pub(crate) fn app_err(status: StatusCode, message: impl Into<String>, data: Value) -> Response
+pub(crate) fn unauthorized(message: impl Into<String>) -> Response
+pub(crate) fn forbidden(message: impl Into<String>) -> Response
+pub(crate) async fn current_user(state: &AppState, headers: &HeaderMap) -> Option<AuthUser>
+pub(crate) async fn lookup_is_admin(db: &PgPool, user_id: Uuid) -> bool
+pub(crate) fn extract_token(headers: &HeaderMap) -> Option<String>
+pub(crate) fn build_login_cookie(token: &str, secure: bool) -> Option<HeaderValue>
+pub(crate) fn build_clear_cookie() -> Option<HeaderValue>
+```
+
+`AuthUser` **没有** `is_admin`（它是 `"user"` 的加法列），必须用 `lookup_is_admin` 单查。
+
+### 阶段 2 路径归属（以 `src/web/*.rs` 的 stub 头为准，**与 S3 无重叠**）
+
+- **S2**：`admin.rs` → `/web/system-status` + `/web/admin/{settings/get,settings/update,set_admin,users/list,invitations/create,invitations/list,pending/list,pending/approve,pending/reject}`（10 条）；
+  `support.rs` → `/web/support`、`/web/admin/support`（2 条）；
+  `orchard.rs` → `/web/orchard/overview`、`/web/admin/orchard/overview`、`/web/citrus-disease-v2`（3 条）
+- **S3**：`dashboard.rs` → `/web/admin/dashboard/{stats,logs}`；`store_admin.rs` → `/web/admin/store/*`
+  （含 `store-admin.js:79` 的 `/web/admin/store/analytics`）
+
+> 任务书把「审计日志 / 仪表盘统计口径」写进了 S2 的覆盖范围，但 S1 的 stub 头把它们划给了
+> `dashboard.rs`（S3）。**以 stub 头为准**，S2 不注册这两条，避免 axum 重复路由 panic。
+
+### 阶段 2 进展（双写已完成并实证）
+
+| 文件 | 路径 / 内容 | 验收 |
+|---|---|---|
+| `src/web/support.rs` | `/web/support`、`/web/admin/support`（裸 JSON） | `web::support` **5 passed** |
+| `src/web/orchard.rs` | `/web/orchard/overview`、`/web/admin/orchard/overview`（裸 JSON） | `web::orchard` **6 passed** |
+| `src/server/handlers_ai/persistence.rs` | 识别落库**双写** | 全序列回放仍 **239 / 0 / 12** |
+| `src/web/admin.rs` | 10 条（信封） | **未开始** |
+
+#### 双写（`store_diagnosis_record`）—— 按父 agent 的收窄方案
+
+一次识别写**两张表**、同一事务：
+
+| 表 | 角色 | 变化 |
+|---|---|---|
+| `web_diagnosis_records`（17 列） | 网页侧识别记录的正主（仪表盘统计 + 3D 沙盘 `latest_diagnosis`） | 写入目标**从 `app_diagnosis_records` 改到这里** |
+| `disease_recognition_record`（9 列契约表） | 让 App 的 `/api/recognition-records` 也读到网页产生的识别 | **新增写入** |
+| `app_diagnosis_records` | 遗留 17 列自研表 | **不再写**，S5 连同 DDL 退役 |
+
+契约表列约束的处理（都在 `persistence.rs` 内）：`id` 能解析成 UUID 就沿用富表 id，否则新生成；
+`user_id` 由用户名反查 `"user"`（保留字双引号），查不到为 NULL；`recognition_date` 是 **DATE**，
+按 `Asia/Shanghai` 从毫秒时间戳取日；`image`/`disease_name`/`area`/`risk_level` 分别按
+100/100/50/20 字符截断（超长会让 `VARCHAR(N) NOT NULL` 直接 INSERT 报错）；`area` 空值回落
+`未指定区域`；`risk_level` 复用 `server::risk_from_disease_name`。富字段
+（`is_citrus_leaf`/`severity`/`temp`/`humm`…）按设计丢弃——契约表只有 9 列。
+
+`orchard.rs` 的 `latest_diagnosis` 因此**已直接读 `web_diagnosis_records`**（不需要过渡方案了）。
+
+#### 双写实证（`compat_s2`，2026-09-21）
+
+| 步骤 | 结果 |
+|---|---|
+| 双写前 | `web_diagnosis_records=0`、`disease_recognition_record=4` |
+| `POST /api/citrus-disease-v2`（真 PNG data URI + `X-Session-Token`） | **HTTP 200**，`predicted_class=非果树`（合成图，门控不通过属正常） |
+| 双写后 | `web_diagnosis_records=1`、`disease_recognition_record=5` |
+| 契约表新行 | `user_resolved=t`（用户名反查 `"user"` 成功）、`area=NAVEL-001`、`risk_level=高风险`、`recognition_date=2026-09-21`（DATE）、`confidence` 已落位 |
+| `app_diagnosis_records` | **0**（确认不再写） |
+| 全序列回放 | **239 / 0 / 12**，与改动前一致 |
+
+> **一个必须知道的坑**：legacy `-v2` 的认证走 `user_routes::ensure_authenticated`，读的是
+> **`app_sessions` / `app_users`**（不是 `auth_token` / `"user"`）。任何「只有契约表数据」的环境
+> （例如 scratch schema 只灌了 Django dumpdata）里它都会 401——探针因此先向旧表植入了一行
+> `app_users` + `app_sessions`。**这本身就是 S5 要处理的问题**：`handlers_ai` 的认证仍绑在退役表上。
+
+- `seed_approval_id` 捕获键从未被观察到（S1 §5.1 已记录），回放时会显式告警。
+
+
+---
+
+## S3 执行记录（商城收敛 + 后台仪表盘）
+
+> 作者：W2-S3。独占文件：`src/web/store_admin.rs`、`src/web/dashboard.rs`。
+> 验收用共享 schema `compat_test`、端口 11620。
+
+### 阶段 1 + 阶段 2 均完成，7 条路径全部实测可达
+
+| 路径 | 方法 | 实测 |
+|---|---|---|
+| `/web/admin/dashboard/stats` | POST | 200，信封，`data` 非 null |
+| `/web/admin/dashboard/logs` | POST | 200，信封，`logs` 数组 |
+| `/web/admin/store/analytics` | GET | 200，信封（**旧实现是裸 JSON**，见下） |
+| `/web/admin/store/overview` | POST | 200，信封 |
+| `/web/admin/store/orders` | POST | 200，信封 |
+| `/web/admin/store/orders/status` | POST | 200，信封 |
+| `/web/admin/store/products/{id}/cover` | POST | 200，信封；写入值 `/store-images/<uuid>.png` |
+
+负向实测（全部符合预期）：无 cookie → **401** `请先登录`；非管理员（buyer）→ **403** `当前账号无管理权限`；
+非法订单状态 → **400** `订单状态参数无效`；非法 uuid 的订单/商品 → **404**。
+
+### 统计口径**用可区分的数据真验过**（不是全 0 糊过去）
+
+`web_diagnosis_records` 是空表（双写还没接），所以自造 3 条**刻意能互相区分**的记录：
+健康柑橘叶 / 病柑橘叶 / 非果树。实测结果：
+
+```
+totals      = {detections:3, healthy_count:1, diseased_count:1, users:7, admins:1, pending_users:0, healthy_rate:33}
+environment = {current_temperature:22.0, current_humidity:68.0, health_score:33, active_alerts:1}
+daily_counts 长度 = 7
+```
+
+`diseased_count=1` 同时证伪了两件事：健康叶没被算成病害、**非果树也没被算成病害**——
+三层过滤 `is_citrus_leaf AND NOT is_healthy AND predicted_class <> '非果树'` 逐条都有效。
+
+### `analytics` 的成交分支单独补验（第一次跑是 0，属未覆盖而非通过）
+
+第一次实测 `revenue=0`、`products=[]`，因为 seed 订单全是 `pending_payment`，
+不在成交状态集里——`FILTER (WHERE status = ANY(...))` + `ROUND(unit_price*quantity*100)`
+这条路径**根本没被走到**。把一条订单推到 `completed` 后复验：
+
+| 请求 | summary |
+|---|---|
+| `?days=7` | `{orders:1, revenue:4500, buyers:1, pending:0}`，`products` 有 1 条 `红肉脐橙家庭装×1=4500` |
+| `?days=30` | `{orders:2, revenue:9490}`（更早那单进入窗口） |
+| `?days=0` | 被 clamp 到 1，`trend` 恰好 1 天 |
+| `?days=9999` | 被 clamp 到 90，`{orders:3, revenue:13480}` |
+
+**两条独立代码路径互证**：`analytics days=90 revenue=13480` == `overview gross_amount_cents=13480`。
+
+### 字段映射的最终决定（兼容层，**有意的**）
+
+前端硬依赖自研命名与分制（`admin.js:1700-1709`、`store-admin.js:79-96`），而契约表是
+UUID + `NUMERIC` + `status` 枚举。任务书取向是「规划没写死就选前端少改」，故本层**同时输出**：
+
+| Django 原生 | 派生兼容别名 | 派生规则 |
+|---|---|---|
+| `order_number` | `order_no` | 同值 |
+| `total_amount`（`"45.00"`） | `total_cents`（`4500`） | `×100` 四舍五入 |
+| `unit_price`（`"45.00"`） | `unit_price_cents` / `line_total_cents` | 同上 |
+| `status` | — | 10 个 Django 状态值原样透出 |
+| `stock` | `stock_quantity` | 同值（商品载荷目前无路由，见下） |
+| `id`（UUID 字符串） | — | 前端只当不透明标识拼 URL，能直接用 |
+
+别名是**只读派生视图、不存库**，S5 收敛前端后可整体删除。`is_active` 的映射
+（`status == "on_sale"`）已在代码里备好但**当前无调用方**（本文件没有商品列表路由，
+按 §2.3 商品 CRUD 改打 Django 农户端接口），故标 `#[allow(dead_code)]` 并注明启用条件。
+
+### 交接给 S4 的三个点（都在我这层之外）
+
+1. **`citrus_product` 没有 `sku` 列** → 现有后台 SKU 输入框无处落。它有 `sku_type`
+   （`trial`/`family`/`gift`/`juice`/`enterprise`/`specialty`），**语义不同，不要拿来顶替 SKU**。
+2. **`citrus_product.sales_batch_id` 是必填 `RESTRICT` 外键** → 后台建商品必须选批次，
+   前端表单要加批次选择（或后端按当前活动批次兜底）。
+3. **`analytics` 我改成了套信封**：旧实现返回裸 JSON，但 `store-admin.js:40-50` 是
+   `return b.data ?? b`，两种都吃（已实测），统一信封是为了少一套形状。
+
+### 时间基**三种混用**，代码里逐处注释（最容易写错的地方）
+
+| 列 | 类型 | 处理 |
+|---|---|---|
+| `web_diagnosis_records.timestamp` | `BIGINT`（epoch **毫秒**） | 原样透出 |
+| `app_pending_users.created_at` | `BIGINT`（epoch **秒**） | 输出前 `×1000` |
+| `"user".created_at` / `"order".created_at` / `temperature_humidity_data.timestamp` | `TIMESTAMPTZ` | `DateTime<Utc>` 解码后 `.timestamp_millis()` |
+
+`admin.js:1023-1029` 的 `parseTime` 按 `>1e12 ? ms : s` 处理，秒/毫秒混用会显示成 1970 年。
+
+### 验证结果
+
+| 项 | 结果 |
+|---|---|
+| `cargo +nightly fmt --check` | exit 0 |
+| `cargo check --all-targets` | **0 error**，我两个文件 **0 诊断** |
+| `cargo test -- --test-threads=1 compat` | **126 passed / 0 failed**（含 S2 的 session 测试；之前需先 `-Reset`+`-Apply`+`load_seed`） |
+| 单测分布 | `store_admin` 4 条（金额换算/状态集合/乐观口径）、`dashboard` 4 条（健康率/分桶边界含 `i64::MAX` 与负值） |
+| 未跑契约全序列回放 | 按任务书要求（`/web/*` 不在夹具覆盖内） |
+
+### 环境坑（两条，会影响后续流）
+
+1. **`cargo test` 报 `link.exe LNK1104`**：兄弟 agent 同时在写同一个 `target/debug/ai-service.exe`。
+   解法是给每条流独立 `CARGO_TARGET_DIR`。注意 S1 §5.5 的约定：**要放进被忽略的 `target/` 之内**
+   （如 `db\target\s3`），我这次用的是 `D:\githubs\db_work\target-s3`（在仓库外，未污染 `git status`，
+   但不符约定，后续请按 `db\target\s3` 统一）。
+2. **`pg_env.ps1 -Serve` 会在后台留子进程**：`-Stop` 后要 `Get-Process ai-service` 复核；
+   实测两次都干净停掉了。另外 `psql -Atc` 传中文会 UTF8 报错，SQL 走 `-f` 文件。
+
+### 未覆盖 / 已知限制
+
+- `store_admin` 的订单状态流转只验了合法流转与两种非法输入，**没验**其它 8 个状态之间的互相可达性
+  （契约层 `commerce` 域已覆盖订单状态机，本层只是管理端改状态，风险低）。
+- `dashboard` 的日志聚合在共享 schema 上跑，日志里会混入其它流测试产生的用户（如 `w1b_*`）——
+  这是 schema 共享导致的，不是实现问题。
+- 我为自测在 `compat_test` 留下：`farmer_xinfeng.is_admin=TRUE`、3 条 `s3-diag-*` 识别记录。
+  **对后续流有用（否则管理端接口全 403、仪表盘全 0）**，故保留；订单状态已还原。
