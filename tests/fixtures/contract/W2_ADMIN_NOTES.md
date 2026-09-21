@@ -121,6 +121,12 @@ miss 再查 `app_sessions`**；`ensure_authenticated` 与 `username_by_token` �
 ⚠️ **双表桥是临时的**：S5 统一会话表后只保留 `auth_token` 分支，删掉 `app_sessions` 那段
 （已登记进 §6 待办）。
 
+> **补记（S5/G2 已完成，本节所述机制已不存在）**：`app_sessions` 分支、它的 DDL 与
+> `bootstrap.rs` 里的 3 条迁移语句已**同一步**删除（O4），`lookup_session_username` 现在
+> **只认 `auth_token`**。同一批还删掉了整棵 `/user/*`。差异是：历史 `/user/*` 会话**不再被接受**
+> ——但那条树本身也一起没了，没有残留调用方。执行记录见 `W2_S5_PLAN.md` 的 G2 记录。
+> 本文以下内容保持原样，作为当时那次 401 的排查记录。
+
 ### 5.1 第三处（`user_routes/session.rs:261`）：**裁定不桥接**（不是遗漏）
 
 `src/user_routes/session.rs:261` 是旧 `/user/validate` 的查询，join 的还是 `app_users`。

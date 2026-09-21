@@ -1,5 +1,16 @@
 # 网页端后端依赖盘点（W0-d 侦察）
 
+> ⚠️ **本文档是 W0 阶段的侦察快照，描述的是 S1 之前的状态**。其中的「存活调用数」「死代码」
+> 等结论**已被后续工作改变**，不要拿它当作当前事实：
+> - S4 已把前端全部切到 `/web/*` 与契约层（`/api/products`、`/api/orders` …）；
+> - S5/G1 删掉了 `handlers_core`/`handlers_ai` 里的一批死模块；
+> - **S5/G2 删掉了整棵 `/user/*`、`/api/commerce/*`、`/api/store/products`、
+>   `/api/system-status`、`/api/citrus-disease-v2`，以及 `user_routes/**`、`handlers_commerce.rs`**。
+>
+> 本文档的价值在于**当时逐行取证的映射表**（哪条自研端点对应哪个 Django 能力、字段差在哪），
+> 那是迁移决策的依据，仍然可查。当前结构请看 `db/AGENTS.md`，执行记录看
+> `db/tests/fixtures/contract/W2_S5_PLAN.md`。
+
 > 目的：在「Rust 侧新增 `src/compat/` 契约兼容层、旧 `store_*`/`commerce_*`/`app_*` 表退役」的合并中，
 > 提前识别**网页端用到但 Django 从未建模**的能力。这些接口没有现成契约可抄，是真实的排期风险。
 >

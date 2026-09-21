@@ -379,6 +379,25 @@ rg -n '"(/store-images|/uploads|/media/recognition_records)' db\src
 **✅ 关键判据达成**：搬完后重新清点，`user_routes` 的外部引用面**只剩 1 处** —— `server.rs: crate::user_routes::router`（就是 G2 要删的那个 `.nest("/user")`）。
 **→ G2 可以干净地整棵删掉 `user_routes/**`，不会挂到别的东西。**
 
+> ⚠️ **补记（G2 复核时）：`ensure_admin` 改表的语义代价**
+>
+> 上表最后一行「顺手修正」不是纯等价重构，它有一处**会改变行为**的过渡代价：
+> 「只在 `app_users` 里被标成 `is_admin = TRUE`、而契约表 `"user".is_admin` 仍是默认 `FALSE`
+> 的账号」**会丢失页面准入**——`handlers_core/pages.rs` 的 `has_admin_session` 走的正是
+> `ensure_admin`，所以这类账号会被 `/admin`、`/store-admin`、`/analyze` 的重定向挡回 `/`。
+>
+> 为什么不是理论风险：现网 `public` 里 `app_users`（6 行）与契约表 `"user"` 是**两套独立数据**，
+> 两边的管理员标记从来没有同步过。
+>
+> 判定为**可接受的过渡态**，理由：S2 之后管理员身份的唯一权威就是 `"user".is_admin`
+> （`web::session::{lookup_is_admin, require_admin}` 读的也是它），G2 只是把仅剩的那处
+> 不一致读法对齐；迁移动作是一行 SQL：
+> `UPDATE "user" SET is_admin = TRUE WHERE username = '<管理员账号>'`。
+>
+> **G2 已把 `app_users` 的 DDL 一并删除，所以「两套数据」的产生窗口到此关闭**；但现网
+> `app_users` 表与里面的标记**仍在**（O7：删 DDL ≠ 删表）。S5 的 DROP 脚本执行**之前**，
+> 必须确认这类账号都已在 `"user"` 里补齐。
+
 验证：`cargo check --all-targets` **exit 0**；`cargo test -- --test-threads=1 compat` **126 passed / 0 failed**；
 告警 **16–18 → 14**，且 14 条**全是既有的**（`compat/*` 9 + `inference/*` 4 + `web/support.rs` 1）。
 
@@ -411,3 +430,248 @@ rg -n '"(/store-images|/uploads|/media/recognition_records)' db\src
 **O1 的实证**：撤掉三个属性后，编译器**一次暴露 17 处 never-used**（`shared.rs` 16 + `review.rs` 1）——这是对 S1 那句「保留属性会让日后的真死代码隐身」的**实测印证**，不是引用。
 
 **工具**：`.g1_probe2.py`（路径限定死活判定）、`.s5_probe.py`（shared 再导出的活/死统计），都在仓库外。
+
+---
+
+## 0.2 前置条件：**跑单测之前必须先重灌种子**（这是前置条件，不是补救手段）
+
+> **任何 `cargo test -- --test-threads=1 compat` 之前，必须先做完这一串：**
+> `pg_env.ps1 -Reset <schema>` → `pg_env.ps1 -Apply <schema>` → `load_seed.py --schema <schema>`。
+> 直接跑单测，红出来的那几条**全是假失败**，而且是同一副面孔。
+
+`compat_test` 是一个**被多个流共享的 scratch schema**：夹具 JSON
+（`commerce.json` / `seed.json` / `core.json` / `auth.json` / `agent.json` / `orchard_trace.json`）
+会被别的流重新 capture 而改变，schema 里的数据却还是你上次灌进去的旧种子。
+两者一错位，`compat::tests::*_tests` 这批**夹具比对**测试必然红——**代码一行没动也一样红**。
+
+实测计数（同一形态，连续四次）：
+
+| 次数 | 红的条数 | 当时的错判 |
+|---|---|---|
+| 第 1 次 | **9** 条 | 「我这次改坏了」 |
+| 第 2 次 | **11** 条 | 同上 |
+| 第 3 次（G1 第二单元） | **11** 条 `commerce_tests` | 同上；`git status` 显示 `commerce.json` / `seed.json` **确被别的流改过** |
+| 第 4 次（G2） | 见下方 G2 记录的验证节 | 已按本规则处理 |
+
+**每次重灌后都是 125 passed / 0 failed。**
+
+> ⚠️ **更正：「126」是笔误，真实数字一直是 125。** G1 记录与本文件多处写的 `126 passed`
+> 是转录错误，已在下文改正。核对方式（**别再用裸数字对账**）：
+> `cargo test -- --test-threads=1 compat` 的过滤是**子串匹配**，命中的是
+> **124 条** `src/compat/**` 里的真测试（`support.rs:9` 那一条 `#[tokio::test]` 是**文档注释里的示例**，
+> 不是测试！）+ **1 条** `web::session::tests::cookie_name_matches_compat_reader`
+> （函数名里含 "compat" 才被捞进来）= **125**。
+> 在 `90c2998`（G1 之前）、`73ce4d1`、`fece92f`、以及当前工作树上**都是 125**，逐点核过。
+> 实测：在独立 schema `compat_g2` 上 `125 passed; 0 failed; 0 ignored; 43 filtered out`。
+> **所以「125 vs 126」不是回归**，不必再查。
+
+所以这条纪律的正确用法是**前置**：不要等它红了
+再去猜是回归还是漂移——先在开跑前重灌，让「红」重新变成有信息量的信号。
+（真实回归仍然能被抓到：重灌种子后还红，才是回归。）
+
+---
+
+## G2 执行记录（路由 / 模块 / 旧表退役）
+
+### 前置条件核对（主线给的 6 条 + 1 条附加，逐条落实）
+
+| # | 前置条件 | 落实 |
+|---|---|---|
+| 1 | **O3**：`user_routes` 外部引用面清零才能删 | ✅ 只剩 `server.rs` 的 `.nest("/user", ...)` 一行（G1 第二单元达成） |
+| 2 | **O4**：双表桥与 `app_sessions` 的 DDL **同一步**删 | ✅ step A 同一步删掉桥的第二段、`legacy_tables` 的 CREATE + 索引、`bootstrap.rs` 的 3 条迁移语句 |
+| 3 | **O5 先修**：治理任务写契约表 `task` | ✅ 先落 `handlers_ai/persistence.rs`，`app_tasks` 从此零代码引用 |
+| 4 | **O7**：**不写 `DROP TABLE`** | ✅ 只删 `CREATE TABLE IF NOT EXISTS`；现网 `public` 一行未动 |
+| 5 | 不整文件删 `handlers_store.rs` / `handlers_core/media.rs` | ✅ 两者都保留（它们是静态通道），并逐条实测 |
+| 6 | 前端零调用者证据必须区分「注释」与「调用」 | ✅ 见下「判活死证据」一栏 |
+| + | `store-admin.js:390` 的 `/api/supply-batches` **必须保留** | ✅ 未触碰该文件；它是活的前端调用 |
+
+### Step A：O4 桥退役 + `app_sessions` + 静态通道改表
+
+- `server/shared.rs`：`lookup_session_username` 的 `app_sessions` 分支删除，`now_secs` 参数从
+  签名里去掉；文档注释改为「只认 `auth_token`」。
+- `legacy_tables.rs`：`app_sessions` 的 CREATE + 索引删除。
+- `bootstrap.rs`：`app_sessions` 的 3 条 `ALTER/UPDATE` 迁移语句删除。
+- **顺手挖出并修掉第二处 O5 型地雷**：`handlers_core/media.rs` 的归属校验查的是
+  `app_diagnosis_records`，而 S2 已把识别写入口切到 `web_diagnosis_records`
+  → **两条识别图静态通道本来会永久 404**。
+  第一版改法是「改查 `web_diagnosis_records`」，但随后查现网数据发现那会反过来打坏 24 张老图，
+  最终定案为**两张表 UNION 的过渡态读桥** —— 完整推理与实测数据见下面
+  「`app_diagnosis_records` 的处置说明」。
+  这类「读端与写端分两次搬家」的错位，编译器和 grep 都抓不到，**只能靠实测通道 + 查现网数据**。
+
+### 第二个新地雷：识别图通道对**合法会话**也返回 500（INT4 / INT8 解码错）
+
+这是「必须实测通道」这条纪律的第二个实证，比 O5 那个更隐蔽——它**改前就存在**：
+
+- **现象**：`/media/recognition_records/<file>` 与 `/uploads/<file>`，带**合法** session token
+  返回 **500**；无 token → 401；别人的 token → 404。（401/404 都正常，只有「本该 200」的那条坏。）
+- **日志原文**：
+  `ERROR … media: 校验识别图片归属失败 err=error occurred while decoding column 0: mismatched types; Rust type i64 (as SQL type INT8) is not compatible with SQL type INT4`
+- **根因**：归属校验写的是 `query_scalar::<_, i64>("SELECT 1 FROM … LIMIT 1")`，
+  而 PG 里 `SELECT 1` 的字面量类型是 **INT4**，`i64` 要的是 INT8 → sqlx 解码失败。
+- **HEAD 上同款写法同样中招**（只是查 `app_diagnosis_records`），所以**不是 UNION 引入的**；
+  但它是**活的**两条通道，等于这两条通道一直是坏的。
+- **修法**：换成布尔语义，从根上消除类型歧义 ——
+  `query_scalar::<_, bool>("SELECT EXISTS (SELECT 1 … UNION ALL SELECT 1 …)")` + `fetch_one`。
+- **诚实记录**：这个 bug 编译器、grep、单测**都抓不到**，只有真的带会话发一次 HTTP 才暴露。
+  所以「三条隐式静态通道必须实测」不是形式主义 —— 它是本次唯一抓到它的手段。
+
+### 工具链回归：`pg_env.ps1 -Apply` 的阈值被「合法删表」打死（已修）
+
+`Assert-DdlExtracted` 里有一道 `if ($statements.Count -lt 90) { throw … }` 的守卫。
+S5/G2 删掉 9 张旧表后抽取总量 91 → **82**，于是 `-Apply` 直接拒绝执行，
+**权威配方 `VERIFICATION.md` 的第 2 步整条失效**（验证代理跑配方时撞上的，不是猜的）。
+
+处置：阈值 **90 → 60**，并把注释改成解释「为什么不能把下限写成『当前条数 + 余量』」——
+每个分组非空的检查**已经**覆盖「正则失效」这一失败模式，总量下限只兜「契约表整块抽丢」；
+60 按契约层量级定（30 张契约表约 66 条，且契约层冻结、只会增不会减）。
+
+> **教训**：守卫的阈值一旦写成「当前值 + 余量」，它就会在下一次**合法**的规模变化时变成拦路石。
+> 要么把阈值锚在不变量上（契约层量级），要么只做语义检查（分组非空）。
+
+### Step B：路由 / 模块 / 旧表 DDL 退役
+
+删除的路由（`server.rs`）：`GET /api/system-status`、`POST /api/citrus-disease-v2`、
+`GET /api/commerce/storefront`、`GET /api/commerce/batches/{batch_id}/trace`、
+`GET /api/store/products`、`.nest("/user", ...)`。
+
+> **这一刀之后 `/api/**` 与 `/api/v1/**` 100% 由契约层注册**，服务里不再有任何自研 `/api/*`。
+> 这既是本次的成果，也是往后必须守住的边界（自研能力一律进 `/web/*`）。
+
+删除的模块：`src/user_routes/**`（16 个文件 / 4316 行）、`src/server/handlers_commerce.rs`（236 行）。
+删除的 DDL：`app_users`、`app_tasks`、`app_temperature_humidity`、7 张 `commerce_*`、
+`store_products` / `store_orders` / `store_order_items`；连带删掉 `bootstrap.rs` 里往
+`store_products` 灌示例商品的 `ensure_store_demo_data`（否则新库会插进一张不存在的表）。
+
+**保留（每一条都有活读者，不许因为「看起来像遗留」再删）**：
+
+| 保留项 | 活读者 |
+|---|---|
+| `store_support_messages` | `web/support.rs`（客服会话） |
+| `app_pending_users` / `app_invitations` / `app_admin_audit_logs` / `app_system_settings` | `web/{admin,session,dashboard}.rs`、`system_settings.rs` |
+| `app_orchard_trees` / `app_tree_sensor_records` | `web/orchard.rs`、`bootstrap.rs` 的 demo 种子 |
+| `handlers_store.rs` | `/store-images/*` 静态通道 |
+| `handlers_core/media.rs` | `/media/recognition_records/*`、`/uploads/*` 两条静态通道 |
+| `bootstrap/commerce_tables.rs` | **契约表**（`citrus_product` 等）。名字带 commerce，但和退役的 `commerce_*` 毫无关系——**这是本次最容易误删的文件** |
+| `app_diagnosis_records` | `handlers_core/media.rs` 的**双表读桥**（UNION 第二支）+ 现网 24 行历史行，详见下 |
+
+`app_diagnosis_records` 的处置说明（**中途改过一次结论，这里是最终版**）：
+
+- 原计划保留的理由：「活的 `handlers_core/media.rs` 还在引用它」。
+- step A 把 `media.rs` 改查 `web_diagnosis_records` 之后，这个理由一度**不成立**，
+  它变成零代码引用 —— 当时的打算是「只为了端历史行而保留」。
+- 随后查现网发现**这个改动本身会打坏历史图片**，于是定案为**双表读桥**：
+
+| 事实（现网 `public` 实测，只读查询） | 值 |
+|---|---|
+| `app_diagnosis_records` 行数 | **24**（24 行都带 `image_path`） |
+| `image_path` 前缀分布 | `/media/recognition_records/` × 24，`/uploads/` × 0 |
+| 这 24 行的 username | 全部 `tester` |
+| `web_diagnosis_records` | **表还不存在**（S2 的 DDL 要等首次启动才建，且建出来是空的） |
+
+也就是说：识别记录的**写口**在 S2 从 `app_diagnosis_records` 搬到了 `web_diagnosis_records`，
+但**历史行没搬**。于是
+
+- 只查新表 → 那 24 张老图**全部 404**（归属校验在新表里找不到行）；
+- 只查旧表 → 所有**新**图 404（写口已经不往旧表写了，这正是 step A 修掉的原始 bug）。
+
+**定案**：`media.rs` 的归属校验改成两张表 `UNION ALL`，任一支命中即放行。
+它是**过渡态桥**，与 S5 的 `DROP` **同一步收尾**：将来删 `app_diagnosis_records` 时，
+必须同时删掉 UNION 的第二个分支，否则新库直接 `relation does not exist`。
+这条耦合已写进 `legacy_tables.rs` 与 `media.rs` 的注释里。
+
+> 这与 O4 的会话双表桥是同一种病：**同一份数据在「读端」与「写端」分两次搬家**，
+> 中间任何时刻都存在一个「读的一侧是空表」的窗口。识别图这一处是第二例，
+> 而且**是查现网数据才发现的**——编译器、grep、单测都不会报它。
+
+### 判活死证据（按 §0.1 的判据，不用裸名字）
+
+- 5 条候选路由在 `db/static/**` 的所有 `.js` / `.html` 里的命中**全部是注释或迁移说明表**
+  （`store.js:7-10`、`cart.js:8-11`、`analyze.js:197`、`index.js:148` 都是「旧路径 → 新路径」的
+  对照注释），**没有一处真实调用**；`db/scripts/**` 与 `db/tests/**` 的 `.rs` 零命中
+  （只有 `.md` 文档提到它们）。
+- `commerce.js` 在 S4-1 已删除，`/api/commerce/*` 的最后两个调用方随之消失。
+- `handlers_core::system_status_api_handler` 的唯一「引用」在 `web/admin.rs:177` 的**注释**里
+  （那句话是在说「复刻」而不是「挂载」）——这正是 §0.1 记录的第二个反例。
+
+### 编译器纠正的两处（与 G1 同样的模式）
+
+删完路由后 `cargo check` 立刻指出还有两处再导出悬空，**都不是路由**：
+
+1. `handlers_core.rs` 的 `pub(crate) use pages::{..., system_status_api_handler}` —— 函数本体
+   已随路由删除，再导出要同步删（`/web/system-status` 由 `web/admin.rs` 自己的同形实现承担）。
+2. `server.rs` 的 `pub(crate) use shared::{api_response, api_success, ...}` —— 这两个信封构造器
+   的**唯一**使用者是 `handlers_store::storefront_handler`（已删）。
+   → 连带把 `shared.rs` 里这两个函数本体也删掉（`compat` 有自己的 `api_ok`/`api_error`，
+   `web` 有自己的 `app_ok`/`app_err`，这份是第三份重复实现）。
+
+另外清掉 4 处因删除而变成死代码的项：`auth.rs::{now_secs, parse_requested_role}`、
+`models.rs::{RequestedRole, RequestedRole::is_admin}`（`web/admin.rs:149` 与 `web/session.rs:232`
+各自有私有实现，不受影响）。
+
+**告警回到基线 14 条**（`compat/*` 9 + `inference/*` 4 + `web/support.rs` 1），**无新增**。
+
+### 同一批文档
+
+- §0.2 新增（单测前置规则）。
+- §2.2 补记 `ensure_admin` 改表的语义代价。
+- **裁定：`static/app-shell.js:30` 的 `/commerce → /store` 归一化「保留」**（并补了注释说明
+  **为什么不能用「零引用」当删除依据**）：仓库里确实已无任何 html/js 链接到 `/commerce`
+  （`commerce.js` 已删），但 `app-bridge.js:44` **包住了 `history.pushState`**，会把
+  **原生 App 传来的任意同源路径**交给 `shell.normalize()` —— 那条入口**不经过服务端**，
+  `server.rs` 的 308 覆盖不到它。删掉这一行的后果不是「功能消失」（终点仍是 `/store`），
+  而是退化成整页重载、iframe 里多拉一次 `/app-content/`。既然代价只是一行，
+  就保留并把理由写在代码旁，免得下一个读到它的人又把它当死代码删掉。
+- `AGENTS.md` 重写：原文还在描述「`/user/*` 是用户域路由层」「会话落 `app_sessions`」
+  「`handlers_commerce.rs` 负责团购」，而且完全没提 `compat/` 与 `web/` 两层 —— 全是过时事实。
+- `static/WEB_ENDPOINT_MAP.md` 加历史快照横幅（它描述的是 S1 之前的状态）。
+- `W2_ADMIN_NOTES.md` §5 补一行「本节所述双表桥已不存在」。
+
+### 留给 S5 的动作项（G2 只取证，没动手）
+
+1. **历史识别数据回填（用户可见）**：网页仪表盘与 3D 沙盘的读源是 `web_diagnosis_records`，
+   而现网的历史 24 行还在 `app_diagnosis_records`。**部署后仪表盘的识别统计会显示 0**，
+   直到发生新的识别。两张表列结构相同（已逐列核对 `bootstrap/web_tables.rs` 与
+   `bootstrap/legacy_tables.rs`：17 列的**名字、顺序、类型全部一致**，
+   `web_diagnosis_records` 就是照抄 `app_diagnosis_records` 建的），所以回填是：
+
+   ```sql
+   INSERT INTO web_diagnosis_records
+       (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy,
+        disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning,
+        username, area, image_path, temp, humm)
+   SELECT id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy,
+          disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning,
+          username, area, image_path, temp, humm
+     FROM app_diagnosis_records
+   ON CONFLICT (id) DO NOTHING;
+   ```
+
+   两表 `timestamp` 语义也一致（**都是 epoch 毫秒**）。上面按列名显式列出而不用 `SELECT *`——
+   位置虽然对得上，但显式列名在日后再加列时不会静默错位。
+   这与「媒体通道的双表读桥」是同一件事的两半：**桥让图能看，回填让统计能看**。
+2. **`app_diagnosis_records` 的 DROP 必须与 `media.rs` 的 UNION 第二支同一步**（见上），
+   而且**拆桥之前先要满足一个数据条件**，不能只当作代码顺序问题：
+   `public.app_diagnosis_records` 那 **24 行是现网真实资产**（`tester` 的识别图，不是测试数据），
+   所以拆桥 / 删表之前，要么**先执行上面第 1 条的回填**（新表里有了对应行，
+   UNION 第二支就不再被需要），要么**明确记录并接受这 24 张图失效**。
+   三种顺序里有两种是坏的：
+
+   - 先拆 UNION、后回填 → 老图在中间窗口**全部 404**；
+   - 先删 DDL、后拆 UNION → UNION 第二支直接 `relation does not exist`；
+   - ✅ **正确顺序：回填 → 验证新表命中 → 再「同一步」拆 UNION + 删 DDL。**
+3. 现网 `public` 的现状（只读实测，供部署对账）：
+   - **22 张表**，全是自研遗留表（`app_*` / `store_*` / `commerce_*`），**包含 `app_sessions`**
+     —— O7 的实证：DDL 删了，表还在。
+   - **30 张契约表一张都不在 `public`**：`to_regclass('public.disease_recognition_record')`
+     与 `to_regclass('public.web_diagnosis_records')` **都是 NULL**；契约表只存在于
+     `compat_*` scratch schema 里。
+   - 结论：**合并后的服务还没在现网库上启动过**。首次启动会由 `bootstrap` 建出契约表
+     + `web_diagnosis_records`（都是 `IF NOT EXISTS`，不会动已有的 22 张表）。
+     这不是待办，是**首次部署时的预期**，写下来免得第一次启动时被「怎么多出一堆表」吓一跳。
+4. `static/commerce.css` 已成孤儿（`commerce.js` 在 S4-1 删了，8 个 html 里零引用；
+   同目录的 `market.css` 仍被 `store.html` 引用，**别一起删**）。属前端清理，不在 G2 范围。
+5. `admin.css:614-760` 那组 `.commerce-*` 类是否还有使用者，**未裁定**（`market.css` 同理有
+   一段 commerce 专用样式）。删之前要按 §0.1 的判据查 class 使用而非文件引用。
+
+---
