@@ -227,6 +227,19 @@ fn short_id() -> String {
     Uuid::new_v4().simple().to_string()[..8].to_uppercase()
 }
 
+/// D15：清掉历史运行残留的商品（本文件多个用例都用 `seed_farmer`，用户名前缀相同）。
+///
+/// 只在测试开场调用；测试统一 `--test-threads=1`，不存在并发互删。
+async fn delete_products_of_seed_farmers(pool: &PgPool) {
+    sqlx::query(
+        r#"DELETE FROM citrus_product
+           WHERE seller_id IN (SELECT id FROM "user" WHERE username LIKE 'w1b\_%')"#,
+    )
+    .execute(pool)
+    .await
+    .expect("清理残留商品失败");
+}
+
 async fn seed_farmer(pool: &PgPool) -> AuthUser {
     let id = Uuid::new_v4();
     let username = format!("w1b_{}", short_id().to_lowercase());
@@ -442,9 +455,17 @@ async fn multi_key_data_breaks_chain_the_same_way_as_blueprint() {
 }
 
 /// 商品列表的确定性排序：`created_at` 撞在同一毫秒时必须靠 `id ASC` 兜底。
+///
+/// **D15**：本用例会插入商品，原先不清理 —— 实测同一子集跑两次后 `citrus_product`
+/// 从 7 行涨到 11 行（每次残留 2 行）。它自己因为按 seller 过滤+每次都新建用户所以
+/// 一直是绿的，但残留会污染 `compat_test`，给别的按条数断言的用例制造假红。
+/// 现在开场清历史残留、收尾删自己这两条，保证**连跑两次都绿且不留痕**。
+/// 测试统一 `--test-threads=1`，不存在并发互删。
 #[tokio::test]
 async fn product_order_is_deterministic_when_created_at_ties() {
     let pool = super::support::pool().await;
+    delete_products_of_seed_farmers(&pool).await;
+
     let user = seed_farmer(&pool).await;
     let orchard_id = seed_orchard(&pool, user.id).await;
     let batch_id = seed_batch(&pool, orchard_id, 100).await;
@@ -489,6 +510,15 @@ async fn product_order_is_deterministic_when_created_at_ties() {
     assert_eq!(items[0]["is_available"], true);
     assert_eq!(items[0]["sales_batch"]["available_quantity"], 100);
     assert_eq!(items[0]["sales_batch"]["status_display"], "在售");
+
+    // D15：收尾删掉自己这两条，避免跨次运行累积（见本用例文档注释）。
+    for id in &ids {
+        sqlx::query("DELETE FROM citrus_product WHERE id = $1")
+            .bind(id)
+            .execute(&pool)
+            .await
+            .expect("清理测试商品失败");
+    }
 }
 
 /// 视图层 404 走**成功体形状**（蓝本 `api_response(None, msg, 404)` → 带 `timestamp`）。
