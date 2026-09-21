@@ -832,5 +832,109 @@ UUID + `NUMERIC` + `status` 枚举。任务书取向是「规划没写死就选�
   （契约层 `commerce` 域已覆盖订单状态机，本层只是管理端改状态，风险低）。
 - `dashboard` 的日志聚合在共享 schema 上跑，日志里会混入其它流测试产生的用户（如 `w1b_*`）——
   这是 schema 共享导致的，不是实现问题。
-- 我为自测在 `compat_test` 留下：`farmer_xinfeng.is_admin=TRUE`、3 条 `s3-diag-*` 识别记录。
-  **对后续流有用（否则管理端接口全 403、仪表盘全 0）**，故保留；订单状态已还原。
+### 我在共享 schema `compat_test` 里改了什么、为什么、怎么还原
+
+S3 开工时还不知道「自测优先用独占 schema」这条约定（S4 起已改用 `compat_s3`），所以在共享的
+`compat_test` 上留了三处**隐藏状态**。它们会让下一个人看到「行为不同」而误判成 bug，故登记：
+
+| 改动 | 为什么必须 | 还原方式 |
+|---|---|---|
+| `UPDATE "user" SET is_admin=TRUE WHERE username='farmer_xinfeng'` | 管理端接口全走 `require_admin`；没有管理员账号则**全部 403**，什么都验不了 | `UPDATE "user" SET is_admin=FALSE WHERE username='farmer_xinfeng';` |
+| 插入 3 条 `s3-diag-1/2/3` 到 `web_diagnosis_records` | 该表是空表（双写当时未接），不造数据则仪表盘统计全 0，口径无法验证 | `DELETE FROM web_diagnosis_records WHERE id LIKE 's3-diag-%';` |
+| 把 `ORD-DEMO-1003` 推到 `completed` 复验成交聚合分支 | seed 订单全 `pending_payment`，成交分支不会被走到 | **已还原**为 `pending_payment`（实测 `pending_payment=1`） |
+
+**建议保留前两项**——没有它们管理端接口无法自测、仪表盘统计全是 0；真要清就用上表 SQL。
+
+---
+
+## S4-2 执行记录（前端商城两页）
+
+> 作者：W2-S4-2。改动文件：`db/static/store.js`、`db/static/cart.js`（**只这两个**）。
+> 验收用独占 schema `compat_s3`、端口 11630。
+
+### 逐端点替换表（旧 → 新，全部实测）
+
+| 旧 | 新 | 实测响应摘要 |
+|---|---|---|
+| `POST /user/validate` | `POST /web/session/validate` | 200 **扁平体** `{"valid":true,"username":"buyer_zhang","is_admin":false,"maintenance_mode":false,"open_registration":true}`（不套信封，`store.js` 直接读） |
+| `POST /user/logout` | `POST /web/session/logout` | 200 `{"status":"logged out","deleted":1}`（恒 200） |
+| `GET /api/store/products` | `GET /api/products` | 200 `data.items`（**不是 `data.products`**）+ `data.count`；字段 `price:'168.00'`（**字符串**）、`stock`、`unit`、`is_available`、`sales_batch` |
+| `GET /user/store/orders` | `GET /api/orders` | 200 **`data` 就是数组**（不是 `{orders:[]}`）；订单带 `status_display`/`amount_due`/`payment_action_label` |
+| `POST /user/store/orders`（带 `items[]`） | `POST /api/orders {address_id}` | 200 `pending_payment`/`待支付`/`支付全款`/`total='258.00'`；**商品由服务端购物车决定，前端不传明细** |
+| （无） | `GET /api/cart` | 200 `data:{items:[{id,product,quantity,subtotal,updated_at}], totalAmount:'213.00'}` |
+| （无） | `POST /api/cart {product_id,quantity}` | 200 `已加入购物车` |
+| （无） | `PATCH /api/cart/<item_id> {quantity}` | 200 `quantity:2, subtotal:'90.00'` |
+| （无） | `DELETE /api/cart/<item_id>` | 200 `已移出购物车` |
+| （无） | `GET /api/addresses` | 200 数组；`{id,recipient_name,phone,province,city,district,detail,is_default}` |
+| （无） | `POST /api/addresses` | 200 `收货地址已保存`；必填 `recipient_name`/`phone`/`detail` |
+| （无） | `POST /api/orders/<id>/pay` | 200 `status:'paid'`/`待发货`/`amount_due:'0.00'`/`paid_at` 非空 |
+| （无） | `POST /api/orders/<id>/cancel` | 待支付 → 200 `cancelled`；已支付 → **400 `当前订单状态不能取消`** |
+
+### buyer / farmer 双跑实测
+
+**buyer（`buyer_zhang`）主流程全通**：validate → 商品 7 件 → 清车 → 同批次加购 2 件 → `GET /api/cart`
+（服务端 `totalAmount='213.00'`）→ PATCH 改数量（`subtotal='90.00'`）→ 地址 2 条 → 下单
+（`NO2026092105035501583E`，`pending_payment`，`待支付`，`due='258.00'`，明细 2 项）→ **下单后购物车自动清空**
+（`items=0`，契约行为）→ 支付 200（`paid`，`paid_amount='258.00'`，`due='0.00'`）→ 取消已支付订单 400 → 订单列表 4 条 → 取消待支付订单 200 `cancelled` → 登出 200。
+
+**farmer（`farmer_xinfeng`）**：`GET /api/products` 200（公开接口，果农能看）；`GET /api/cart`、
+`GET /api/orders`、`GET /api/addresses`、`POST /api/cart` **全部 403 `该接口仅限购买者使用`** ——
+**这是契约层 `IsBuyer` 的正确行为，不是 bug**，两个文件顶部注释都写明了这个前提。
+
+### 探针抓出的一条真实产品约束（值得让 S5 / 产品知悉）
+
+跨批次加购会 **400 `一次只能结算同一果园供货批次，请先完成或清空当前购物车`**。
+后端文案可执行，但在商城页是**软死路**（用户得自己到侧栏逐个删），所以我在 `store.js` 加了
+客户端预判：车中批次与目标批次不同时弹**明确到批次号**的确认框，同意则清空后重加。
+已单独实测该路径：`加入第 1 批次 200` → `直接跨批次 400` → `清空后再加第 2 批次 200`、
+最终车中批次正确。**这一处是我主动加的行为，不属于纯端点替换，若认为超出范围可回退。**
+
+### 其它实现决定
+
+- **金额**：契约是 `NUMERIC` **字符串**，与旧版的「分」不同。展示统一走 `money()`；
+  购物车合计**直接用服务端的 `totalAmount`**，不在客户端累加（避免浮点尾差与口径不一致）。
+- **状态文案**：改用服务端的 `status_display`，删掉本地映射表——Django 订单状态机有 10 个取值，
+  本地表早晚漏。支付按钮文案用服务端的 `payment_action_label`（如「支付全款」）。
+- **订单支付/取消按钮**：`ordersList` 是 JS 渲染的，所以按钮由 `renderOrders` 注入，
+  **不需要改 `store.html`**（HTML 不在本次改动范围内）。
+- **收货信息 → 地址**：`cart.html` 的表单是三个自由文本字段，而契约要 `address_id`。
+  `cart.js` 提交时先用这三个值 `GET /api/addresses` **查找**（命中即复用，避免每单刷一条新地址），
+  没有再 `POST /api/addresses`，然后下单。
+- **`request()` 的错误提取**：契约错误体的 `message` 有两种形态——字符串（业务错）与**对象**（DRF 字段校验，
+  如 `{"recipient_name":["该字段是必填项。"]}`）。旧实现直接 `new Error(body.message)` 在对象形态下会得到
+  `[object Object]`，这里加了摊平函数。
+- **旧购物车**：按裁定丢弃，`init()` 里显式 `localStorage.removeItem("store_cart_v1")`，不留半残状态。
+- 商品搜索/排序仍走客户端过滤：契约支持 `?q=`/`?sku_type=`，但本页排序需要整份列表，客户端过滤行为与旧版一致且少一次请求。
+- 封面来源放行了 `/media/recognition_records/`（隐式静态通道第三类），与 `W2_PLAN.md` §2.4 一致。
+
+### 验证
+
+| 项 | 结果 |
+|---|---|
+| `node --check static/store.js` | **exit 0** |
+| `node --check static/cart.js` | **exit 0** |
+| buyer 主流程 | 全通（列表→加购→改量→下单→支付→取消） |
+| farmer 对照 | 4 个买家专属端点全 403，`/api/products` 200 ✓ |
+| 跨批次替换路径 | 单独实测通过 |
+| 契约全序列回放 | 按任务书**未跑**（前端不在夹具覆盖内） |
+
+### 交接给「后台组」的点（会卡住他们）
+
+1. **`admin.js` 走的是 `unwrapApiPayload`（取 `payload.data`）**，所以 `/web/admin/**` 必须套信封
+   且**成功时 `data` 不能为 null**；而 `store-admin.js` 是 `b.data ?? b`（两种都吃）、
+   `store-support.js` 是 **`return b`（必须裸 JSON）**。三套 reader 三种要求，混了就是 TypeError。
+2. **`/api/products` 的列表在 `data.items`**，不是 `data.products` —— `store-admin.js` 里旧的商品列表
+   若继续读 `products` 会拿到 undefined。
+3. **商品字段改名**：`price_cents`→`price`（字符串）、`stock_quantity`→`stock`、`unit_label`→`unit`、
+   `cover_image`→`cover_image_url`。后台批量改点时按这四个先替换，漏一个就是"显示 undefined"。
+4. **`citrus_product` 没有 `sku`**、`sales_batch_id` 必填 —— 后台商品表单的两个硬缺口（S3 已登记）。
+5. **旧的自研商品 CRUD（`/user/admin/store/products*`）不在我这两个文件里**，所以后台组改的时候
+   注意 `store-admin.js` 的商品 CRUD 与 `admin.js` 的 store 段是两处，别只改一处。
+
+### 未覆盖 / 诚实说明
+
+- **没有真实浏览器跑过**：验证是「按前端实际发出的请求逐条打服务端 + `node --check`」。
+  真机 DOM 交互（事件绑定、`CSS.escape`、`window.confirm`）**未在浏览器里点过**，需要 S4 收尾时人工走查一次。
+- 支付是契约层的 **mock** 支付（无真实网关），`paid_at` 直接写入，这符合 `W2_PLAN.md` §3 的现状。
+- 我在 `compat_s3` 留下：1 笔已支付订单、1 笔已取消订单（都是实测产生）；购物车已清空、已登出。
+  独占 schema，不影响其它流。
