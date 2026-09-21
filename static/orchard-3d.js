@@ -70,7 +70,7 @@ function disposeSceneNode(node) {
 
 async function logout() {
   try {
-    await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+    await fetch("/web/session/logout", { method: "POST", credentials: "same-origin" });
   } finally {
     window.location.href = "/";
   }
@@ -823,7 +823,9 @@ function animate() {
 }
 
 async function validateSession() {
-  const response = await postJson("/user/validate");
+  // /web/session/validate 是扁平体且恒 200：postJson 的 .data 就是整个 body，
+  // 所以 response.data?.valid 直接成立（**不要**改成先 unwrap）。
+  const response = await postJson("/web/session/validate");
   if (!response.ok || !response.data?.valid) {
     return null;
   }
@@ -836,7 +838,9 @@ async function loadOverview() {
     throw new Error("未获取到用户身份");
   }
 
-  const response = await postJson("/user/orchard/overview");
+  // /web/orchard/overview 是**裸 JSON**（trees/coordinate_range/legend/summary/weather
+  // 直接在顶层），所以下面是 unwrapApiPayload(response.data) —— 对裸体是恒等操作。
+  const response = await postJson("/web/orchard/overview");
 
   if (!response.ok) {
     throw new Error(response.data?.error || response.data?.message || "获取园区监测数据失败");

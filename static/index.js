@@ -140,11 +140,12 @@
 
   async function fetchSystemStatus() {
     try {
-      const res = await fetch("/api/system-status", {
+      const res = await fetch("/web/system-status", {
         method: "GET",
         credentials: "same-origin",
       });
       const payload = await res.json().catch(() => ({}));
+      // /web/system-status 走信封，消费方用 unwrapApiPayload 取 data（与旧 /api/system-status 同形）
       applySystemStatus(unwrapApiPayload(payload));
     } catch (e) {
       // 忽略状态获取失败，不阻断登录页渲染
@@ -188,12 +189,14 @@
 
   async function fetchValidatedSession() {
     try {
-      const res = await fetch("/user/validate", {
+      const res = await fetch("/web/session/validate", {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
       });
       const data = await res.json().catch(() => ({}));
+      // /web/session/validate 是**扁平体且恒 200**：直接把整个 body 交给 applySystemStatus，
+      // 再读 data.valid。**不要**在这里 unwrap——套信封会同时打坏登录页的系统状态与登录判定。
       applySystemStatus(data);
       if (res.ok && data.valid) {
         return data;
@@ -222,7 +225,7 @@
       return;
     }
 
-    const res = await fetch("/user/login", {
+    const res = await fetch("/web/session/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
@@ -257,7 +260,7 @@
       return;
     }
 
-    const res = await fetch("/user/register", {
+    const res = await fetch("/web/session/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "same-origin",
@@ -304,7 +307,7 @@
 
   async function logout() {
     try {
-      await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+      await fetch("/web/session/logout", { method: "POST", credentials: "same-origin" });
     } finally {
       location.reload();
     }

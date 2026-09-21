@@ -60,7 +60,7 @@
   }
 
   async function session() {
-    const response = await fetch("/user/validate", {
+    const response = await fetch("/web/session/validate", {
       method: "POST",
       credentials: "same-origin",
     });
@@ -163,7 +163,7 @@
   $("shellLogout").onclick = async () => {
     $("shellLogout").disabled = true;
     try {
-      const response = await fetch("/user/logout", {
+      const response = await fetch("/web/session/logout", {
         method: "POST",
         credentials: "same-origin",
       });

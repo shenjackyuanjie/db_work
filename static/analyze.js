@@ -52,7 +52,7 @@
 
   async function refreshSessionNavigation() {
     try {
-      const response = await fetch("/user/validate", {
+      const response = await fetch("/web/session/validate", {
         method: "POST",
         credentials: "same-origin",
       });
@@ -193,7 +193,9 @@
 
     try {
       const imageDataUrl = await fileToDataUrl(file);
-      const resp = await fetch("/api/citrus-disease-v2", {
+      // /web/citrus-disease-v2 是**信封且 code===200**（下面的判定依赖它），
+      // 响应形状与旧 /api/citrus-disease-v2 逐字段一致（同一条 handler）。
+      const resp = await fetch("/web/citrus-disease-v2", {
         method: "POST",
         credentials: "same-origin",
         headers: {
@@ -244,7 +246,7 @@
 
   async function logout() {
     try {
-      await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+      await fetch("/web/session/logout", { method: "POST", credentials: "same-origin" });
     } finally {
       location.reload();
     }
