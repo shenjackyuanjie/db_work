@@ -76,7 +76,7 @@
   }
   async function dashboard() {
     const d = await request(
-      "/user/admin/store/analytics?days=" + $("period").value,
+      "/web/admin/store/analytics?days=" + $("period").value,
     );
     const s = d.summary;
     $("kpis").innerHTML = [
@@ -110,7 +110,7 @@
     );
   }
   async function loadProducts() {
-    const d = await request("/user/admin/store/products");
+    const d = await request("/web/admin/store/products");
     products = d.products || [];
     $("products").innerHTML = products.length
       ? `<table>
@@ -136,7 +136,7 @@
                         : '<span class="store-product-cover__placeholder">暂无封面</span>'}
                     </div>
                   </td>
-                  <td>${escape(p.name)}<small>${escape(p.sku)} · ${escape(p.unit_label)}</small></td>
+                  <td>${escape(p.name)}<small>${escape(p.unit_label)}</small></td>
                   <td>${money(p.price_cents)}</td>
                   <td>${p.stock_quantity}</td>
                   <td>${p.is_active ? "在售" : "已下架"}</td>
@@ -176,7 +176,7 @@
       : empty;
   }
   async function loadOrders() {
-    const d = await request("/user/admin/store/orders", "POST");
+    const d = await request("/web/admin/store/orders", "POST");
     orders = d.orders || [];
     renderOrders();
   }
@@ -185,7 +185,7 @@
     const name = conversation,
       version = ++conversationVersion;
     const d = await request(
-      "/user/admin/store/support?username=" + encodeURIComponent(name),
+      "/web/admin/support?username=" + encodeURIComponent(name),
     );
     if (version !== conversationVersion || name !== conversation) return;
     const wrap = $("messages"),
@@ -200,7 +200,7 @@
     if (bottom) wrap.scrollTop = wrap.scrollHeight;
   }
   async function support() {
-    const d = await request("/user/admin/store/support");
+    const d = await request("/web/admin/support");
     $("conversations").innerHTML =
       d.conversations
         .map(
@@ -267,7 +267,8 @@
         throw Error("请输入有效的价格和整数库存");
       const body = {
         name: f.get("name").trim(),
-        sku: f.get("sku").trim(),
+        // 契约表的 `citrus_product.sales_batch_id` 是**必填的外键**，不传服务端会 400。
+        sales_batch_id: f.get("sales_batch_id"),
         unit_label: f.get("unit_label").trim(),
         price_cents: price,
         stock_quantity: stock,
@@ -275,7 +276,7 @@
         cover_image: f.get("cover_image").trim() || null,
       };
       await request(
-        "/user/admin/store/products" + (editing ? "/" + editing : ""),
+        "/web/admin/store/products" + (editing ? "/" + editing : ""),
         editing ? "PUT" : "POST",
         body,
       );
@@ -287,12 +288,12 @@
     const b = e.target.closest("button");
     if (!b) return;
     if (b.dataset.edit) {
-      const p = products.find((p) => p.id === Number(b.dataset.edit));
+      const p = products.find((p) => String(p.id) === b.dataset.edit);
       editing = p.id;
       const f = $("productForm");
       for (const key of [
         "name",
-        "sku",
+        "sales_batch_id",
         "unit_label",
         "stock_quantity",
         "description",
@@ -306,7 +307,7 @@
     if (b.dataset.toggle)
       action(b, async () => {
         await request(
-          "/user/admin/store/products/" + b.dataset.toggle + "/toggle",
+          "/web/admin/store/products/" + b.dataset.toggle + "/toggle",
           "POST",
         );
         await loadProducts();
@@ -324,7 +325,7 @@
       if (file.size > 8 * 1024 * 1024) throw Error("封面不能超过 8 MB");
       const form = new FormData();
       form.append("image", file);
-      const r = await fetch("/user/admin/store/products/" + id + "/cover", {
+      const r = await fetch("/web/admin/store/products/" + id + "/cover", {
         method: "POST",
         credentials: "same-origin",
         body: form,
@@ -345,7 +346,7 @@
     if (!b) return;
     const select = b.parentElement.querySelector("select");
     action(b, async () => {
-      await request("/user/admin/store/orders/status", "POST", {
+      await request("/web/admin/store/orders/status", "POST", {
         order_id: b.dataset.save,
         status: select.value,
       });
@@ -372,7 +373,7 @@
       content = $("reply").value.trim();
     if (!username || !content) return;
     action($("replyButton"), async () => {
-      await request("/user/admin/store/support", "POST", { username, content });
+      await request("/web/admin/support", "POST", { username, content });
       if (conversation === username) $("reply").value = "";
       await support();
     });
@@ -380,14 +381,36 @@
   setInterval(() => {
     if (ready && view === "support" && !document.hidden && !loading) refresh();
   }, 10000);
+
+  // 供货批次的数据源用**公开的契约端点** `/api/supply-batches`（未登录也能读，实测 anon/管理员/买家都 200）。
+  // **不能**用 `/api/v1/farmer/batches`：那是 `IsFarmer`，而管理员的 `is_admin` 与 `role` 正交，
+  // 管理员可能是 buyer 角色 → 会 403，批次选择器直接空掉。
+  async function loadBatches() {
+    try {
+      const data = await request("/api/supply-batches");
+      const list = Array.isArray(data) ? data : data.batches || data.items || [];
+      $("productBatch").innerHTML =
+        '<option value="">请选择供货批次</option>' +
+        list
+          .map(
+            (b) =>
+              `<option value="${escape(b.id)}">${escape(b.code)} · ${escape(b.title)}（${escape(b.status_display || b.status)}）</option>`,
+          )
+          .join("");
+    } catch (e) {
+      error(e);
+    }
+  }
+
   (async () => {
     try {
-      const session = await request("/user/validate", "POST");
+      const session = await request("/web/session/validate", "POST");
       if (!session.valid || !session.is_admin)
         throw Error("请使用管理员账号登录后进入商城后台。");
       $("account").textContent = session.username;
       $("workspace").hidden = false;
       ready = true;
+      await loadBatches();
       await refresh();
     } catch (e) {
       error(e);

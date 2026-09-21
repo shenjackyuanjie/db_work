@@ -84,7 +84,7 @@ function copyInviteCode() {
 
 async function logout() {
   try {
-    await fetch("/user/logout", { method: "POST", credentials: "same-origin" });
+    await fetch("/web/session/logout", { method: "POST", credentials: "same-origin" });
   } finally {
     location.reload();
   }
@@ -128,7 +128,7 @@ async function postJson(url, body) {
 }
 
 async function validateAdmin() {
-  const resp = await postJson("/user/validate");
+  const resp = await postJson("/web/session/validate");
   if (!resp.ok || !resp.data.valid || !resp.data.is_admin) {
     return null;
   }
@@ -143,7 +143,7 @@ async function createInvite() {
   const ttlVal = Number($("ttlSelect").value);
   const body = { ttl_seconds: ttlVal };
 
-  const resp = await postJson("/user/admin/invitations/create", body);
+  const resp = await postJson("/web/admin/invitations/create", body);
   const payload = unwrapApiPayload(resp.data);
   btn.disabled = false;
   btn.innerText = "立即生成";
@@ -162,7 +162,7 @@ async function createInvite() {
 async function toggleAdmin(username, currentIsAdmin) {
   if (!confirm(`确定要将 ${username} ${currentIsAdmin ? "降级为普通用户" : "设为管理员"} 吗？`)) return;
 
-  const resp = await postJson("/user/admin/set_admin", {
+  const resp = await postJson("/web/admin/set_admin", {
     target_username: username,
     make_admin: !currentIsAdmin,
   });
@@ -252,7 +252,7 @@ function renderPending(list) {
 }
 
 async function listPending() {
-  const resp = await postJson("/user/admin/pending/list");
+  const resp = await postJson("/web/admin/pending/list");
   const payload = unwrapApiPayload(resp.data);
   if (resp.ok) {
     renderPending(payload.pending_users || []);
@@ -263,7 +263,7 @@ async function listPending() {
 }
 
 async function listInvites() {
-  const resp = await postJson("/user/admin/invitations/list");
+  const resp = await postJson("/web/admin/invitations/list");
   const payload = unwrapApiPayload(resp.data);
   if (resp.ok) {
     renderInvites(payload.invitations || []);
@@ -274,7 +274,7 @@ async function listInvites() {
 }
 
 async function listUsers() {
-  const resp = await postJson("/user/admin/users/list");
+  const resp = await postJson("/web/admin/users/list");
   const payload = unwrapApiPayload(resp.data);
   if (resp.ok) {
     renderUsers(payload.users || []);
@@ -285,7 +285,7 @@ async function listUsers() {
 }
 
 async function approvePending(username) {
-  const resp = await postJson("/user/admin/pending/approve", { username });
+  const resp = await postJson("/web/admin/pending/approve", { username });
   if (resp.ok) {
     showToast(`已通过 ${username} 的申请`);
     listPending();
@@ -297,7 +297,7 @@ async function approvePending(username) {
 
 async function rejectPending(username) {
   if (!confirm(`确定要拒绝 ${username} 的申请吗？`)) return;
-  const resp = await postJson("/user/admin/pending/reject", { username });
+  const resp = await postJson("/web/admin/pending/reject", { username });
   if (resp.ok) {
     showToast(`已拒绝 ${username} 的申请`);
     listPending();
@@ -319,7 +319,7 @@ const orchardState = {
 let currentAdminUsername = "";
 let allLogs = [];
 
-const ADMIN_SECTIONS = new Set(["orchard", "access", "store", "overview", "audit", "settings"]);
+const ADMIN_SECTIONS = new Set(["orchard", "access", "overview", "audit", "settings"]);
 
 function requestedAdminSection() {
   const section = new URLSearchParams(window.location.search).get("section");
@@ -884,7 +884,7 @@ async function fetchOrchardOverview() {
     return false;
   }
 
-  const resp = await postJson("/user/admin/orchard/overview", {
+  const resp = await postJson("/web/admin/orchard/overview", {
     username: currentAdminUsername,
   });
   if (!resp.ok) {
@@ -926,7 +926,7 @@ function bindInviteActions() {
 }
 
 async function fetchStats() {
-  const resp = await postJson("/user/admin/dashboard/stats");
+  const resp = await postJson("/web/admin/dashboard/stats");
   if (!resp.ok) {
     showToast(readErrorMessage(resp.data, "获取统计数据失败"), "error");
     return false;
@@ -1008,7 +1008,7 @@ function renderDetectionChart(series) {
 }
 
 async function fetchLogs() {
-  const resp = await postJson("/user/admin/dashboard/logs");
+  const resp = await postJson("/web/admin/dashboard/logs");
   if (!resp.ok) {
     showToast(readErrorMessage(resp.data, "获取日志失败"), "error");
     return false;
@@ -1060,7 +1060,7 @@ function applySettingsToForm(settings) {
 }
 
 async function loadSettings() {
-  const resp = await postJson("/user/admin/settings/get");
+  const resp = await postJson("/web/admin/settings/get");
   if (!resp.ok) {
     showToast(readErrorMessage(resp.data, "获取系统设置失败"), "error");
     return false;
@@ -1076,7 +1076,7 @@ async function saveSettings() {
   btn.disabled = true;
   btn.innerText = "保存中...";
 
-  const resp = await postJson("/user/admin/settings/update", {
+  const resp = await postJson("/web/admin/settings/update", {
     open_registration: $("settingOpenReg").checked,
     invite_bypass_enabled: $("settingInviteBypass").checked,
     maintenance_mode: $("settingMaintenance").checked,
@@ -1120,651 +1120,12 @@ function bindDashboardActions() {
   $("logFilter").addEventListener("change", renderLogs);
 }
 
-const commerceAdminState = {
-  orchards: [],
-  products: [],
-  batches: [],
-  orders: [],
-};
-
-const commerceBatchStatusLabels = {
-  draft: "草稿",
-  preorder: "预售中",
-  open: "开团中",
-  closed: "已截团",
-  harvesting: "采摘中",
-  shipping: "发货中",
-  completed: "已完成",
-  cancelled: "已取消",
-};
-
-const commerceOrderStatusLabels = {
-  pending_payment: "待收款",
-  paid: "已付款",
-  confirmed: "已确认",
-  harvesting: "采摘中",
-  packing: "分选装箱",
-  shipped: "已发货",
-  completed: "已完成",
-  cancelled: "已取消",
-  refunded: "已退款",
-};
-
-const commercePaymentStatusLabels = {
-  unpaid: "未收款",
-  deposit_paid: "已收订金",
-  paid: "已收全款",
-  refunded: "已退款",
-};
-
-async function commerceRequest(url, method = "GET", body) {
-  try {
-    const hasBody = body !== undefined;
-    const res = await fetch(url, {
-      method,
-      credentials: "same-origin",
-      headers: requestHeaders(hasBody),
-      body: hasBody ? JSON.stringify(body) : undefined,
-    });
-    const text = await res.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { raw: text };
-    }
-    if (!res.ok) throw new Error(readErrorMessage(data, "商业接口请求失败"));
-    return unwrapApiPayload(data);
-  } catch (error) {
-    throw new Error(error.message || "网络请求失败");
-  }
-}
-
-function commerceMoney(cents) {
-  return `¥${(Number(cents || 0) / 100).toFixed(2)}`;
-}
-
-function commerceDate(timestamp) {
-  if (!timestamp) return "未设置";
-  const date = new Date(Number(timestamp));
-  return Number.isNaN(date.getTime()) ? "未设置" : date.toLocaleString("zh-CN");
-}
-
-function commerceDateInput(id) {
-  const value = $(id).value;
-  if (!value) return null;
-  const timestamp = new Date(value).getTime();
-  return Number.isFinite(timestamp) ? timestamp : null;
-}
-
-function renderCommerceOrchards() {
-  const wrap = $("commerceOrchardsWrap");
-  if (!commerceAdminState.orchards.length) {
-    wrap.innerHTML = "<div class='empty-state'>暂无合作果园</div>";
-  } else {
-    wrap.innerHTML = commerceAdminState.orchards.map((orchard) => `
-      <div class="commerce-admin-list__item">
-        <div><strong>${escapeHtml(orchard.name)}</strong><small>${escapeHtml(orchard.location || "未填写所在地")} · ${escapeHtml(orchard.farmer_name || "未填写负责人")}</small></div>
-        <span class="pill ${orchard.is_active ? "admin" : "user"}">${orchard.is_active ? "启用" : "停用"}</span>
-      </div>
-    `).join("");
-  }
-
-  const select = $("commerceBatchOrchard");
-  const current = select.value;
-  select.innerHTML = commerceAdminState.orchards.length
-    ? `<option value="">请选择合作果园</option>${commerceAdminState.orchards.map((orchard) => `<option value="${orchard.id}">${escapeHtml(orchard.name)}</option>`).join("")}`
-    : '<option value="">请先创建果园</option>';
-  if (commerceAdminState.orchards.some((orchard) => String(orchard.id) === current)) select.value = current;
-}
-
-function renderCommerceProducts() {
-  const wrap = $("commerceProductsWrap");
-  if (!commerceAdminState.products.length) {
-    wrap.innerHTML = "<div class='empty-state'>暂无商品规格</div>";
-  } else {
-    wrap.innerHTML = commerceAdminState.products.map((product) => `
-      <div class="commerce-admin-list__item">
-        <div><strong>${escapeHtml(product.name)}</strong><small>${escapeHtml(product.sku)} · ${escapeHtml(product.unit_label)}</small></div>
-        <span class="commerce-admin-list__price">${commerceMoney(product.price_cents)}</span>
-      </div>
-    `).join("");
-  }
-
-  const quotaWrap = $("commerceBatchProducts");
-  quotaWrap.innerHTML = commerceAdminState.products.length
-    ? commerceAdminState.products.map((product) => `
-      <label class="commerce-product-quota__item">
-        <span>${escapeHtml(product.name)} · ${commerceMoney(product.price_cents)}</span>
-        <input type="number" min="0" value="0" data-batch-product-id="${product.id}" aria-label="${escapeHtml(product.name)}配额" />
-      </label>
-    `).join("")
-    : '<div class="empty-state">先创建商品后配置批次商品配额。</div>';
-}
-
-function renderCommerceBatches() {
-  const wrap = $("commerceBatchesWrap");
-  if (!commerceAdminState.batches.length) {
-    wrap.innerHTML = "<div class='empty-state'>暂无销售批次</div>";
-    return;
-  }
-  const rows = commerceAdminState.batches.map((batch) => `
-    <tr>
-      <td><strong>${escapeHtml(batch.batch_code)}</strong><br /><small>${escapeHtml(batch.title)}</small></td>
-      <td>${escapeHtml(batch.orchard?.name || "-")}</td>
-      <td><span class="pill ${batch.status === "open" || batch.status === "preorder" ? "admin" : "user"}">${commerceBatchStatusLabels[batch.status] || escapeHtml(batch.status)}</span></td>
-      <td>${batch.planned_quantity} 箱</td>
-      <td>${commerceDate(batch.harvest_start_at)}<br />${commerceDate(batch.ship_at)}</td>
-    </tr>
-  `).join("");
-  wrap.innerHTML = `<table><thead><tr><th>批次</th><th>合作果园</th><th>状态</th><th>计划数量</th><th>采摘 / 发货</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function renderCommerceOrders() {
-  const wrap = $("commerceOrdersWrap");
-  if (!commerceAdminState.orders.length) {
-    wrap.innerHTML = "<div class='empty-state'>暂无订单</div>";
-    return;
-  }
-
-  const orderStatusOptions = Object.entries(commerceOrderStatusLabels).map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
-  const paymentStatusOptions = Object.entries(commercePaymentStatusLabels).map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
-  const rows = commerceAdminState.orders.map((order) => `
-    <tr>
-      <td><strong>${escapeHtml(order.order_no)}</strong><br /><small>${escapeHtml(order.username)}</small></td>
-      <td>${escapeHtml(order.recipient_name)}<br /><small>${escapeHtml(order.recipient_phone)}<br />${escapeHtml(order.shipping_address)}</small></td>
-      <td>${(order.items || []).map((item) => `${escapeHtml(item.product_name)} × ${item.quantity}`).join("<br />")}</td>
-      <td class="commerce-admin-list__price">${commerceMoney(order.total_cents)}</td>
-      <td>
-        <select data-order-status="${escapeHtml(order.id)}">${orderStatusOptions.replace(`value="${order.status}"`, `value="${order.status}" selected`)}</select>
-        <select data-order-payment="${escapeHtml(order.id)}" style="margin-top:6px;">${paymentStatusOptions.replace(`value="${order.payment_status}"`, `value="${order.payment_status}" selected`)}</select>
-      </td>
-      <td><button class="ghost" type="button" data-save-order="${escapeHtml(order.id)}">保存</button></td>
-    </tr>
-  `).join("");
-  wrap.innerHTML = `<table class="commerce-orders-table"><thead><tr><th>订单</th><th>收货信息</th><th>商品</th><th>金额</th><th>状态 / 收款</th><th>操作</th></tr></thead><tbody>${rows}</tbody></table>`;
-
-  wrap.querySelectorAll("[data-save-order]").forEach((button) => {
-    button.addEventListener("click", () => updateCommerceOrder(button.dataset.saveOrder));
-  });
-}
-
-async function loadCommerceOverview() {
-  const data = await commerceRequest("/user/admin/commerce/overview", "POST");
-  const orders = data.orders || {};
-  $("commerceBatchCount").textContent = data.active_batch_count ?? 0;
-  $("commerceOrderCount").textContent = orders.count ?? 0;
-  $("commerceGrossAmount").textContent = commerceMoney(orders.gross_amount_cents);
-  $("commerceActiveOrders").textContent = orders.active_count ?? 0;
-}
-
-async function loadCommerceOrchards() {
-  const data = await commerceRequest("/user/admin/commerce/orchards");
-  commerceAdminState.orchards = data.orchards || [];
-  renderCommerceOrchards();
-}
-
-async function loadCommerceProducts() {
-  const data = await commerceRequest("/user/admin/commerce/products");
-  commerceAdminState.products = data.products || [];
-  renderCommerceProducts();
-}
-
-async function loadCommerceBatches() {
-  const data = await commerceRequest("/user/admin/commerce/batches");
-  commerceAdminState.batches = data.batches || [];
-  renderCommerceBatches();
-}
-
-async function loadCommerceOrders() {
-  const data = await commerceRequest("/user/admin/commerce/orders", "POST");
-  commerceAdminState.orders = data.orders || [];
-  renderCommerceOrders();
-}
-
-async function refreshCommerceData(showMessage = false) {
-  try {
-    await Promise.all([
-      loadCommerceOverview(),
-      loadCommerceOrchards(),
-      loadCommerceProducts(),
-      loadCommerceBatches(),
-      loadCommerceOrders(),
-    ]);
-    if (showMessage) showToast("开团运营数据已刷新");
-  } catch (error) {
-    showToast(error.message || "加载开团运营数据失败", "error");
-  }
-}
-
-async function createCommerceOrchard(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  try {
-    await commerceRequest("/user/admin/commerce/orchards", "POST", {
-      name: $("commerceOrchardName").value.trim(),
-      location: $("commerceOrchardLocation").value.trim(),
-      farmer_name: $("commerceOrchardFarmer").value.trim(),
-      description: $("commerceOrchardDescription").value.trim(),
-    });
-    form.reset();
-    showToast("合作果园已创建");
-    await Promise.all([loadCommerceOrchards(), loadCommerceOverview()]);
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-}
-
-async function createCommerceProduct(event) {
-  event.preventDefault();
-  const form = event.currentTarget;
-  try {
-    await commerceRequest("/user/admin/commerce/products", "POST", {
-      name: $("commerceProductName").value.trim(),
-      sku: $("commerceProductSku").value.trim(),
-      unit_label: $("commerceProductUnit").value.trim(),
-      price_cents: Math.round(Number($("commerceProductPrice").value) * 100),
-      deposit_cents: Math.round(Number($("commerceProductDeposit").value || 0) * 100),
-    });
-    form.reset();
-    $("commerceProductDeposit").value = "0";
-    showToast("商品规格已创建");
-    await loadCommerceProducts();
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-}
-
-async function createCommerceBatch(event) {
-  event.preventDefault();
-  const products = [...document.querySelectorAll("[data-batch-product-id]")]
-    .map((input) => ({ product_id: Number(input.dataset.batchProductId), quota: Number(input.value || 0) }))
-    .filter((item) => item.quota > 0);
-  if (!products.length) {
-    showToast("请至少配置一个批次商品配额", "error");
-    return;
-  }
-
-  try {
-    await commerceRequest("/user/admin/commerce/batches", "POST", {
-      batch_code: $("commerceBatchCode").value.trim(),
-      title: $("commerceBatchTitle").value.trim(),
-      orchard_id: Number($("commerceBatchOrchard").value),
-      status: $("commerceBatchStatus").value,
-      planned_quantity: Number($("commerceBatchQuantity").value),
-      open_at: commerceDateInput("commerceBatchOpenAt"),
-      close_at: commerceDateInput("commerceBatchCloseAt"),
-      harvest_start_at: commerceDateInput("commerceBatchHarvestStart"),
-      harvest_end_at: commerceDateInput("commerceBatchHarvestEnd"),
-      ship_at: commerceDateInput("commerceBatchShipAt"),
-      products,
-    });
-    event.currentTarget.reset();
-    renderCommerceProducts();
-    showToast("销售批次已创建");
-    await Promise.all([loadCommerceBatches(), loadCommerceOverview()]);
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-}
-
-async function updateCommerceOrder(orderId) {
-  const status = document.querySelector(`[data-order-status="${CSS.escape(orderId)}"]`)?.value;
-  const paymentStatus = document.querySelector(`[data-order-payment="${CSS.escape(orderId)}"]`)?.value;
-  if (!status || !paymentStatus) return;
-  const note = window.prompt("履约备注（可选）", "") ?? "";
-  try {
-    await commerceRequest("/user/admin/commerce/orders/status", "POST", {
-      order_id: orderId,
-      status,
-      payment_status: paymentStatus,
-      note,
-    });
-    showToast("订单状态已更新");
-    await Promise.all([loadCommerceOrders(), loadCommerceOverview()]);
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-}
-
-function bindCommerceActions() {
-  $("commerceOrchardForm").addEventListener("submit", createCommerceOrchard);
-  $("commerceProductForm").addEventListener("submit", createCommerceProduct);
-  $("commerceBatchForm").addEventListener("submit", createCommerceBatch);
-  $("btnRefreshCommerceOrchards").addEventListener("click", async () => {
-    await loadCommerceOrchards();
-    showToast("合作果园已刷新");
-  });
-  $("btnRefreshCommerceProducts").addEventListener("click", async () => {
-    await loadCommerceProducts();
-    showToast("商品规格已刷新");
-  });
-  $("btnRefreshCommerceBatches").addEventListener("click", async () => {
-    await Promise.all([loadCommerceBatches(), loadCommerceOverview()]);
-    showToast("销售批次已刷新");
-  });
-  $("btnRefreshCommerceOrders").addEventListener("click", async () => {
-    await Promise.all([loadCommerceOrders(), loadCommerceOverview()]);
-    showToast("订单已刷新");
-  });
-}
-
-// ====== 商城管理（普通购买） ======
-const storeOrderStatusLabels = {
-  pending_payment: "待收款",
-  paid: "已付款",
-  shipped: "已发货",
-  completed: "已完成",
-  cancelled: "已取消",
-  refunded: "已退款",
-};
-
-const storeAdminState = {
-  products: [],
-  orders: [],
-  editingId: null,
-  coverTargetId: null,
-};
-
-async function storeRequest(url, method = "GET", body) {
-  try {
-    const hasBody = body !== undefined;
-    const res = await fetch(url, {
-      method,
-      credentials: "same-origin",
-      headers: requestHeaders(hasBody),
-      body: hasBody ? JSON.stringify(body) : undefined,
-    });
-    const text = await res.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { raw: text };
-    }
-    if (!res.ok) throw new Error(readErrorMessage(data, "商城接口请求失败"));
-    return unwrapApiPayload(data);
-  } catch (error) {
-    throw new Error(error.message || "网络请求失败");
-  }
-}
-
-function storeMoney(cents) {
-  return `¥${(Number(cents || 0) / 100).toFixed(2)}`;
-}
-
-function renderStoreOverview(data) {
-  if (!data) return;
-  $("storeProductCount").textContent = data.product_count ?? "--";
-  $("storeOrderCount").textContent = data.order_count ?? "--";
-  $("storeGrossAmount").textContent = storeMoney(data.gross_amount_cents);
-  $("storePendingOrders").textContent = data.pending_order_count ?? "--";
-}
-
-async function loadStoreOverview() {
-  const data = await storeRequest("/user/admin/store/overview", "POST");
-  renderStoreOverview(data);
-}
-
-function renderStoreProducts() {
-  const wrap = $("storeProductsWrap");
-  if (!storeAdminState.products.length) {
-    wrap.innerHTML = '<div class="empty-state">暂无商品，先在上方创建。</div>';
-    return;
-  }
-  wrap.innerHTML = `
-    <table class="store-orders-table">
-      <thead>
-        <tr><th>商品</th><th>SKU</th><th>规格</th><th>售价</th><th>库存</th><th>状态</th><th>操作</th></tr>
-      </thead>
-      <tbody>
-        ${storeAdminState.products.map((product) => `
-          <tr>
-            <td>
-              <div class="store-product-cell">
-                <div class="store-product-cover ${product.cover_image ? "has-image" : "no-image"}">
-                  ${product.cover_image
-                    ? `<img class="store-product-cover__img" src="${escapeHtml(product.cover_image)}" alt="${escapeHtml(product.name)}" />`
-                    : '<span class="store-product-cover__placeholder">暂无封面</span>'}
-                </div>
-                <div class="store-product-cell__name">${escapeHtml(product.name)}</div>
-                <div class="store-product-cell__note">${product.cover_image ? "已上传封面" : "尚未上传封面"}</div>
-              </div>
-            </td>
-            <td><code>${escapeHtml(product.sku)}</code></td>
-            <td>${escapeHtml(product.unit_label)}</td>
-            <td>${storeMoney(product.price_cents)}</td>
-            <td>${product.stock_quantity}</td>
-            <td><span class="pill ${product.is_active ? "admin" : "user"}">${product.is_active ? "在售" : "下架"}</span></td>
-            <td>
-              <button class="ghost" type="button" data-edit-store-product="${product.id}">编辑</button>
-              <button class="ghost" type="button" data-upload-store-cover="${product.id}">上传封面</button>
-              <button class="ghost" type="button" data-toggle-store-product="${product.id}">${product.is_active ? "下架" : "上架"}</button>
-            </td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
-  wrap.querySelectorAll("[data-toggle-store-product]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      await toggleStoreProduct(Number(button.dataset.toggleStoreProduct));
-    });
-  });
-  wrap.querySelectorAll("[data-edit-store-product]").forEach((button) => {
-    button.addEventListener("click", () => {
-      editStoreProduct(Number(button.dataset.editStoreProduct));
-    });
-  });
-  wrap.querySelectorAll("[data-upload-store-cover]").forEach((button) => {
-    button.addEventListener("click", () => {
-      storeAdminState.coverTargetId = Number(button.dataset.uploadStoreCover);
-      $("storeCoverFile").click();
-    });
-  });
-}
-
-async function loadStoreProducts() {
-  const data = await storeRequest("/user/admin/store/products");
-  storeAdminState.products = Array.isArray(data.products) ? data.products : [];
-  renderStoreProducts();
-}
-
-function storeProductFormBody() {
-  return {
-    name: $("storeProductName").value.trim(),
-    sku: $("storeProductSku").value.trim(),
-    unit_label: $("storeProductUnit").value.trim(),
-    price_cents: Math.round(Number($("storeProductPrice").value) * 100),
-    stock_quantity: Math.round(Number($("storeProductStock").value || 0)),
-    description: $("storeProductDescription").value.trim(),
-    cover_image: $("storeProductCover").value.trim() || undefined,
-  };
-}
-
-function resetStoreProductForm() {
-  storeAdminState.editingId = null;
-  $("storeProductForm").reset();
-  $("storeProductStock").value = "0";
-  $("storeProductFormTitle").textContent = "新增商品";
-  $("storeProductSubmit").textContent = "创建商品";
-  $("storeProductCancel").hidden = true;
-}
-
-function editStoreProduct(productId) {
-  const product = storeAdminState.products.find((p) => p.id === productId);
-  if (!product) return;
-  storeAdminState.editingId = productId;
-  $("storeProductName").value = product.name || "";
-  $("storeProductSku").value = product.sku || "";
-  $("storeProductUnit").value = product.unit_label || "";
-  $("storeProductPrice").value = (product.price_cents / 100).toFixed(2);
-  $("storeProductStock").value = product.stock_quantity ?? 0;
-  $("storeProductDescription").value = product.description || "";
-  $("storeProductCover").value = product.cover_image || "";
-  $("storeProductFormTitle").textContent = "编辑商品";
-  $("storeProductSubmit").textContent = "保存修改";
-  $("storeProductCancel").hidden = false;
-  $("storeProductForm").scrollIntoView({ block: "center", behavior: "smooth" });
-}
-
-async function submitStoreProduct(event) {
-  event.preventDefault();
-  const body = storeProductFormBody();
-  const editingId = storeAdminState.editingId;
-  try {
-    if (editingId) {
-      await storeRequest(`/user/admin/store/products/${editingId}`, "PUT", body);
-      showToast("商品已更新");
-    } else {
-      await storeRequest("/user/admin/store/products", "POST", body);
-      showToast("商品创建成功");
-    }
-    resetStoreProductForm();
-    await Promise.all([loadStoreProducts(), loadStoreOverview()]);
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-}
-
-async function uploadStoreCover(file) {
-  const productId = storeAdminState.coverTargetId;
-  if (!productId || !file) return;
-  const MAX_COVER_BYTES = 8 * 1024 * 1024;
-  // 前端先做一次校验，给出明确提示，避免把明显不合法的文件上传。
-  if (!/^image\//.test(file.type)) {
-    showToast("请选择图片文件（JPEG / PNG / WebP）", "error");
-    $("storeCoverFile").value = "";
-    storeAdminState.coverTargetId = null;
-    return;
-  }
-  if (file.size > MAX_COVER_BYTES) {
-    showToast("封面图片过大，最大 8MB", "error");
-    $("storeCoverFile").value = "";
-    storeAdminState.coverTargetId = null;
-    return;
-  }
-  const formData = new FormData();
-  formData.append("image", file);
-  try {
-    const res = await fetch(`/user/admin/store/products/${productId}/cover`, {
-      method: "POST",
-      credentials: "same-origin",
-      body: formData,
-    });
-    const text = await res.text();
-    let data;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      data = { raw: text };
-    }
-    if (!res.ok) throw new Error(readErrorMessage(data, "封面上传失败"));
-    showToast("封面已上传");
-    await Promise.all([loadStoreProducts(), loadStoreOverview()]);
-  } catch (error) {
-    showToast(error.message, "error");
-  } finally {
-    storeAdminState.coverTargetId = null;
-    $("storeCoverFile").value = "";
-  }
-}
-
-async function toggleStoreProduct(productId) {
-  try {
-    await storeRequest(`/user/admin/store/products/${productId}/toggle`, "POST");
-    showToast("商品状态已更新");
-    await loadStoreProducts();
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-}
-
-function renderStoreOrders() {
-  const wrap = $("storeOrdersWrap");
-  if (!storeAdminState.orders.length) {
-    wrap.innerHTML = '<div class="empty-state">暂无订单。</div>';
-    return;
-  }
-  const statusOptions = Object.entries(storeOrderStatusLabels)
-    .map(([value, label]) => `<option value="${value}">${label}</option>`)
-    .join("");
-  wrap.innerHTML = `
-    <table class="store-orders-table">
-      <thead>
-        <tr><th>订单号</th><th>用户</th><th>收货信息</th><th>商品</th><th>金额</th><th>状态 / 操作</th></tr>
-      </thead>
-      <tbody>
-        ${storeAdminState.orders.map((order) => `
-          <tr>
-            <td><code>${escapeHtml(order.order_no)}</code><br /><small style="opacity:.7">${new Date(Number(order.created_at)).toLocaleString("zh-CN")}</small></td>
-            <td>${escapeHtml(order.username)}</td>
-            <td>${escapeHtml(order.recipient_name)} · ${escapeHtml(order.recipient_phone)}<br /><small style="opacity:.7">${escapeHtml(order.shipping_address)}</small></td>
-            <td>${(Array.isArray(order.items) ? order.items : []).map((item) => `${escapeHtml(item.product_name)} × ${item.quantity}`).join("<br />") || "--"}</td>
-            <td>${storeMoney(order.total_cents)}</td>
-            <td>
-              <select data-store-order-status="${order.id}">
-                ${statusOptions.replace(`<option value="${order.status}">`, `<option value="${order.status}" selected>`)}
-              </select>
-              <button class="ghost" type="button" data-save-store-order="${order.id}">保存</button>
-            </td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
-  wrap.querySelectorAll("[data-save-store-order]").forEach((button) => {
-    button.addEventListener("click", async () => {
-      const orderId = button.dataset.saveStoreOrder;
-      const status = wrap.querySelector(`[data-store-order-status="${orderId}"]`).value;
-      await updateStoreOrderStatus(orderId, status);
-    });
-  });
-}
-
-async function loadStoreOrders() {
-  const data = await storeRequest("/user/admin/store/orders", "POST");
-  storeAdminState.orders = Array.isArray(data.orders) ? data.orders : [];
-  renderStoreOrders();
-}
-
-async function updateStoreOrderStatus(orderId, status) {
-  try {
-    await storeRequest("/user/admin/store/orders/status", "POST", { order_id: orderId, status });
-    showToast("订单状态已更新");
-    await Promise.all([loadStoreOrders(), loadStoreOverview()]);
-  } catch (error) {
-    showToast(error.message, "error");
-  }
-}
-
-async function refreshStoreData() {
-  await Promise.all([loadStoreOverview(), loadStoreProducts(), loadStoreOrders()]);
-}
-
-function bindStoreActions() {
-  $("storeProductForm").addEventListener("submit", submitStoreProduct);
-  $("storeProductCancel").addEventListener("click", resetStoreProductForm);
-  $("storeCoverFile").addEventListener("change", (event) => {
-    const file = event.target.files && event.target.files[0];
-    if (file) uploadStoreCover(file);
-  });
-  $("btnRefreshStoreProducts").addEventListener("click", async () => {
-    await loadStoreProducts();
-    showToast("商品已刷新");
-  });
-  $("btnRefreshStoreOrders").addEventListener("click", async () => {
-    await Promise.all([loadStoreOrders(), loadStoreOverview()]);
-    showToast("订单已刷新");
-  });
-}
 
 function bindEvents() {
   bindAdminSectionNavigation();
   bindInviteActions();
   bindDashboardActions();
   bindSettingsActions();
-  bindStoreActions();
 }
 
 async function initPage() {
@@ -1785,7 +1146,6 @@ async function initPage() {
     fetchStats(),
     fetchLogs(),
     fetchOrchardOverview(),
-    refreshStoreData(),
   ]);
 }
 

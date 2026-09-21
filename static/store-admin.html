@@ -68,13 +68,17 @@
               <label
                 >商品名称<input name="name" required maxlength="120" /></label
               ><label
-                >商品 SKU<input name="sku" required maxlength="80" /></label
-              ><label
                 >规格<input
                   name="unit_label"
                   required
                   maxlength="80"
                   placeholder="如：5 斤 / 箱" /></label
+              ><label
+                >供货批次<select
+                  name="sales_batch_id"
+                  id="productBatch"
+                  required
+                ></select></label
               ><label
                 >价格（元）<input
                   name="price"
