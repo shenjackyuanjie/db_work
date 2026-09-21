@@ -1097,7 +1097,9 @@ S3 开工时还不知道「自测优先用独占 schema」这条约定（S4 起�
 
 ### 三个刻意的设计决定
 
-1. **新建默认 `status = 'on_sale'`**（偏离 Django 模型的 `draft` 默认）。理由：旧后台商品表单里**没有状态字段**，
+1. **新建默认 `status = 'on_sale'`**（偏离 Django 模型的 `draft` 默认）
+   —— **这是超集行为，不是契约**（compat 层 `/api/products` 的契约由夹具锁定，本决定只作用于 `/web/admin/**`）。
+   理由：旧后台商品表单里**没有状态字段**，
    而 `/api/products` 只返回 `on_sale`；若沿用 `draft`，管理员建完商品在商城页看不到，必然被当成 bug。
 2. **`origin` 从批次所属果园推出**（`concat_ws('', orchard.province, orchard.city, orchard.county)`）。
    理由：`citrus_product.origin` 是 `NOT NULL`，而旧后台表单没有这个字段——不推就会插库失败变 500。
@@ -1145,3 +1147,96 @@ S3 开工时还不知道「自测优先用独占 schema」这条约定（S4 起�
 2. **共享 schema 的种子会漂**：别的流重录夹具后 `seed.json` 变了，而我本地 `compat_test` 还是旧种子
    → 单测报 **9 条失败**（**不是代码回归**）。重灌种子即复原（126 passed / 0 failed）。
    规则：共享 schema 上的单测一红，先重灌种子再怀疑代码。
+
+---
+
+## S4-3 执行记录（前端后台三页 + 商城管理页）
+
+> 作者：W2-S4-2（同一 agent）。改动文件**只有这四个**：`db/static/{admin.js, admin.html, store-admin.js, store-admin.html}`。
+> 验收用独占 schema `compat_s3`、端口 11630。**前端代码未在真机浏览器走过**（见「未覆盖」）。
+
+### 逐端点替换表（27 处调用，全部实测 200）
+
+**`admin.js`（16 处）**：`/web/session/validate`、`/web/session/logout`、
+`/web/admin/{invitations/create, invitations/list, pending/list, pending/approve, pending/reject,
+users/list, set_admin, settings/get, settings/update, orchard/overview, dashboard/stats, dashboard/logs}`。
+
+**`store-admin.js`（11 处）**：`/web/admin/store/{analytics?days=, products, products/{id}, products/{id}/toggle,
+products/{id}/cover, orders, orders/status}`、`/web/admin/support`（GET 列表 / GET + `?username=` / POST 回复）、
+`/web/session/validate`。
+
+### 无 body 的 POST 实测（复刻 `postJson` 的「不发 body 也不发 Content-Type」）
+
+8 条读取端点全部 **200**：`validate`、`dashboard/stats`、`dashboard/logs`、`pending/list`、
+`invitations/list`、`users/list`、`settings/get`、`store/orders`。
+**这证明这些 handler 都没挂 `Json` extractor**（否则会 415/400 静默失败）。
+
+### 删除清单（实际动过的行）
+
+| 文件 | 删除 | 内容 |
+|---|---|---|
+| `admin.js` | **1123–1760（638 行，连续）** | commerce 段（1123–1451）+ store 段（1452–1760） |
+| `admin.js` | 2 处调用点 + 1 处常量 | `bindEvents()` 里的 `bindStoreActions();`、`initPage()` 里的 `refreshStoreData(),`、`ADMIN_SECTIONS` 里的 `"store"` |
+| `admin.html` | **216–345（130 行）** | 重复的 `<section data-admin-page="store">`（含其 KPI/商品表单/订单表） |
+
+行数：`admin.js` **1795 → 1154**、`admin.html` **681 → 550**。
+**残留自检**：commerce/store 段的 30+ 个标识符（`commerceAdminState`/`commerceRequest`/`bindCommerceActions`/
+`refreshCommerceData`/`storeAdminState`/`bindStoreActions`/`refreshStoreData`/`storeProductForm`/`storeCoverFile`…）
+在四个文件里**全部 0 命中**；`/user/` 与 `sku` 也 0 命中。
+
+> 批量删除用脚本按行范围做（638 行连续块无法用 `old_string` 复现），删完立刻回读边界 + `node --check`。
+
+### `node --check`
+
+`admin.js` **exit 0**、`store-admin.js` **exit 0**。
+
+### 100 倍误差复核（有实测证据，不是因为有别名就假设对）
+
+`store-admin.js:140` 的 `money(p.price_cents)` 会 `/100`，所以别名必须与原生字段一致：
+
+```
+列表首件: price='168.00'  price_cents=16800  -> 一致
+新建后:   price='168.00'  price_cents=16800  -> 一致（表单提交的是 price_cents=16800 分）
+最终复验: price='168.00'  price_cents=16800  -> ★ 100 倍误差 = 无
+```
+
+### SKU 按 D18 移除（4 处）
+
+`store-admin.js:139`（列表展示的 `${escape(p.sku)} · `）、`store-admin.js` 提交体里的 `sku:`、
+编辑回填的 `"sku",`、`store-admin.html` 的 `<input name="sku">`。四个文件现在**零 `sku` 命中**。
+
+### 我补掉的一个真实缺口：**批次选择器**
+
+`sales_batch_id` 是契约表的必填外键，而我第一次实测时 `store-admin.html` 的商品表单**根本没有批次字段**
+→ 提交必然 400 `必须选择销售批次（sales_batch_id）`（这是我探针漏传参数后顺带暴露的，但**前端确实缺**）。
+
+补法：`store-admin.html` 加 `<select name="sales_batch_id" id="productBatch" required>`；
+`store-admin.js` 新增 `loadBatches()` 并在 init 里 `await loadBatches()`，数据源用**公开的**
+`/api/supply-batches`（实测匿名/管理员/买家**三种身份都 200**）。
+**不能用 `/api/v1/farmer/batches`** —— 那是 `IsFarmer`，而管理员的 `is_admin` 与 `role` 正交，
+管理员可能是 `buyer` → 403，下拉框会空掉。
+
+最终复验（完全按前端时序）：`loadBatches` 拿到 3 个批次 → 提交 `sales_batch_id` → **200**，
+`batch='CGJ-2026-AY-002'`、`price_cents=16800`、列表可查、清理 200。
+
+### 与交接文档的三处偏离（都记录在案）
+
+1. **「时间一律输出秒」不适用于本批**：我的订单 `created_at` 要**毫秒**（`admin.js` 与 `store-admin.js`
+   都用 `new Date(Number(x))`），按「一律秒」改会显示 1970 年。判据表见交接文档 §8.2。
+   （实测：`orders[0].created_at=1789967035760 > 1e12` ✓；而邀请码 `expires_at=1790054495 < 4102444800` ✓ 是秒。）
+2. **请求侧不重命名字段**：因为后端同时接受旧名（`price_cents`/`stock_quantity`/`unit_label`/`cover_image`），
+   所以 `store-admin.html` 的 `name=` 与 JS 字符串**都不动**（`unit_label`/`price`/`stock_quantity`/`cover_image` 保持原样）。
+   这消掉了交接文档 §4.3 担心的「两边必须同时改」那一类风险。
+3. **`/web/admin/store/overview` 现在没有前端调用方**：原调用（`admin.js:1505`）随 admin.html 商城段一起删除；
+   `store-admin.js` 的 KPI 用的是 `analytics` 的 `summary`（实测 `{orders:2, revenue:25800, buyers:1, pending:1}`）。
+   端点本身仍可用（S3 实现），但**它已是 S5 的「未使用端点」候选**。
+
+### 未覆盖 / 诚实说明
+
+- **仍无真机浏览器走查**：本批证据是「按前端实际会发出的请求逐条打服务端（29 次请求、**0 个 5xx**）+ `node --check`」。
+  DOM 交互（`window.confirm`、select 回填、section 切换、`fetch` 上传）**未在浏览器点过**——按主线安排，
+  与 S4-1/S4-2 一起做一次整组人工走查。
+- `/web/admin/orchard/overview` 实测返回 `trees=0 legend=0 summary=false`：`compat_s3` 里
+  `app_orchard_trees` 没数据（种子只灌契约表，不灌 3D 沙盘表），**不是接口问题**。
+- 我在 `compat_s3` 留下：`s43_pending_a`（已批准）、`s43_pending_b`（已拒绝）两个账号、
+  1 条客服会话、1 条设置更新、若干订单状态改动。独占 schema，不影响其它流。
