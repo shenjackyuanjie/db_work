@@ -16,7 +16,10 @@
     status = dialog.querySelector(".support-status");
   let busy = false;
   async function request(options) {
-    const r = await fetch("/user/store/support", {
+    // /web/support 是**裸 JSON**（形如 `{messages: [{is_staff, created_at, content}]}`），
+    // **不要**套信封：本文件的 `request()` 是 `return b`（不解包），`refresh()` 直接读
+    // `b.messages`，套上 `{code,message,data}` 会 TypeError。错误分支读的是 `b.message`。
+    const r = await fetch("/web/support", {
       credentials: "same-origin",
       ...options,
     });
