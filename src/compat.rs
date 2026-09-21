@@ -14,7 +14,10 @@
 //! - `views_*` 各域路由，按 `api/urls.py` 逐条对应
 
 mod agent_service;
-mod auth;
+// `auth` 需要 crate 内可见：网页超集层（`src/web/session.rs`）要复用它做口令校验、
+// 令牌签发与三通道解析。**不要为了绕开可见性而在 web 层复制这份逻辑**——
+// 那是 ~170 行安全敏感代码的重复，一旦与契约层漂移，App 与网页的登录行为就会不一致。
+pub(crate) mod auth;
 mod dto;
 mod errors;
 mod ser;
