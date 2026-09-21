@@ -45,6 +45,18 @@ pub(crate) fn router() -> Router<AppState> {
     Router::new()
         .route("/orchard/overview", post(public_overview_handler))
         .route("/admin/orchard/overview", post(admin_overview_handler))
+        // 识别超集：**直接把现有 handler 挂上来**，不做包装、不重写推理，
+        // 响应形状因此天然与旧 `/api/citrus-disease-v2` 一致
+        // （`analyze.js:212` 读信封里的 `data`）。双写（`web_diagnosis_records` +
+        // 契约表 `disease_recognition_record`）已在 `handlers_ai/persistence.rs` 内完成，
+        // 这里只是把入口挪到 `/web` 前缀下。
+        //
+        // 这条路由曾因 `handlers_ai` 的可见性（E0603）被临时移除，现已恢复：
+        // 主线把 `handlers_ai` 的模块与再导出都开成了 `pub(crate)`。
+        .route(
+            "/citrus-disease-v2",
+            post(crate::server::handlers_ai::citrus_disease_advanced_handler),
+        )
 }
 
 #[derive(Debug, Deserialize)]
