@@ -455,15 +455,39 @@ rg -n '"(/store-images|/uploads|/media/recognition_records)' db\src
 
 **每次重灌后都是 125 passed / 0 failed。**
 
-> ⚠️ **更正：「126」是笔误，真实数字一直是 125。** G1 记录与本文件多处写的 `126 passed`
-> 是转录错误，已在下文改正。核对方式（**别再用裸数字对账**）：
-> `cargo test -- --test-threads=1 compat` 的过滤是**子串匹配**，命中的是
-> **124 条** `src/compat/**` 里的真测试（`support.rs:9` 那一条 `#[tokio::test]` 是**文档注释里的示例**，
-> 不是测试！）+ **1 条** `web::session::tests::cookie_name_matches_compat_reader`
-> （函数名里含 "compat" 才被捞进来）= **125**。
-> 在 `90c2998`（G1 之前）、`73ce4d1`、`fece92f`、以及当前工作树上**都是 125**，逐点核过。
-> 实测：在独立 schema `compat_g2` 上 `125 passed; 0 failed; 0 ignored; 43 filtered out`。
-> **所以「125 vs 126」不是回归**，不必再查。
+> ⚠️ **「126 → 125」的真相（这一节前后改过两次口径，以下是逐提交点核过后的定论）**
+>
+> `cargo test -- --test-threads=1 compat` 的过滤是**子串匹配**，命中两类：
+> ① `src/compat/**` 里的 **124 条**真测试 —— 注意 `tests/support.rs:9` 那条 `#[tokio::test]` 是
+> **文档注释里的用法示例**（`//!`），任何按 `#[test]` 计数的脚本都会多算它一条；
+> ② 函数名里含子串 `compat` 的**外部**测试。
+>
+> 而 ② 的成员在 G2 少了一个：
+>
+> | 提交点 | `src/user_routes/auth.rs` 的 `#[test]` | 名字含 `compat` 的测试 | `-- compat` 计数 |
+> |---|---|---|---|
+> | `73ce4d1`（G1 一单元，记录写 126/0） | **3** | `legacy_blake3_hash_remains_login_compatible_for_migration`（`user_routes/auth.rs:262`）+ `web/session.rs:689 cookie_name_matches_compat_reader` | **126** |
+> | `fece92f`（G1 二单元） | **3**（依旧在） | 同上两个（前者移到 `user_routes/auth.rs:156`） | **126** |
+> | `HEAD`（G2 之后） | 文件已删 | 只剩 `web/session.rs:689` 那一个 | **125** |
+>
+> 也就是说：**`126` 在 G1 期间是对的，不是笔误**；它变成 125 是 **G2 删 `src/user_routes/**` 时
+> 带走了 `legacy_blake3_hash_remains_login_compatible_for_migration`** —— 那条测试的名字里
+> 正好含子串 `compat`，于是过滤计数掉 1。
+>
+> **行为覆盖没有实质损失**（这也是为什么 `0 failed` 而没有人发现）：
+> blake3 兼容迁移由 `compat::auth::tests::legacy_blake3_hash_still_verifies` 覆盖，
+> cookie 的两个安全位由 `web::session::tests::cookie_is_http_only_and_optionally_secure` 覆盖
+> —— 这两条都在。
+>
+> **正确期望值 = 125**（G2 之后）。若日后想彻底摆脱这个口径麻烦，把过滤器写成路径限定
+> `cargo test -- --test-threads=1 compat::`（只跑契约层自己的测试）。
+>
+> **方法论教训（我们俩都栽在这上面）**：判断「某次改动有没有删掉测试」，**不能用
+> 「按 `#[test]` 计数 + 比较总数」**，也不能只 grep `git diff` 的 `-` 行（移动/重编号会让同一行
+> 既出现 `-` 又出现 `+`，只看 `-` 就会误判成「删了 3 条」）。**要么按提交点逐个数、要么看
+> `cargo test -- --list` 的实际集合差集。** 我第一次用的是 `git grep -c` 套在一段
+> `if ($c) {...} else {"0"}` 的判断里，命令本身写坏了、返回的「0」是假象 ——
+> 这正是 §0.1 的同一类错误：**验证手段本身没有被验证**。
 
 所以这条纪律的正确用法是**前置**：不要等它红了
 再去猜是回归还是漂移——先在开跑前重灌，让「红」重新变成有信息量的信号。
@@ -616,6 +640,57 @@ S5/G2 删掉 9 张旧表后抽取总量 91 → **82**，于是 `-Apply` 直接�
 各自有私有实现，不受影响）。
 
 **告警回到基线 14 条**（`compat/*` 9 + `inference/*` 4 + `web/support.rs` 1），**无新增**。
+
+### 验证（G2 收尾；执行者 = 只读验证代理 + 主线独立复核）
+
+| 项 | 期望 | 实测 | 判定 |
+|---|---|---|---|
+| `cargo check --all-targets` | exit 0；告警 14（基线） | **exit 0；14 条，无新增** | ✅ |
+| 单测（**独立 schema** `compat_g2`） | 125 passed / 0 failed | **125 passed; 0 failed; 0 ignored; 43 filtered out** | ✅ |
+| 全量契约回放（251 条） | 239 / 0 / 12 | **239 pass / 0 fail / 12 expected_deviation**，transport_error 0 | ✅ |
+| 被删路由 | GET 类 404；非 GET 类 405 | GET 5/5 = **404**；3 条 POST = **405**，对照组 `POST /definitely-not-a-route-xyz` 同为 405 | ✅（口径修正） |
+| 替代路由存活 | 非 404 | `/api/products` 200、`/api/orders` 401、`/web/system-status` 200、`/web/session/validate` 200、`POST /web/citrus-disease-v2` 401 | ✅ |
+| 页面外壳 | 200 | `/`、`/store`、`/cart`、`/admin`、`/store-admin`、`/analyze`、`/orchard-3d`、`/health`、`/api/v1/products` 全 200 | ✅ |
+| 三条静态通道 | DB 串 → 200 + `image/*` | 见下（修 P0 之后） | ✅ |
+| 前端残留 | 真实调用 0 | 10 命中 = 9 条注释/迁移说明表 + 1 条活调用 `/api/supply-batches`（未被碰） | ✅ |
+| O5 端到端 | 识别成功且 `task` +1 | **未能端到端验证**（环境阻塞）；SQL 层兜底通过 | ⚠️ |
+
+**三条静态通道的三段对照（P0 修复后的二进制）**
+
+- `/store-images/*`（匿名）：`citrus_product.cover_image_url = /store-images/919b9d66-….jpg`
+  → **200 `image/jpeg` 95239 B** == 磁盘 95239 B；反证（文件只在 `static/uploads/`、不在 `store_covers`）→ **404**。
+- `/media/recognition_records/*` 与 `/uploads/*`（需登录 + 归属校验）：
+  - **A 新表命中** → 200 `image/jpeg`（12905 B / 166846 B，与磁盘逐字节相等）
+  - **B 旧表命中**（UNION 第二支）→ **200**（这条是本次 UNION 改动的核心证据）
+  - **C 两表都无该行** → 404
+  - 他人会话 → 404；无会话 → 401
+- **C 态是决定性的**：同一时刻三个文件都在磁盘上，仍然 404 ⇒ 200 不是 `static/` 兜底端出来的。
+
+**O5 为什么没能端到端（如实记录，不粉饰）**
+
+`POST /web/citrus-disease-v2` 带会话 → **500**，响应原文：
+`{"code":500,"message":"高级识别失败: API Key 无效或已过期 (401): User not found."}`。
+`inference.mode = "onnx"` 只覆盖**一阶段门控**，二阶段仍走 OpenRouter，而 `config.toml` 里的 key
+已失效 → 识别在「落库 + 建任务」**之前**就失败，所以 `task` 5 → 5、
+`web_diagnosis_records` 也未写入。（`SELECT to_regclass('app_tasks')` = **NULL**，
+即「没写旧表」在新库里**结构性成立**。）
+
+替代证据（SQL 层兜底）：把源码里那段 `INSERT … SELECT` 原文放进 `psql` 事务执行 →
+`inserted_rows=1`、`user_id_matches=true`（正确解析到 `"user".id`）、10 列类型逐一对上契约表 `task`
+（`id uuid` / `user_id uuid` / `title varchar` / `description text` / `risk_level varchar` /
+`task_type varchar` / `source varchar` / `is_completed bool` / `created_at timestamptz` /
+`completed_at timestamptz`），随后 `ROLLBACK` 保持库干净。
+
+⇒ **代码与 SQL 已被证明确实指向契约表 `task`**；唯一没做到的是「一次真实识别」，
+阻塞在**环境**（OpenRouter Key 失效），不是代码。**这条要在续期 Key 后补做一次。**
+
+**工具链两条（顺带发现，非本次代码问题）**
+
+1. `pg_env.ps1 -Serve` 的运行目录原来只建 `onnx` / `static` 两个 junction，**缺 `storage`**
+   → stock `-Serve` 下 `/store-images/*` 与 `/media/*` 的第一落盘分支**必然假 404**。
+   已修（补 `storage` junction；目标目录不存在时自建）。这条恰好会让「静态通道验证」得到假失败。
+2. 服务在运行时 `cargo build` 会因 exe 被占用而失败（`failed to remove …ai-service.exe / os error 5`）
+   → 必须先 `-Serve -Stop` 再 build。
 
 ### 同一批文档
 
