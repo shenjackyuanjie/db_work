@@ -235,15 +235,62 @@ pub(crate) fn api_success(data: serde_json::Value) -> Response {
     api_response(StatusCode::OK, 200, "success", data)
 }
 
+/// 会话 token → username 的**双表桥**（过渡态）。
+///
+/// 先查新表 `auth_token`（网页会话 `/web/session/*` 写在这里），miss 再查正在退役的
+/// `app_sessions`（历史 `/user/*` 会话）。
+///
+/// 为什么需要它：`/web/*` 复用了 `handlers_ai` 等 legacy handler，而那些 handler 的鉴权
+/// 只认 `app_sessions`。不桥接的话「网页已登录」在这些端点上会变成 401——实测过：
+/// `POST /web/citrus-disease-v2` 带网页 cookie 曾返回 401 `Invalid token`。
+///
+/// **这是临时状态**：S5 统一会话表后只保留 `auth_token` 分支，届时删掉下面
+/// `app_sessions` 那段（见 `tests/fixtures/contract/W2_ADMIN_NOTES.md` 的 S5 待办）。
+///
+/// 注意两张表的过期列类型**不同**，不能混用绑定参数：
+/// `auth_token.expires_at` 是 `TIMESTAMPTZ`（用 SQL 里的 `now()` 比较）；
+/// `app_sessions.expires_at` 是 epoch 秒（用传入的 `now_secs` 比较）。
+pub(crate) async fn lookup_session_username(
+    pool: &PgPool,
+    token: &str,
+    now_secs: i64,
+) -> Result<Option<String>, sqlx::Error> {
+    // 新表优先。`auth_token.key` 是 UUID：非法 UUID 直接当 miss 而不报错
+    // （历史 `app_sessions` 的 token 也是 UUID 字符串，会顺着走到下面的分支）。
+    if let Ok(key) = uuid::Uuid::parse_str(token.trim()) {
+        let row = sqlx::query(
+            r#"SELECT u.username
+                 FROM auth_token t
+                 JOIN "user" u ON u.id = t.user_id
+                WHERE t.key = $1 AND t.expires_at > now()
+                LIMIT 1"#,
+        )
+        .bind(key)
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some(row) = row {
+            return Ok(row.try_get::<String, _>("username").ok());
+        }
+    }
+
+    let row = sqlx::query(
+        "SELECT username FROM app_sessions WHERE token = $1 AND expires_at > $2 LIMIT 1",
+    )
+    .bind(token)
+    .bind(now_secs)
+    .fetch_optional(pool)
+    .await?;
+
+    Ok(row.and_then(|row| row.try_get::<String, _>("username").ok()))
+}
+
+/// 兼容旧调用点：解析失败一律当 `None`（沿用原有的「吞掉错误」语义）。
 pub(crate) async fn username_by_token(state: &AppState, token: &str) -> Option<String> {
-    sqlx::query("SELECT username FROM app_sessions WHERE token = $1 AND expires_at > $2 LIMIT 1")
-        .bind(token)
-        .bind(crate::user_routes::now_secs() as i64)
-        .fetch_optional(&state.db)
+    lookup_session_username(&state.db, token, crate::user_routes::now_secs() as i64)
         .await
         .ok()
         .flatten()
-        .and_then(|r| r.try_get::<String, _>("username").ok())
 }
 
 fn time_label_from_millis(millis: u64) -> String {

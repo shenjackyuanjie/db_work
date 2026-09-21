@@ -36,9 +36,9 @@ pub(crate) use shared::{
     GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, TagTemperatureHumidityRequest,
     TaskRecord, TemperatureHumiditySample, UsernameQuery, api_response, api_success,
     build_temp_humidity_payload, classify_environment_risk, default_temperature_samples,
-    disease_treatment_text, normalize_recognition_record_image_path, now_millis,
-    risk_from_disease_name, save_recognition_record_image, save_store_cover_image, task_payload,
-    username_by_token,
+    disease_treatment_text, lookup_session_username, normalize_recognition_record_image_path,
+    now_millis, risk_from_disease_name, save_recognition_record_image, save_store_cover_image,
+    task_payload, username_by_token,
 };
 
 async fn log_request_path(req: Request<Body>, next: Next) -> Response {

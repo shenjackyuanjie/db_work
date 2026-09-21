@@ -199,29 +199,24 @@ pub(crate) async fn ensure_authenticated(
         }
     };
 
-    let now = now_secs() as i64;
-    let row = sqlx::query(
-        "SELECT username FROM app_sessions WHERE token = $1 AND expires_at > $2 LIMIT 1",
-    )
-    .bind(&token)
-    .bind(now)
-    .fetch_optional(&state.db)
-    .await
-    .map_err(|_| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            json!({ "error": "Session lookup failed" }),
-        )
-    })?;
+    // **双表桥**：先 `auth_token`（网页会话 `/web/session/*` 写在这里），
+    // miss 再查 `app_sessions`（历史 `/user/*` 会话）。理由与 S5 待办见
+    // `server/shared.rs::lookup_session_username` 的文档注释。
+    let username = crate::server::lookup_session_username(&state.db, &token, now_secs() as i64)
+        .await
+        .map_err(|err| {
+            tracing::error!(%err, "会话查询失败");
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                json!({ "error": "Session lookup failed" }),
+            )
+        })?;
 
-    let username = match row.and_then(|row| row.try_get::<String, _>("username").ok()) {
-        Some(name) => name,
-        None => {
-            return Err((
-                StatusCode::UNAUTHORIZED,
-                json!({ "error": "Invalid token" }),
-            ));
-        }
+    let Some(username) = username else {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            json!({ "error": "Invalid token" }),
+        ));
     };
 
     Ok((token, username))
