@@ -16,10 +16,19 @@ use tracing_subscriber::EnvFilter;
 use crate::client::OpenRouterClient;
 
 pub(crate) mod bootstrap;
+// 下面三个模块里的自研 `/api/*` handler 已在 S1 删掉路由（由契约层同名路径接管），
+// 因此整体变成死代码。用模块级 `allow(dead_code)` 压住告警，避免 60+ 条噪音淹没
+// 后续实施流的真实告警。
+//
+// **S5 删除这些代码时必须把下面三个 `#[allow(dead_code)]` 一起删掉**——
+// 让它们留在此处会让这三个模块里日后的真死代码隐身。
+#[allow(dead_code)]
 mod handlers_ai;
 mod handlers_commerce;
+#[allow(dead_code)]
 mod handlers_core;
 mod handlers_store;
+#[allow(dead_code)]
 mod shared;
 
 pub(crate) use shared::{
@@ -79,29 +88,15 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
             "/index.html",
             get(|| async { axum::response::Redirect::permanent("/") }),
         )
-        .route("/api/register", post(crate::user_routes::register_handler))
-        .route("/api/login", post(crate::user_routes::login_handler))
-        .route("/api/logout", post(crate::user_routes::logout_handler))
-        .route(
-            "/api/validate",
-            post(crate::user_routes::validate_token_handler),
-        )
-        .route("/api/user", get(handlers_core::api_user_handler))
+        // 会话类自研 `/api/*` 已删除：前端对它们**零引用**（`db/static/**` 的 9 个 js 与 8 个 html
+        // 全无命中），且已被契约层同名路径取代。`/api/user` 的角色由契约层 `GET /api/me` 承担。
+        // `/api/system-status` 保留到 S2 —— 它挂在网页登录页首屏，S2 会迁到 `/web/system-status`。
         .route(
             "/api/system-status",
             get(handlers_core::system_status_api_handler),
         )
-        .route("/api/home", get(handlers_core::home_api_handler))
-        .route(
-            "/api/growth-tracking",
-            get(handlers_core::growth_tracking_api_handler),
-        )
-        .route("/api/diagnose", get(handlers_core::diagnose_api_handler))
-        .route(
-            "/api/temperature-humidity",
-            get(handlers_core::temperature_humidity_api_handler)
-                .post(handlers_core::post_temperature_humidity_handler),
-        )
+        // `/api/home`、`/api/growth-tracking`、`/api/diagnose`、`/api/temperature-humidity`
+        // 的自研实现已删除，由契约层同名路径接管。
         .route("/admin", get(handlers_core::app_shell_handler))
         .route("/store-admin", get(handlers_core::app_shell_handler))
         .route("/store-admin.html", get(handlers_core::app_shell_handler))
@@ -138,46 +133,18 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
             "/orchard-3d.html",
             get(|| async { axum::response::Redirect::permanent("/orchard-3d") }),
         )
-        .route("/citrus/analyze", post(handlers_ai::citrus_analyze_handler))
-        .route(
-            "/api/citrus-disease",
-            post(handlers_ai::citrus_disease_handler),
-        )
+        // 自研 `/citrus/analyze` 与 `/api/citrus-disease` 已删除，由契约层接管。
+        // `-v2` 是**超集**（响应比 Django 多 6 个字段），暂留原路径，
+        // S2 迁到 `/web/citrus-disease-v2` 以免超集污染 `/api/**` 的逐字兼容目标。
         .route(
             "/api/citrus-disease-v2",
             post(handlers_ai::citrus_disease_advanced_handler),
         )
-        .route(
-            "/api/recognition-records",
-            get(handlers_core::recognition_records_api_handler),
-        )
-        .route(
-            "/api/disease-treatment",
-            get(handlers_core::disease_treatment_api_handler),
-        )
-        .route("/api/tasks", get(handlers_core::get_tasks_api_handler))
-        .route("/api/tasks/add", post(handlers_core::add_task_api_handler))
-        .route(
-            "/api/tasks/complete",
-            post(handlers_core::complete_task_api_handler),
-        )
-        .route(
-            "/api/tasks/generate/disease",
-            post(handlers_core::generate_task_from_disease_api_handler),
-        )
-        .route(
-            "/api/tasks/generate/environment",
-            post(handlers_core::generate_task_from_environment_api_handler),
-        )
-        .route(
-            "/api/health-point",
-            get(handlers_core::health_point_handler),
-        )
-        .route("/api/generate", get(handlers_ai::generate_handler))
-        .route(
-            "/api/generate/fertilization-plan",
-            post(handlers_ai::generate_fertilization_plan_handler),
-        )
+        // `/api/recognition-records`、`/api/disease-treatment`、`/api/tasks*`、`/api/health-point`、
+        // `/api/generate*` 的自研实现已删除，由契约层同名路径接管。
+        //
+        // `/api/commerce/*` 与 `/api/store/products` **暂留**：网页（含死代码 `commerce.js`）仍在用，
+        // 等 S4 前端切完、S5 统一退役。这些路径与契约层不冲突。
         .route(
             "/api/commerce/storefront",
             get(handlers_commerce::storefront_handler),
@@ -194,9 +161,16 @@ pub fn create_router(config: &crate::config::AppConfig, db: PgPool) -> anyhow::R
             "/store-images/{file_name}",
             get(handlers_store::store_cover_image_handler),
         )
-        // Django 契约兼容层：P0–P4 只挂在影子路径上做逐字节比对，
-        // P5 才提升到 /api/** 与 /api/v1/** 并删除旧自研 handler。
+        // ---- 契约层（Django 逐字兼容）----
+        // 双挂载：根上 `merge` 让 Django 的 `/api/**` 与 `/api/v1/**` 成为**正式路径**（生产用）；
+        // 同时保留 `/compat` 前缀，因为整套 L2 验证网
+        // （`scripts/replay_diff.py --base-url .../compat`）依赖它，丢了等于把回归网拆了。
+        // 两者路径不同，不会重复注册（axum 对同路径重复注册会直接 panic）。
+        .merge(crate::compat::router())
         .nest("/compat", crate::compat::router())
+        // ---- 超集层：Django 从未建模的运营能力 + 网页 cookie 会话（W2_PLAN §3）----
+        .nest("/web", crate::web::router())
+        // ---- 网页会话遗留路径：仍在用。等 S2 提供 `/web/session/*` 且 S4 切完前端后再删 ----
         .nest("/user", crate::user_routes::router(state.clone()))
         .route(
             "/media/recognition_records/{file_name}",

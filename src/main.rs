@@ -7,6 +7,7 @@ mod server;
 mod system_settings;
 mod user_routes;
 mod utils;
+mod web;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
