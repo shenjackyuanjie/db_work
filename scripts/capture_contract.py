@@ -182,6 +182,11 @@ def bootstrap_django():
     separated = break_tied_timestamps()
     print(f"[seed] 平局时间戳错开 {separated} 行（D12：让列表顺序确定化）")
 
+    # D16：同上，必须在 `dump_seed` 之前 —— 种子是回放的起点，起点若还带着 20 分钟的
+    # 到期窗口，回放只要晚于 20 分钟就会凭空多出一批假失败。
+    extended = extend_short_deadlines()
+    print(f"[seed] 短窗口截止时间推后 {extended} 行（D16：让回放不依赖墙钟）")
+
     ENV.update(
         {
             "django_version": django.get_version(),
@@ -1868,6 +1873,94 @@ def break_tied_timestamps() -> int:
     return changed
 
 
+# --------------------------------------------------------------------------------------
+# D16：把「短时间窗」推后，让回放不再依赖墙钟
+# --------------------------------------------------------------------------------------
+
+# 依据（实测，完整排查见 W20_NOTES.md 的 D16 一节）：
+# 蓝本里**唯一**对「20 分钟级」窗口做判定的地方是
+# `commerce_views._expire_stale_orders`：`status IN (pending_payment, pending_deposit)
+# AND expires_at <= now()` —— 命中就取消订单并**回滚库存**。
+# 而种子里只有 `ORD-DEMO-1003` 的 `expires_at = 种子时刻 + 20 分钟`。
+#
+# 其余截止时间要么余量很大、要么朝过去（`SalesBatch.close_at = +60 天`、
+# `open_at = -30 天`、`orchard.verified_at = -60 天`、`balance_due_at = close_at`…），
+# 不需要动。**朝过去的相对时间尤其不能动** —— 它们决定「某行是否落在 now-N 天的
+# 查询窗口里」，改了会直接改变被断言的列表内容。
+#
+# 安全性：`expires_at` 在夹具里已被 `$..expires_at` / `$..expiresAt` 全局屏蔽
+# （`scripts/diag_time_windows.py` 实测：出现 10 个用例、10 个已屏蔽），
+# 所以推后它不改变任何被断言的字段值。
+SHORT_WINDOW_LEAD_DAYS = 1  # 余量短于 1 天，视为「短窗口」
+SHORT_WINDOW_TARGET_DAYS = 30  # 推到种子时刻 + 30 天
+
+
+def extend_short_deadlines() -> int:
+    """把「即将到期」的挂单截止时间推后，返回改动的行数。
+
+    目的：让回放结果与「距录制 / 距灌种子多久」**无关**，把「录制与回放必须在
+    20 分钟内完成」这条隐含时限从协议里拿掉。不改 Django 的 `seed_demo_data`，
+    只作用于录制与回放用的测试库。
+
+    只处理 `pending_payment` / `pending_deposit` 的挂单 —— 已完成的订单不会被
+    `_expire_stale_orders` 触碰，改它们只是多余的副作用。
+    """
+    from datetime import timedelta
+
+    from django.apps import apps as django_apps
+    from django.utils import timezone
+
+    order = django_apps.get_model("api", "Order")
+    now = timezone.now()
+    horizon = now + timedelta(days=SHORT_WINDOW_LEAD_DAYS)
+    target = now + timedelta(days=SHORT_WINDOW_TARGET_DAYS)
+
+    return order.objects.filter(
+        status__in=[order.Status.PENDING_PAYMENT, order.Status.PENDING_DEPOSIT],
+        expires_at__lte=horizon,
+    ).update(expires_at=target)
+
+
+def _shortest_future_window(seed_payload):
+    """从 seed 里推导最短的「未来朝向截止时间」，返回 `(字段名, 值, 余量)` 或 None。
+
+    只统计**会被 now() 参与判定**的字段 —— `created_at` 之类是写入时刻、不是窗口。
+    报告用它来量化「回放对墙钟有多敏感」，而不是写死一句会过时的话。
+    订单按 `_expire_stale_orders` 的真实谓词过滤（只碰挂单）：已完成订单即使
+    `expires_at` 很近也不会被取消，把它们算进来会得出误导性的结论。
+    """
+    from datetime import datetime as _datetime
+
+    watched = {
+        ("api.order", "expires_at"),
+        ("api.order", "balance_due_at"),
+        ("api.salesbatch", "close_at"),
+        ("api.authtoken", "expires_at"),
+    }
+    pending_statuses = {"pending_payment", "pending_deposit"}
+
+    captured_at = _datetime.fromisoformat(seed_payload["_meta"]["captured_at"])
+    best = None
+    for obj in seed_payload["objects"]:
+        if obj["model"] == "api.order" and obj["fields"].get("status") not in pending_statuses:
+            continue
+        for field, value in obj["fields"].items():
+            if (obj["model"], field) not in watched or not isinstance(value, str):
+                continue
+            try:
+                parsed = _datetime.fromisoformat(value)
+            except ValueError:
+                continue
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=captured_at.tzinfo)
+            delta = parsed - captured_at
+            if delta.total_seconds() <= 0:
+                continue
+            if best is None or delta < best[2]:
+                best = (f"{obj['model']}.{field}", value, delta)
+    return best
+
+
 def run_capture(args, routes, refs):
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1899,12 +1992,14 @@ def run_capture(args, routes, refs):
         print(f"\n=== domain {domain}（read {len(reads)} / mutation {len(writes)}）===")
         for spec in reads:
             break_tied_timestamps()  # D12：保证列表顺序确定，见函数注释
+            extend_short_deadlines()  # D16：同样覆盖回放中新建的挂单
             rec = record_case(ctx, spec)
             records.append(rec)
             _log(domain, rec)
         for spec in writes:
             ctx.ensure_tokens()  # 登录/登出会动 token，写类前重建固定 token
             break_tied_timestamps()
+            extend_short_deadlines()
             rec = record_case(ctx, spec)
             ctx.mutation_order.append({
                 "order": len(ctx.mutation_order) + 1,
@@ -2091,8 +2186,9 @@ def dump_seed(out_dir: Path, name: str = "seed.json"):
             "total_rows": sum(counts.values()),
             "time_semantics": (
                 "绝对时间戳原样保存，不做任何 rebase。TraceEvent.evidence_hash 由 "
-                "occurred_at.isoformat()（含微秒）参与 sha256，因此夹具必须在 "
-                "captured_at 当天回放。"
+                "occurred_at.isoformat()（含微秒）参与 sha256。分钟级时限已被 "
+                "extend_short_deadlines() 消除（pending_* 挂单的 expires_at 推到 +30 天，"
+                "见 DEVIATIONS.md D16）；但**天级相对窗口仍存在**，跨天回放仍会漂。"
             ),
         },
         "objects": objects,
@@ -2642,7 +2738,7 @@ def build_report(index, domain_records, alias_results, seed_payload):
         "每步状态自然与录制时一致。")
     add("")
 
-    add("## 7. 确定性与「当天回放」约束")
+    add("## 7. 确定性与时间窗")
     add("")
     add("- LLM 全关：`AGENT_LLM_API_KEY=''`（早于 `import api.*`）-> "
         "`agent_service._LLM_VALID is False`；脚本启动断言，不成立即 abort。")
@@ -2651,14 +2747,24 @@ def build_report(index, domain_records, alias_results, seed_payload):
     add("- **不做时间 rebase**：`seed.json` 保存绝对时间戳。"
         "`TraceEvent.evidence_hash = sha256(规范化 JSON)`，输入含 "
         "`occurredAt.isoformat()` 的微秒，改写时间必然导致 `chainValid=false`。")
-    add(f"- 因此 **Rust 侧必须在 `{index['captured_at'][:10]}`（UTC 日历日）当天回放**。"
-        "跨天会改变：`SalesBatch.is_open`（`close_at` 过期）、"
-        "`_expire_stale_orders`（`expires_at <= now` 的待支付订单被自动取消）、"
-        "日报 `today_order_count`/`today_order_amount`、复购 `days_since`、"
-        "`fulfillment_risk_score` 的「发货窗口临近 / 已过预计发货日」分支。")
-    add(f"- 若必须跨天回放：请把 Rust 侧时钟冻结到 `{index['captured_at']}` 附近，"
-        "或按相同相对时间重建 seed，**不要改夹具**。")
-    add("- 用 `seed_signature`（`sha256(seed.json)`）识别夹具版本；回放前先校验签名。")
+
+    # D16：从种子数据**推导**最短的未来截止时间，而不是写死一句话。
+    shortest = _shortest_future_window(seed_payload)
+    if shortest is not None:
+        name, value, delta = shortest
+        add(f"- **分钟级时限已消除（D16）**：种子里最短的未来截止时间是 `{name}` = "
+            f"`{value}`（距 `captured_at` **+{delta.total_seconds() / 86400:.3f} 天**）。"
+            "`capture_contract.py::extend_short_deadlines()` 会把 `pending_*` 挂单的 "
+            "`expires_at` 推到 +30 天（不改 Django 的 `seed_demo_data`），"
+            "因此**回放不再有「录制后 N 分钟必须跑完」的时限**；"
+            "已用「种子放置 **44.5 分钟**后回放仍 239/0/12」+「手工令该挂单过期则"
+            "恰好复现 5 条 commerce 假失败」的阳性对照双重实证。")
+    add("- **但天级相对窗口仍在**，跨天回放仍会漂："
+        "`agent_service` 日报的 `created_at >= now - 24h`、复购 `days_since`、"
+        "`timezone.localdate()` 的当日统计、`SalesBatch.close_at`（+60 天，余量很大）。"
+        "要彻底消除需冻结 Rust 侧时钟"
+        "（`views_commerce.rs` 已有 `COMPAT_REPLAY_NOW` 开关，但只有商城域实现）。")
+    add(f"- 用 `seed_signature`（`sha256(seed.json)`）识别夹具版本；回放前先校验签名。")
     add(f"- 临时媒体目录：`{MEDIA_TMP}`（仓库外，跑完自动清理）。"
         f"`navel_backend_git/media/` 与 `db.sqlite3` 全程未被写入"
         f"（脚本前后对 `db.sqlite3` 做 mtime+size 双检，并把 `real_db_sha256` "

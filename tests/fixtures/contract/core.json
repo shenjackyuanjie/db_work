@@ -1,7 +1,7 @@
 {
   "domain": "core",
-  "captured_at": "2026-09-21T04:38:06+00:00",
-  "seed_signature": "sha256:99a4cdbbce0d86efa32ad5fff6386c4e38f85f7c80ce9df54316ba6c97dc6b29",
+  "captured_at": "2026-09-21T05:34:01+00:00",
+  "seed_signature": "sha256:e274595ca713778b4ef3c7ccc6b9db2f28fd1a21e31af16fda3136421b5b9211",
   "environment": {
     "django_version": "5.0.14",
     "drf_version": "3.15.2",
@@ -51,9 +51,9 @@
           "DiagnosisStatus": "正常",
           "GrowthStatus": "涨果期"
         },
-        "timestamp": 1789965492044
+        "timestamp": 1789968847184
       },
-      "raw_body_sha256": "18e8ee5006a24cadb1584d179f3fe6ad2d1f1db10fa7db5bbd3ff03171509066",
+      "raw_body_sha256": "170de1d5495c876998c5828c31077e7e81d10ab3783dbafcd4bc502a2353b013",
       "raw_body_bytes": 312,
       "normalize": [
         "$.timestamp",
@@ -258,9 +258,9 @@
           "diameter": 7.2,
           "ratio": 1.2
         },
-        "timestamp": 1789965492053
+        "timestamp": 1789968847191
       },
-      "raw_body_sha256": "bd5440be85411c394b9448fc9c36a64e6050a4dd36dbd8e558837d0fda47b4ac",
+      "raw_body_sha256": "57554cb872121b7f9b186ca47dec9435b2e1a7f293487cf437f12569ce409a45",
       "raw_body_bytes": 413,
       "normalize": [
         "$.timestamp",
@@ -398,29 +398,29 @@
           "getList": {
             "list": [
               {
-                "id": "653f39d9-f30c-4a81-ac77-cff111c67019",
+                "id": "8028ea5b-9d9d-42ea-bb01-81ae4b230940",
                 "title": "氮元素含量稳定",
                 "content": "当前氮含量水平有利于叶片生长，维持现状即可",
-                "created_at": "2026-09-21T04:38:12.061309Z"
+                "created_at": "2026-09-21T05:34:07.197606Z"
               },
               {
-                "id": "fe583f62-1c6f-4cdc-b64d-56c4d5782854",
+                "id": "de4b1348-a95a-4586-83a2-172e8b5eac83",
                 "title": "钾元素缺乏",
                 "content": "第5区果树钾元素偏低，建议补充钾肥提高果实品质",
-                "created_at": "2026-09-21T04:38:12.061309Z"
+                "created_at": "2026-09-21T05:34:07.197606Z"
               },
               {
-                "id": "c2781511-9ade-46eb-890d-6d2201a4a38f",
+                "id": "1440316f-d8ff-4a01-a40c-bc5fb9ef345c",
                 "title": "钙镁元素平衡",
                 "content": "当前钙镁比例适宜，有利于果实发育",
-                "created_at": "2026-09-21T04:38:12.061309Z"
+                "created_at": "2026-09-21T05:34:07.197606Z"
               }
             ]
           }
         },
-        "timestamp": 1789965492062
+        "timestamp": 1789968847198
       },
-      "raw_body_sha256": "1b24d9982dec039e274af8fa9c204d57b867a3f815064eaece81c6870a670475",
+      "raw_body_sha256": "cf395dfcc16042dbc20234063ce2695cc1e7ceb7a3a23c82fa6061ecc45bb6f8",
       "raw_body_bytes": 784,
       "normalize": [
         "$.timestamp",
@@ -568,7 +568,7 @@
         "data": {
           "temperatureHistory": [
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 26.2
             },
             {
@@ -576,7 +576,7 @@
               "value": 25.9
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 25.6
             },
             {
@@ -584,7 +584,7 @@
               "value": 25.3
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 25.0
             },
             {
@@ -592,7 +592,7 @@
               "value": 24.7
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 24.4
             },
             {
@@ -600,17 +600,17 @@
               "value": 24.1
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 23.8
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 23.5
             }
           ],
           "humidityHistory": [
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 69.0
             },
             {
@@ -618,7 +618,7 @@
               "value": 65.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 77.0
             },
             {
@@ -626,7 +626,7 @@
               "value": 73.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 69.0
             },
             {
@@ -634,7 +634,7 @@
               "value": 65.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 77.0
             },
             {
@@ -642,11 +642,11 @@
               "value": 73.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 69.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 65.0
             }
           ],
@@ -656,68 +656,68 @@
             {
               "temperature": 26.2,
               "humidity": 69.0,
-              "record_time": "2026-09-12T02:38:09.497781+00:00",
+              "record_time": "2026-09-12T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 25.9,
               "humidity": 65.0,
-              "record_time": "2026-09-13T02:38:09.497781+00:00",
+              "record_time": "2026-09-13T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 25.6,
               "humidity": 77.0,
-              "record_time": "2026-09-14T02:38:09.497781+00:00",
+              "record_time": "2026-09-14T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 25.3,
               "humidity": 73.0,
-              "record_time": "2026-09-15T02:38:09.497781+00:00",
+              "record_time": "2026-09-15T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 25.0,
               "humidity": 69.0,
-              "record_time": "2026-09-16T02:38:09.497781+00:00",
+              "record_time": "2026-09-16T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 24.7,
               "humidity": 65.0,
-              "record_time": "2026-09-17T02:38:09.496782+00:00",
+              "record_time": "2026-09-17T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 24.4,
               "humidity": 77.0,
-              "record_time": "2026-09-18T02:38:09.496782+00:00",
+              "record_time": "2026-09-18T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 24.1,
               "humidity": 73.0,
-              "record_time": "2026-09-19T02:38:09.496782+00:00",
+              "record_time": "2026-09-19T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 23.8,
               "humidity": 69.0,
-              "record_time": "2026-09-20T02:38:09.496782+00:00",
+              "record_time": "2026-09-20T03:34:04.813944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 23.5,
               "humidity": 65.0,
-              "record_time": "2026-09-21T02:38:09.496782+00:00",
+              "record_time": "2026-09-21T03:34:04.813944+00:00",
               "tag_serial_number": "0x4a80"
             }
           ]
         },
-        "timestamp": 1789965492069
+        "timestamp": 1789968847206
       },
-      "raw_body_sha256": "695c49ab34c3d4ea937df581038414c2d3e0e4fef7de8455ec86303415f9d80d",
+      "raw_body_sha256": "a4fbca4ab89d54c8e2c022002b8e078e0d3da25c567dc7dd78d02ce8c20048e8",
       "raw_body_bytes": 1987,
       "normalize": [
         "$.timestamp",
@@ -912,9 +912,9 @@
         "data": {
           "textii": "针对赣南脐橙，建议实施\"测土配方、分期精准\"的施肥策略。基肥以腐熟有机肥（如羊粪、饼肥）为主，秋季深施，改良酸性红壤。追肥分三次：春梢期以高氮复合肥促梢保花；壮果期增施钾肥（如硫酸钾），配施磷与中微量元素，提升糖度与果皮光泽；采果前补施速效肥恢复树势。全年注重叶片营养诊断，结合土壤检测结果灵活调整，确保氮、磷、钾与钙、镁、硼等元素平衡，避免偏施氮肥。坚持生草栽培，保墒增肥。"
         },
-        "timestamp": 1789965492079
+        "timestamp": 1789968847215
       },
-      "raw_body_sha256": "18dacb8c1d100f05183e0affcc1a9e9d964ac1390701254a09b431e575019772",
+      "raw_body_sha256": "01d32258f3d363f53d853c7755b4bb06b316bf0525a307c73613de58377f5bdc",
       "raw_body_bytes": 641,
       "normalize": [
         "$.timestamp",
@@ -1047,9 +1047,9 @@
           "disease_name": "黄龙病",
           "treatment": "先杀虫，后砍树：发现病树后，先全园喷洒噻虫嗪、联苯菊酯等药剂杀灭柑橘木虱。间隔3-5天后，将病树连根挖除或砍除，并集中烧毁。砍除时需对树蔸做毁蔸处理（如划十字、涂草甘膦、覆土），防止复发。"
         },
-        "timestamp": 1789965492084
+        "timestamp": 1789968847220
       },
-      "raw_body_sha256": "c708448ea2a5f3db292fdc28c4557ba59eb953abf3362ab2188ca05b5f038c23",
+      "raw_body_sha256": "770d1075bfcce51be8204dcba39aa74b53b39f299b328b1858cd9b15c470acba",
       "raw_body_bytes": 385,
       "normalize": [
         "$.timestamp",
@@ -1118,9 +1118,9 @@
           "disease_name": "不存在的病害",
           "treatment": "暂无治理建议"
         },
-        "timestamp": 1789965492086
+        "timestamp": 1789968847222
       },
-      "raw_body_sha256": "5c99582673e47b2a4300b04b34d3a06f7f5349ccc0ecd8cb4bf9989b857e0805",
+      "raw_body_sha256": "509c9b5c3e76ac7496b8e29ea31b192c7fb1c7bdd9124540ab8db32a73e16582",
       "raw_body_bytes": 136,
       "normalize": [
         "$.timestamp",
@@ -1184,9 +1184,9 @@
         "code": 400,
         "message": "disease_name parameter is required",
         "data": null,
-        "timestamp": 1789965492089
+        "timestamp": 1789968847225
       },
-      "raw_body_sha256": "5b48102ce0cb6064e78d1676dc639874d970b08ac184c22308381c8914dff2d0",
+      "raw_body_sha256": "ae7827d0268834975b12166ba7b1447acc10c5403110b311c9f521bea93dad17",
       "raw_body_bytes": 97,
       "normalize": [
         "$.timestamp",
@@ -1317,42 +1317,42 @@
         "message": "success",
         "data": [
           {
-            "id": "e90b780b-fe8f-48ac-8c34-c28e8cae079e",
-            "title": "B区坡地黄龙病复核",
-            "description": "B区坡地识别到黄龙病，需巡园复核并安排木虱防治。",
-            "risk_level": "高风险",
-            "task_type": "病虫害防治",
-            "source": "疾病识别",
-            "is_completed": false,
-            "created_at": "2026-09-21T04:38:09.498785Z",
-            "completed_at": null
-          },
-          {
-            "id": "a14b6888-82b9-4c7a-ac38-00e126b860d5",
+            "id": "fd12cd9a-6a3c-4f08-a9ae-ce1a9bf02b8a",
             "title": "果园日常巡园",
             "description": "常规巡园记录生长状态。",
             "risk_level": "低风险",
             "task_type": "日常巡园",
             "source": "用户",
             "is_completed": true,
-            "created_at": "2026-09-21T04:38:09.498784Z",
+            "created_at": "2026-09-21T05:34:04.815946Z",
             "completed_at": null
           },
           {
-            "id": "671db181-1668-48ab-88a7-3879f1e91323",
+            "id": "cbf07542-ca19-4c21-bed7-8bb763a3e6d6",
             "title": "采摘期前糖度抽检",
             "description": "对A区批次做采前糖度抽检。",
             "risk_level": "中风险",
             "task_type": "品质抽检",
             "source": "系统",
             "is_completed": false,
-            "created_at": "2026-09-21T04:38:09.498783Z",
+            "created_at": "2026-09-21T05:34:04.815945Z",
+            "completed_at": null
+          },
+          {
+            "id": "a07be0b5-f8fa-44bc-9b75-43962482edeb",
+            "title": "B区坡地黄龙病复核",
+            "description": "B区坡地识别到黄龙病，需巡园复核并安排木虱防治。",
+            "risk_level": "高风险",
+            "task_type": "病虫害防治",
+            "source": "疾病识别",
+            "is_completed": false,
+            "created_at": "2026-09-21T05:34:04.815944Z",
             "completed_at": null
           }
         ],
-        "timestamp": 1789965492096
+        "timestamp": 1789968847231
       },
-      "raw_body_sha256": "bf53709fc659cc39f4aba656563a039e8c1cf534983618e24d4e45a2acaed1fc",
+      "raw_body_sha256": "484f49d0d2de5637133a7869bf416090a61acbe71925209b4bf6c10e2a7d63ff",
       "raw_body_bytes": 966,
       "normalize": [
         "$.timestamp",
@@ -1550,30 +1550,30 @@
         "data": {
           "records": [
             {
-              "id": "44ecff8d-a2f0-49ef-b83e-333c0a699de9",
+              "id": "7c324822-29d2-48a6-ae82-963ff6ed9849",
               "imagePath": "",
               "diseaseName": "健康果树",
               "area": "A区",
               "riskLevel": "正常",
               "recognitionDate": "2026-09-19",
               "confidence": 96.5,
-              "created_at": "2026-09-21T04:38:09.497781Z"
+              "created_at": "2026-09-21T05:34:04.815944Z"
             },
             {
-              "id": "3665f381-8296-48ee-9ae4-0810482b59dc",
+              "id": "e30993be-3461-4430-813f-1162205c1c3c",
               "imagePath": "",
               "diseaseName": "黄龙病",
               "area": "B区坡地",
               "riskLevel": "高风险",
               "recognitionDate": "2026-09-20",
               "confidence": 88.2,
-              "created_at": "2026-09-21T04:38:09.497781Z"
+              "created_at": "2026-09-21T05:34:04.815944Z"
             }
           ]
         },
-        "timestamp": 1789965492108
+        "timestamp": 1789968847242
       },
-      "raw_body_sha256": "68a23c77bd52375875c3575123d4b079c1f48eea327a2ad3fbb1c247c818ade7",
+      "raw_body_sha256": "d9772677f6bccaf91a3c778d417a1457857bba960aeb4bc5b8a35dabb3ab815d",
       "raw_body_bytes": 519,
       "normalize": [
         "$.timestamp",
@@ -1723,9 +1723,9 @@
           ]
         },
         "data": null,
-        "timestamp": 1789965492116
+        "timestamp": 1789968847248
       },
-      "raw_body_sha256": "e0a073812dbe357c925f55f54e17a77943768dcaece7de8c90710a6fe2d60b0f",
+      "raw_body_sha256": "1f2df05b16b8e37abfeba6cdca8650b0fd40e761d5b7688c9a5006c810c0ee07",
       "raw_body_bytes": 142,
       "normalize": [
         "$.timestamp",
@@ -1917,9 +1917,9 @@
         "code": 400,
         "message": "task_id is required",
         "data": null,
-        "timestamp": 1789965492127
+        "timestamp": 1789968847255
       },
-      "raw_body_sha256": "b2dc99b04cef6b3916a996f0334d4eb5e4012d62c97fb0afa26e2464ecd77c9b",
+      "raw_body_sha256": "5f73aac44a9d8fcc512d587adf026dfb8cee2cb3ab962f8e2b364ec90e3a67ab",
       "raw_body_bytes": 82,
       "normalize": [
         "$.timestamp",
@@ -1985,9 +1985,9 @@
         "code": 404,
         "message": "Task not found",
         "data": null,
-        "timestamp": 1789965492130
+        "timestamp": 1789968847257
       },
-      "raw_body_sha256": "42fe77e97590fdd40cd85e180b6b1df41e834b380ee06bc59903fd182a0f0d6e",
+      "raw_body_sha256": "962aabc103b7f38571ee28ff542037d277496b43c83a4e99766fc8ca923f82cf",
       "raw_body_bytes": 77,
       "normalize": [
         "$.timestamp",
@@ -2051,9 +2051,9 @@
         "code": 400,
         "message": "disease_name is required",
         "data": null,
-        "timestamp": 1789965492133
+        "timestamp": 1789968847260
       },
-      "raw_body_sha256": "cd624f9b5974d75f5925427d09343ca8fde351e46f06195537d42c639e8e98ea",
+      "raw_body_sha256": "20ac87597c3ac66ab30c129530ef3cdb4c3acf2437e92f7fa4b0db656e8432f1",
       "raw_body_bytes": 87,
       "normalize": [
         "$.timestamp",
@@ -2117,9 +2117,9 @@
         "code": 400,
         "message": "temperature and humidity are required",
         "data": null,
-        "timestamp": 1789965492135
+        "timestamp": 1789968847262
       },
-      "raw_body_sha256": "84612bd574526925a02cce51246120d2ce977ebde435088ac9f061540b03c007",
+      "raw_body_sha256": "508ddc89db379a49267d0bafa708d67249dde1a3d2e835e2ea9a0cd40b946884",
       "raw_body_bytes": 100,
       "normalize": [
         "$.timestamp",
@@ -2183,9 +2183,9 @@
         "code": 400,
         "message": "No image provided",
         "data": null,
-        "timestamp": 1789965492137
+        "timestamp": 1789968847265
       },
-      "raw_body_sha256": "346fb92d35b684e66799468db747e7e3de4e8454732df70add47d9151813b3ca",
+      "raw_body_sha256": "bc14d314bfafe20b59c811452759b6e7ce6d28d2caf67ecb596c42d796ad3e2a",
       "raw_body_bytes": 80,
       "normalize": [
         "$.timestamp",
@@ -2313,9 +2313,9 @@
         "code": 500,
         "message": "name 'FertilizationPlanRequestSerializer' is not defined",
         "data": null,
-        "timestamp": 1789965492142
+        "timestamp": 1789968847270
       },
-      "raw_body_sha256": "04a7846c56b969b34edb3583bd7a6f97b399e7dedf6e2d3ac3413f897615df61",
+      "raw_body_sha256": "bf78ac291d81e87ca8ddfbc75593d6f1868afff197934f214772d8f4b786598a",
       "raw_body_bytes": 119,
       "normalize": [
         "$.timestamp",
@@ -2383,9 +2383,9 @@
         "code": 400,
         "message": "temperature and humidity must be numbers",
         "data": null,
-        "timestamp": 1789965492163
+        "timestamp": 1789968847288
       },
-      "raw_body_sha256": "7b289c23ab71b13da60a2b9108a6c327131a03100303a1686da7bf84ab69c5fa",
+      "raw_body_sha256": "5d0d63c9aa52d5b57f3ae1308b31a6ff0fc35edd8c516bff64ab59b3613d0151",
       "raw_body_bytes": 103,
       "normalize": [
         "$.timestamp",
@@ -2452,9 +2452,9 @@
         "code": 400,
         "message": "temperature or humidity is outside the supported range",
         "data": null,
-        "timestamp": 1789965492165
+        "timestamp": 1789968847292
       },
-      "raw_body_sha256": "6039508ffed03dad75deedf458ab649b45568355d04895c01de1d49f9e01ffe0",
+      "raw_body_sha256": "f5cb9e02c4ea3b892c51a2733eab0b40c51ae1eb2ab27255608f85d8ea6ba5de",
       "raw_body_bytes": 117,
       "normalize": [
         "$.timestamp",
@@ -2522,9 +2522,9 @@
         "code": 400,
         "message": "record_time must be ISO 8601",
         "data": null,
-        "timestamp": 1789965492168
+        "timestamp": 1789968847294
       },
-      "raw_body_sha256": "c8574312296b132913674af12ea2f311e9e02ba541fc47dd2d6a87739543e162",
+      "raw_body_sha256": "c69b46be5f214bd265186ff2e200b2e1968c9341ed62fd8c47687ba5fa6f2a34",
       "raw_body_bytes": 91,
       "normalize": [
         "$.timestamp",
@@ -2595,7 +2595,7 @@
         "data": {
           "temperatureHistory": [
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 25.9
             },
             {
@@ -2603,7 +2603,7 @@
               "value": 27.5
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 25.6
             },
             {
@@ -2611,7 +2611,7 @@
               "value": 25.3
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 25.0
             },
             {
@@ -2619,7 +2619,7 @@
               "value": 24.7
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 24.4
             },
             {
@@ -2627,17 +2627,17 @@
               "value": 24.1
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 23.8
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 23.5
             }
           ],
           "humidityHistory": [
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 65.0
             },
             {
@@ -2645,7 +2645,7 @@
               "value": 88.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 77.0
             },
             {
@@ -2653,7 +2653,7 @@
               "value": 73.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 69.0
             },
             {
@@ -2661,7 +2661,7 @@
               "value": 65.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 77.0
             },
             {
@@ -2669,11 +2669,11 @@
               "value": 73.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 69.0
             },
             {
-              "timestamp": "02:38",
+              "timestamp": "03:34",
               "value": 65.0
             }
           ],
@@ -2683,7 +2683,7 @@
             {
               "temperature": 25.9,
               "humidity": 65.0,
-              "record_time": "2026-09-13T02:38:09.497781+00:00",
+              "record_time": "2026-09-13T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
@@ -2695,56 +2695,56 @@
             {
               "temperature": 25.6,
               "humidity": 77.0,
-              "record_time": "2026-09-14T02:38:09.497781+00:00",
+              "record_time": "2026-09-14T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 25.3,
               "humidity": 73.0,
-              "record_time": "2026-09-15T02:38:09.497781+00:00",
+              "record_time": "2026-09-15T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 25.0,
               "humidity": 69.0,
-              "record_time": "2026-09-16T02:38:09.497781+00:00",
+              "record_time": "2026-09-16T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 24.7,
               "humidity": 65.0,
-              "record_time": "2026-09-17T02:38:09.496782+00:00",
+              "record_time": "2026-09-17T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 24.4,
               "humidity": 77.0,
-              "record_time": "2026-09-18T02:38:09.496782+00:00",
+              "record_time": "2026-09-18T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 24.1,
               "humidity": 73.0,
-              "record_time": "2026-09-19T02:38:09.496782+00:00",
+              "record_time": "2026-09-19T03:34:04.814944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 23.8,
               "humidity": 69.0,
-              "record_time": "2026-09-20T02:38:09.496782+00:00",
+              "record_time": "2026-09-20T03:34:04.813944+00:00",
               "tag_serial_number": "0x4a80"
             },
             {
               "temperature": 23.5,
               "humidity": 65.0,
-              "record_time": "2026-09-21T02:38:09.496782+00:00",
+              "record_time": "2026-09-21T03:34:04.813944+00:00",
               "tag_serial_number": "0x4a80"
             }
           ]
         },
-        "timestamp": 1789965492174
+        "timestamp": 1789968847300
       },
-      "raw_body_sha256": "c73d6e98057cfc6c78aa5790935ca874c50b3ae42f76d0e61dd5711ed210f66e",
+      "raw_body_sha256": "59147164d14f336ea9ceae2185e5dcc8f3ecfcee8785cb5ca1bd93e1b8d4fa1c",
       "raw_body_bytes": 2020,
       "normalize": [
         "$.timestamp",
@@ -2817,19 +2817,19 @@
         "code": 200,
         "message": "Task created successfully",
         "data": {
-          "id": "46cafc4f-f810-4381-afc0-fd9ed3c7c079",
+          "id": "dae31ecd-c486-4c5e-9851-ada5de7b6cc4",
           "title": "QA 巡园记录",
           "description": "契约基准用例生成的巡园任务",
           "risk_level": "低风险",
           "task_type": "日常巡园",
           "source": "用户",
           "is_completed": false,
-          "created_at": "2026-09-21T04:38:12.182086Z",
+          "created_at": "2026-09-21T05:34:07.308606Z",
           "completed_at": null
         },
-        "timestamp": 1789965492182
+        "timestamp": 1789968847308
       },
-      "raw_body_sha256": "e0f0e5b6b8eaa2e993afcdabb2bcd0148bb2675672e19aedf095cbdddeed313d",
+      "raw_body_sha256": "a77df9e3d8df6c79aef9f1fca27fb7191d66f6d0fa6466373fb8243b997aa4f0",
       "raw_body_bytes": 365,
       "normalize": [
         "$.timestamp",
@@ -2889,7 +2889,7 @@
       },
       "query": {},
       "body": {
-        "task_id": "46cafc4f-f810-4381-afc0-fd9ed3c7c079"
+        "task_id": "dae31ecd-c486-4c5e-9851-ada5de7b6cc4"
       },
       "upload": null,
       "path_params": {},
@@ -2899,19 +2899,19 @@
         "code": 200,
         "message": "Task completed successfully",
         "data": {
-          "id": "46cafc4f-f810-4381-afc0-fd9ed3c7c079",
+          "id": "dae31ecd-c486-4c5e-9851-ada5de7b6cc4",
           "title": "QA 巡园记录",
           "description": "契约基准用例生成的巡园任务",
           "risk_level": "低风险",
           "task_type": "日常巡园",
           "source": "用户",
           "is_completed": true,
-          "created_at": "2026-09-21T04:38:12.182086Z",
-          "completed_at": "2026-09-21T12:38:12.190086Z"
+          "created_at": "2026-09-21T05:34:07.308606Z",
+          "completed_at": "2026-09-21T13:34:07.314609Z"
         },
-        "timestamp": 1789965492193
+        "timestamp": 1789968847316
       },
-      "raw_body_sha256": "1853855273b68917b7d03b404186a92ef7ba0d8473d760a8100ad371d2231db8",
+      "raw_body_sha256": "9a7952ddbccf5c2cf584bdfbd101a4f672d2fe3634704feb42c22a347b71cad8",
       "raw_body_bytes": 391,
       "normalize": [
         "$.timestamp",
@@ -2981,19 +2981,19 @@
         "code": 200,
         "message": "Task created successfully",
         "data": {
-          "id": "7128b91e-82df-40ea-91fc-3ec82c8a2f3b",
+          "id": "656c4f12-cb7f-4499-9daf-33b5ca18486d",
           "title": "溃疡病治理",
           "description": "采用\"药-剪-药\"策略：首先使用铜制剂（如噻菌铜、春雷·王铜）全面喷雾杀菌。然后彻底剪除病枝、病叶、病果并集中销毁，修剪工具需消毒。修剪完成后，再喷一次杀菌剂进行保护，7-10天后可再施一次。同时注意防治潜叶蛾等虫媒，减少传播伤口。",
           "risk_level": "高风险",
           "task_type": "疾病识别",
           "source": "自动生成",
           "is_completed": false,
-          "created_at": "2026-09-21T04:38:12.201087Z",
+          "created_at": "2026-09-21T05:34:07.321608Z",
           "completed_at": null
         },
-        "timestamp": 1789965492202
+        "timestamp": 1789968847322
       },
-      "raw_body_sha256": "bf95834f4e145a58f44b491fd297dac36ffbeb9261ab34ad0d238fb5089adcf1",
+      "raw_body_sha256": "4ad205da6e737db28009c2f97124ef2e84e9b53df16b0df1b4dbce3bdbd82651",
       "raw_body_bytes": 665,
       "normalize": [
         "$.timestamp",
@@ -3063,9 +3063,9 @@
         "code": 200,
         "message": "No task needed for healthy tree",
         "data": null,
-        "timestamp": 1789965492209
+        "timestamp": 1789968847327
       },
-      "raw_body_sha256": "270e082e48813db3815b2dab4491f06d6f919adc198b9d7c850dbe3715c67720",
+      "raw_body_sha256": "d44529822392587a722c213dbd669bbe6d15e54469103fe2f26ac8bbfd1f95f2",
       "raw_body_bytes": 94,
       "normalize": [
         "$.timestamp",
@@ -3132,19 +3132,19 @@
         "code": 200,
         "message": "Task created successfully",
         "data": {
-          "id": "836dacb8-4a3a-421f-b2a6-90733ab07543",
+          "id": "9cf944e2-567c-4ddb-a5ac-b9e585228ab8",
           "title": "环境监测-高风险",
           "description": "加强果园巡查，每7-10天喷施木虱防治药剂（如噻虫嗪、高效氯氟氰菊酯）；发现病树立即标记并挖除，防止传播。",
           "risk_level": "高风险",
           "task_type": "温湿度监测",
           "source": "自动生成",
           "is_completed": false,
-          "created_at": "2026-09-21T04:38:12.215086Z",
+          "created_at": "2026-09-21T05:34:07.332606Z",
           "completed_at": null
         },
-        "timestamp": 1789965492215
+        "timestamp": 1789968847332
       },
-      "raw_body_sha256": "0236bb19271f3657ada3a4908c75cc90d21f0e33cf657c9fb85a54b6325857cc",
+      "raw_body_sha256": "474eea4506b8048eaca93867c523ce618d45b54a33321ff30f8651083ebe20e9",
       "raw_body_bytes": 493,
       "normalize": [
         "$.timestamp",
@@ -3231,9 +3231,9 @@
           "confidence": 92.38,
           "stage": "mock"
         },
-        "timestamp": 1789965492236
+        "timestamp": 1789968847355
       },
-      "raw_body_sha256": "e78ae48fdb546658653b575da0cc5709910596c006151a5922de46db05f30c5d",
+      "raw_body_sha256": "3d2a17c98f00af311ae489ac29caf3b4f52ca3c2434815da60328e80541739db",
       "raw_body_bytes": 131,
       "normalize": [
         "$.timestamp",
@@ -3305,9 +3305,9 @@
         "code": 500,
         "message": "name 'FertilizationPlanRequestSerializer' is not defined",
         "data": null,
-        "timestamp": 1789965492242
+        "timestamp": 1789968847360
       },
-      "raw_body_sha256": "4fecbb907d6e1c5ae509f1629d16306e589421ddd7861b0e3123ca94b5c7ced5",
+      "raw_body_sha256": "bdcc267497cd4199106fafb5b86809c0860ac23b9d0c26f32f04ac37e334e849",
       "raw_body_bytes": 119,
       "normalize": [
         "$.timestamp",

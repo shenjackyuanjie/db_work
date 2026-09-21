@@ -108,6 +108,9 @@ commerce  GET     v1_order_cancel_api    v1_order_cancel_alias_read_405
 4. `cargo test` **必须 `--test-threads=1`**（并发 `CREATE INDEX IF NOT EXISTS` 撞 `pg_class_relname_nsp_index`）。
 5. `sccache` 在本机沙箱起不来：跑 cargo 前 `$env:CARGO_BUILD_RUSTC_WRAPPER=''`。
 6. **单域 + fresh seed 必然有假失败**（夹具的读类期望值含前置域写类的效果），权威跑法必须全序列。
+7. **长验证必须用专属 schema**：`compat_test` 是 `tests/support.rs` 的默认，多个并行 agent 都会写它。
+   我用它做 20 分钟等待实验，等待期间被别的进程写入，凭空出现 7 条与时间无关的失败（见 §9.4 第 4 点）。
+   **做法：用专属 `compat_*`，并在等待前后各取一次行数自证未被干扰。**
 
 ## 7. 当前基线与复现
 
@@ -123,9 +126,107 @@ cargo test -- --test-threads=1 compat   → 125 passed / 0 failed
 
 ## 8. 我未处理 / 需要注意的
 
-- **D16**：回放有「录制后 20 分钟」时限（`ORD-DEMO-1003.expires_at`）。权威协议是
-  `capture → load_seed → replay` 一次跑完；种子放置过久需先把该订单窗口推后。
+- **D16**：回放时间窗 —— **已解决，见 §9**（分钟级「录制后 20 分钟」时限已从协议里拿掉；
+  剩余的**天级**漂移仍未消除，需要冻结时钟才能彻底解决）。
 - **D4**：`Z` 与 `+00:00` 两种时间形态并存，比对器归一化后比较并单独计数漂移（当前 0）。
 - 我对 `src/` 的改动只有两处：`views_auth.rs`（D14）、`trace_tests.rs`（D15）。
   **`src/server.rs` 未动**（W2-P 要改路由处置）。
 - 我没有 `git commit`，改动都留在工作树里等主线分块提交。
+
+## 9. D16：回放的时间窗（分钟级时限已消除）
+
+### 9.1 问题
+
+`seed_demo_data` 给 `ORD-DEMO-1003` 的 `expires_at` 是 `now + timedelta(minutes=20)`。
+任何订单端点触发的 `_expire_stale_orders`（`status IN (pending_payment, pending_deposit)
+AND expires_at <= now()`）超时后会**取消它并回滚库存**，于是「录制/灌种子与回放之间
+不能超过 20 分钟」成了一条**隐含在协议里的时限**——上次那个 230/9 就是这么来的。
+
+### 9.2 完整排查（不是只修看得见的那条）
+
+蓝本里所有「被当前时间参与判定」的地方，逐个配上种子里的余量：
+
+| 判定点（蓝本位置） | 判定字段 | 种子里的余量 | 20 分钟后会漂 | 24 小时后会漂 |
+|---|---|---|---|---|
+| `commerce_views._expire_stale_orders` | `Order.expires_at` | **+20 分钟（仅 `ORD-DEMO-1003`）** | **会** | 会 |
+| `SalesBatch.is_open` | `SalesBatch.open_at` / `close_at` | -30 天 / **+60 天** | 不会 | 不会 |
+| 支付后生成 `balance_due_at` | `SalesBatch.close_at` | +60 天 | 不会 | 不会 |
+| `agent_service` 日报 | `Task.created_at >= now - 24h` | 0（种子时刻） | 不会 | **会** |
+| `agent_service` 复购建议 | `days_since`（订单/批次日期） | 天级 | 不会 | **会** |
+| `today = timezone.localdate()` | 当日统计 | 天级 | 不会 | **会** |
+| `views.py` 施肥计划排期 | `base_date + 15/45 天` | 天级 | 不会 | 不会 |
+| `checkedAt` / `cancelled_at` / `paid_at` / `recorded_at` | 写入时刻 | — | — | 已被 normalize 屏蔽 |
+
+`scripts/diag_seed_deadlines.py` 输出可复核：种子里**唯一**的分钟级未来窗口就是
+`Order.expires_at`，其余未来朝向的值都 ≥ +2.8 天（`expected_harvest_*` 等纯日期字段
+本身是存储的绝对日期，不随墙钟漂）。
+
+**顺带查清两件事**：
+1. 种子里的 `expires_at` 有 **3 条**：两条 `+0.021 天`（≈30 分钟）是 `COMPLETED` 订单，
+   来自模型默认 `default_order_expiry`；一条是被推后的挂单。**只有后一条会被判定**——
+   所以按 `pending_*` 过滤是必须的，否则会得出一堆误导性的「短窗口」。
+2. 夹具暴露面（`scripts/diag_time_windows.py`）：`expires_at` / `expiresAt` / `close_at` /
+   `open_at` / `checkedAt` / `cancelled_at` / `paid_at` **全部已被 normalize 屏蔽**；
+   而 `is_open` / `balance_due_at` / `verified_at` 虽未屏蔽，但它们是**已存储的绝对值**，
+   不随墙钟漂移。→ 因此推后 `expires_at` **不改变任何被断言的字段值**。
+
+### 9.3 修法
+
+`capture_contract.py` 新增 `extend_short_deadlines()`：把 `pending_*` 挂单的
+`expires_at` 推到 `now + 30 天`；不改 Django 的 `seed_demo_data`，只作用于测试库。
+两个调用点（与 D12 同构，**位置错了就白做**）：
+1. `call_command("seed_demo_data")` 之后**立刻**，即 `dump_seed` 之前 —— 种子是回放起点；
+2. `run_capture` 里每个用例之前 —— 覆盖回放中新建的挂单。
+
+顺带把 `REPORT.md` 第 7 节的文案改成**从种子数据推导**（`_shortest_future_window()`），
+这样以后种子变了文档会自己跟上，不会再留一句会过时的「必须当天回放」。
+
+### 9.4 证据
+
+**1）数据侧**
+- 库里实测余量：`ORD-DEMO-1003 | pending_payment | expires_in_min=43199`（**30.0 天**），
+  且「会被 `_expire_stale_orders` 命中的行」= **0**。
+- `REPORT.md` 第 7 节的数字现在**从种子推导**（`_shortest_future_window()`），
+  本轮自动写出「最短未来截止时间 = `api.order.expires_at`，距 captured_at **+30.000 天**」。
+
+**2）墙钟无关性（正面）**
+
+灌好种子后**故意放置 44.5 分钟**再回放（`12:47:30` 灌入 → `13:31:59` 回放），
+结果仍是 **239 / 0 / 12**（`REPLAY_wallclock_20min.json`）。
+并且等待前后各取一次行数，**完全一致**（`sales_batch=3` / `citrus_product=7` / `order=3`），
+二进制 hash 前后也未变（`DEA54960…`）—— 即这段等待里**没有任何东西改过库或改过二进制**。
+
+另在**最终重录的那一代夹具**上又跑了一次计时实验（`13:35:03` 灌入 → `13:56:08` 回放，
+等待 **21.1 分钟**，等待前后行数一致 `sales_batch=3 / citrus_product=7 / order=3`），
+同样是 **239 / 0 / 12**（`REPLAY_wallclock_final.json`）。两次计时 + 一次阳性对照，
+互相独立。
+
+**3）阳性对照（反面，证明这个窗口就是原因）**
+
+把同一份种子灌进去后，手工
+`UPDATE "order" SET expires_at = now() - interval '1 minute' WHERE order_number='ORD-DEMO-1003'`，
+再回放 → **234 / 5 / 12**，失败的正是：
+`orders_list_ok`、`orders_v1_list_ok`、`products_list_after_state_ok`、
+`orders_v1_list_after_state_ok`、`order_cancel_pending_ok`
+—— **恰好 5 条 commerce 假失败**，与旧记录里那个 230/9 的成因完全对上。
+
+**4）一个必须先排掉的干扰源（我踩过）**
+
+第一次计时实验用的是 **`compat_test`**，结果出现 7 条**完全不同**的失败
+（`products_list_*` 的 `cover_image_url`、`supply_batches_list_*` 的 `count 3 != 6`、
+`agent_context_buyer_ok` 的批次数组长度）。而同样夹具、同样二进制**立刻回放**是 239/0/12
+—— 所以那 7 条与时间无关。
+
+原因：**`compat_test` 是 `tests/support.rs` 的默认 schema**，而当时同时活跃着
+`compat_s1` / `compat_s2` / `compat_s2b` / `compat_s3` 多个并行 agent ——
+等待期间有别的进程写过同一个 schema。
+
+**结论：任何超过几分钟的验证都必须用专属 schema**（我用 `compat_d16`），
+并在等待前后取一次行数自证未被干扰。这条比 D16 本身更容易再踩。
+
+### 9.5 仍然存在的（**不是**本次范围）
+
+分钟级时限没了，但**天级相对窗口仍在**（日报 24 小时窗口、复购 `days_since`、
+`localdate()` 当日统计），所以**跨天回放仍会漂**。要彻底消除必须冻结 Rust 侧时钟：
+`views_commerce.rs` 已有 `COMPAT_REPLAY_NOW` 开关，但**只有商城域实现了它**，
+其它域仍直接用 `Utc::now()`。这属于 src 改动，本次按任务约束未动。

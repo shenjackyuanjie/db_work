@@ -333,9 +333,19 @@ W2-0 选择**让数据确定化**（录制时把平局时间戳错开微秒）�
 - **`sccache` 在本机起不来**：跑 cargo 前必须 `$env:CARGO_BUILD_RUSTC_WRAPPER=''`。
 - **只在 `compat_*` 里操作**：`replay_diff.py --schema public` 会被硬拒绝；
   `pg_env.ps1` / `load_seed.py` 同样只接受 `^compat_[a-z0-9_]+$`。
-- **必须在录制当天（UTC 日历日）回放**：跨天会改变 `SalesBatch.is_open`、
-  `_expire_stale_orders`、日报的 `today_*`、复购 `days_since` 等分支。
-  本轮录制于 `2026-09-20T15:57Z`，回放同在当天。
+- **分钟级时限已消除（W2-0 / D16）**：种子放置多久再回放都不影响结果——已用
+  「灌好种子后放置 **44.5 分钟**再回放」实证，仍是 239 / 0 / 12（`REPLAY_wallclock_20min.json`）；
+  另有阳性对照：手工令该挂单过期则恰好复现 5 条 commerce 假失败（234/5/12）。
+  修法是录制准备阶段把 `pending_*` 挂单的 `expires_at` 推到 +30 天
+  （`capture_contract.py::extend_short_deadlines()`），不改 Django 的 `seed_demo_data`。
+- **⚠️ 长验证必须用专属 schema**：`compat_test` 是 `tests/support.rs` 的**默认** schema，
+  多个并行 agent 都会写它。踩过一次——用 `compat_test` 做 20 分钟等待实验，等待期间被别的
+  进程写入，凭空出现 7 条与时间无关的失败（多出批次、商品封面被改）。
+  **做法：用 `compat_verify` / 自定义 `compat_*`，并在等待前后各取一次行数自证未被干扰。**
+- **但跨天回放仍会漂**（剩余的**天级**相对窗口）：`SalesBatch.is_open` 已由 +60 天余量兜住，
+  但 `agent_service` 日报的 `created_at >= now - 24h`、复购 `days_since`、
+  `timezone.localdate()` 的当日统计会随日历日变化。要彻底消除需冻结 Rust 侧时钟
+  （`views_commerce.rs` 有 `COMPAT_REPLAY_NOW`，但只有商城域实现了它）。
 - **重跑前务必 `-Reset` + `-Apply` + `load_seed.py` 三连**：`replay_diff.py` 会写库
   （下单、支付、审批、建批次…），在**已被上一次回放改过**的库里再跑一遍必然大面积假失败。
 
