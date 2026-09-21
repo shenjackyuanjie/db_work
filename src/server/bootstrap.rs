@@ -3,6 +3,7 @@ mod commerce_tables;
 mod core_tables;
 mod legacy_tables;
 mod trace_tables;
+mod web_tables;
 
 use sqlx::{PgPool, Row};
 
@@ -52,6 +53,26 @@ pub(crate) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow
     apply_contract_ddl(pool, trace_tables::QUALITY_DDL, "trace.quality").await?;
     apply_contract_ddl(pool, commerce_tables::DDL, "commerce").await?;
     apply_contract_ddl(pool, agent_tables::DDL, "agent").await?;
+
+    // `"user"` 的**加法列** `is_admin`：网页后台鉴权要用，App 的 `role` 契约里没有管理员概念
+    // （`W2_PLAN.md` §3.1(a)）。
+    //
+    // 三条硬约束，改的时候别踩：
+    // 1. 用 `ALTER ... ADD COLUMN IF NOT EXISTS`，可重复执行（照抄上面 `app_sessions.expires_at` 的写法）；
+    // 2. **不要**把它挪进 `core_tables.rs` 的 `CREATE TABLE` —— 那张表要与 Django `db_table`
+    //    逐字对齐，加了列就没法用 Django 的 `dumpdata` 直接把种子灌进来；
+    // 3. 它不进任何 DRF 响应（`AuthUser::payload()` 不做改动），也**不要**引入第三个 `role` 值
+    //    （会污染 App 依赖的 `role` 契约）。管理员用
+    //    `UPDATE "user" SET is_admin = TRUE WHERE username = '<管理员账号>'` 标记。
+    sqlx::query(
+        r#"ALTER TABLE "user" ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE"#,
+    )
+    .execute(pool)
+    .await
+    .map_err(|e| anyhow::anyhow!("添加 user.is_admin 加法列失败: {}", e))?;
+
+    // 网页超集专用表（不参与契约，故排在契约表之后）。
+    apply_contract_ddl(pool, web_tables::DDL, "web").await?;
 
     crate::system_settings::ensure_default_settings(pool).await?;
     if seed_demo_data {
