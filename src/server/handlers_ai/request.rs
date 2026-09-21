@@ -35,7 +35,7 @@ async fn auth_username_from_headers(
     state: &AppState,
     headers: &HeaderMap,
 ) -> Result<String, Response> {
-    match crate::user_routes::ensure_authenticated(state, headers).await {
+    match crate::auth::ensure_authenticated(state, headers).await {
         Ok((_, username)) => Ok(username),
         Err((code, body)) => Err((code, Json(body)).into_response()),
     }

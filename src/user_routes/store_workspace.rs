@@ -1,4 +1,4 @@
-use super::auth::{ensure_admin, ensure_authenticated};
+use crate::auth::{ensure_admin, ensure_authenticated};
 use crate::server::{AppState, now_millis};
 use axum::{
     Json,

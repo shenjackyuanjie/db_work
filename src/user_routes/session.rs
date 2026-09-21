@@ -10,11 +10,13 @@ use tracing::info;
 
 use crate::server::AppState;
 
+use crate::auth::{ensure_authenticated, extract_auth_token, now_secs};
+
 use super::{
     auth::{
         SESSION_MAX_AGE_SECONDS, app_response, build_clear_cookie, build_login_cookie,
-        current_system_settings, ensure_authenticated, extract_auth_token, generate_token,
-        hash_password, needs_password_rehash, now_secs, verify_password,
+        current_system_settings, generate_token, hash_password, needs_password_rehash,
+        verify_password,
     },
     dto::LoginRequest,
 };

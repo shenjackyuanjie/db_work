@@ -15,7 +15,7 @@ use crate::{
     system_settings::append_audit_log,
 };
 
-use super::auth::{ensure_admin, ensure_authenticated};
+use crate::auth::{ensure_admin, ensure_authenticated};
 
 const STORE_ORDER_STATUSES: &[&str] = &[
     "pending_payment",

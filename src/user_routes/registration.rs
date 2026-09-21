@@ -9,9 +9,11 @@ use sqlx::Row;
 
 use crate::server::AppState;
 
+use crate::auth::now_secs;
+
 use super::{
     auth::{
-        app_response, current_system_settings, hash_password, now_secs, pending_approval_response,
+        app_response, current_system_settings, hash_password, pending_approval_response,
         requested_role_label, user_payload,
     },
     dto::RegisterRequest,

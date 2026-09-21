@@ -4,19 +4,17 @@ use argon2::{
 };
 use axum::{
     Json,
-    http::{HeaderMap, HeaderValue, StatusCode, header},
+    http::{HeaderValue, StatusCode},
     response::{IntoResponse, Response},
 };
 use rand_core::OsRng;
 use serde_json::json;
-use sqlx::Row;
 use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 
 use crate::{models::RequestedRole, server::AppState, system_settings::SystemSettings};
 
 const SESSION_COOKIE_NAME: &str = "session_token";
-const SESSION_HEADER_NAME: &str = "x-session-token";
 pub(crate) const SESSION_MAX_AGE_SECONDS: u64 = 30 * 24 * 60 * 60;
 
 pub(super) fn generate_token() -> String {
@@ -51,13 +49,6 @@ pub(super) fn needs_password_rehash(hash: &str) -> bool {
     !hash.starts_with("$argon2")
 }
 
-pub(crate) fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs()
-}
-
 fn now_millis() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -80,14 +71,6 @@ pub(super) fn app_response(
 
 pub(super) fn requested_role_label(role: &RequestedRole) -> &'static str {
     if role.is_admin() { "admin" } else { "user" }
-}
-
-pub(crate) fn parse_requested_role(text: &str) -> RequestedRole {
-    if text.eq_ignore_ascii_case("admin") {
-        RequestedRole::Admin
-    } else {
-        RequestedRole::User
-    }
 }
 
 pub(super) fn user_payload(username: &str, created_at: u64) -> serde_json::Value {
@@ -154,95 +137,6 @@ pub(super) fn build_clear_cookie() -> Result<HeaderValue, (StatusCode, serde_jso
             json!({ "error": "Failed to clear session cookie" }),
         )
     })
-}
-
-fn token_from_cookie(headers: &HeaderMap) -> Option<String> {
-    let cookie_header = headers.get(header::COOKIE)?.to_str().ok()?;
-    cookie_header.split(';').find_map(|part| {
-        let trimmed = part.trim();
-        trimmed
-            .strip_prefix("session_token=")
-            .and_then(|value| (!value.is_empty()).then(|| value.to_string()))
-    })
-}
-
-pub(crate) fn extract_auth_token(headers: &HeaderMap) -> Option<String> {
-    token_from_cookie(headers).or_else(|| {
-        headers
-            .get(SESSION_HEADER_NAME)
-            .and_then(|value| value.to_str().ok())
-            .map(str::trim)
-            .filter(|value| !value.is_empty())
-            .map(ToString::to_string)
-    })
-}
-
-pub(crate) async fn ensure_authenticated(
-    state: &AppState,
-    headers: &HeaderMap,
-) -> Result<(String, String), (StatusCode, serde_json::Value)> {
-    let token = match extract_auth_token(headers) {
-        Some(token) => token,
-        None => {
-            return Err((
-                StatusCode::UNAUTHORIZED,
-                json!({ "error": "Missing session token" }),
-            ));
-        }
-    };
-
-    // **双表桥**：先 `auth_token`（网页会话 `/web/session/*` 写在这里），
-    // miss 再查 `app_sessions`（历史 `/user/*` 会话）。理由与 S5 待办见
-    // `server/shared.rs::lookup_session_username` 的文档注释。
-    let username = crate::server::lookup_session_username(&state.db, &token, now_secs() as i64)
-        .await
-        .map_err(|err| {
-            tracing::error!(%err, "会话查询失败");
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                json!({ "error": "Session lookup failed" }),
-            )
-        })?;
-
-    let Some(username) = username else {
-        return Err((
-            StatusCode::UNAUTHORIZED,
-            json!({ "error": "Invalid token" }),
-        ));
-    };
-
-    Ok((token, username))
-}
-
-pub(crate) async fn ensure_admin(
-    state: &AppState,
-    headers: &HeaderMap,
-) -> Result<String, (StatusCode, serde_json::Value)> {
-    let (_, admin_username) = ensure_authenticated(state, headers).await?;
-
-    let row = sqlx::query("SELECT is_admin FROM app_users WHERE username = $1 LIMIT 1")
-        .bind(&admin_username)
-        .fetch_optional(&state.db)
-        .await
-        .map_err(|_| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                json!({ "error": "Admin lookup failed" }),
-            )
-        })?;
-
-    let is_admin = row
-        .and_then(|row| row.try_get::<bool, _>("is_admin").ok())
-        .unwrap_or(false);
-
-    if !is_admin {
-        return Err((
-            StatusCode::FORBIDDEN,
-            json!({ "error": "User is not an admin" }),
-        ));
-    }
-
-    Ok(admin_username)
 }
 
 #[cfg(test)]

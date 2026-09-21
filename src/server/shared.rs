@@ -154,7 +154,7 @@ pub(crate) async fn lookup_session_username(
 
 /// 兼容旧调用点：解析失败一律当 `None`（沿用原有的「吞掉错误」语义）。
 pub(crate) async fn username_by_token(state: &AppState, token: &str) -> Option<String> {
-    lookup_session_username(&state.db, token, crate::user_routes::now_secs() as i64)
+    lookup_session_username(&state.db, token, crate::auth::now_secs() as i64)
         .await
         .ok()
         .flatten()

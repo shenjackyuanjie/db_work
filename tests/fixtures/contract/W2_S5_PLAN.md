@@ -167,6 +167,26 @@ app_tasks / app_diagnosis_records / app_temperature_humidity（无外键）
 **触发条件（写进 S5 清单）**：前端改为直接消费 `price`（字符串）**并且**有「100 倍误差已消除」的实测证据，两件事在**同一次提交**里完成。
 **不要**默认「登记了就该删」——这一步删错了，症状是「商品价格显示 ¥1.68」，而它不会报错。
 
+#### 触发条件（**可判定**，不是「以后有空再说」）
+
+**当且仅当下面三条同时成立**，才启动别名删除；缺任何一条则保持现状：
+
+1. **前端零消费**（机械判据）：
+   ```powershell
+   rg -n "price_cents|stock_quantity|unit_label|cover_image\b|is_active|order_no|total_cents|unit_price_cents|line_total_cents" `
+      db\static\*.js db\static\*.html
+   ```
+   **必须零命中**。（注意 `cover_image` 要带词边界，否则会误伤 `cover_image_url`。）
+
+2. **/api 契约不受影响**（回归判据）：这些别名**只存在于 `/web/**` 的超集响应里**，`/api/**` 与 `/api/v1/**`（compat 层）一个字节都不含它们。
+   因此删别名**不得**改动 compat 层任何字节 —— 用全序列回放守住：**239 pass / 0 fail / 12 expected_deviation**（跑法与前置见 `VERIFICATION.md`）。
+
+3. **有「100 倍误差已消除」的实测证据**（业务判据）：把前端 `money()` 改成直接消费 `price`（`NUMERIC` 字符串）**之后**，
+   必须用当前同一件商品做断言 —— 契约实测值 `price='168.00'`，前端显示必须是 **`¥168.00`** 而不是 **`¥1.68`**，
+   并把这条断言的前后对照贴进提交说明。
+
+**三条必须在同一次提交里完成并留下证据**（1 的 grep 输出、2 的回放数字、3 的前后对照）。
+
 ### 5.2 双表桥：**与 `app_sessions` 同一步**（O4）
 
 `shared.rs:253-286` 的 `lookup_session_username` 是过渡态：
@@ -294,3 +314,100 @@ rg -n "store_products|store_orders|app_users|app_sessions|app_tasks|commerce_" d
 # 静态通道注册点
 rg -n '"(/store-images|/uploads|/media/recognition_records)' db\src
 ```
+
+---
+
+## G1 执行记录（活/死切分 + 模块退役）
+
+> 作者：W2-S4-2。**判据只有一条：`server.rs` / `compat.rs` / `web/*.rs` 的实际路由注册。**
+> 工具：`.g1_probe2.py`（路径限定死活判定）、`.g1_clean.py`、`.g1_shared.py`（仓库外）。
+
+### 第一单元：删了什么 + 依据
+
+| 删除 | 依据 |
+|---|---|
+| `handlers_core/{static_data, health_point, tasks, records, temperature}.rs`（整文件，13 个 handler） | 这 13 个 handler 在 `server.rs` 的路由里**一个都不出现**（S1 已删它们的路由），且没有被任何其它路径限定引用 |
+| `handlers_ai/{diagnosis, reports}.rs`（整文件，4 个 handler） | 同上（`diagnosis::citrus_disease_handler` 的再导出被编译器报 unused → 证明 compat 是**自己的同名实现**而不是复用） |
+| `client/fertilization.rs` | 只被 `client/mod.rs:1` 的 `mod` 声明引用；`compat/views_core.rs:1015` 有自己的 `fertilization_plan_impl` |
+| `pages.rs::api_user_handler`（19 行） | 无路由引用；它同时是 `user_routes::me_handler` 的**最后使用者** |
+| `user_routes/auth.rs::username_matches_session` + 测试（14 行） | 唯一使用者是上面删掉的 `tasks/temperature/records` |
+| `models.rs` 的 5 个 fertilization struct（55 行） | 唯一使用者是被删的 `reports.rs` |
+| `shared.rs` 的 16 个 never-used 项（约 150 行） | 撤掉 `#[allow(dead_code)]` 后由编译器逐个指认 |
+| `handlers_ai/review.rs::apply_review_threshold_to_prediction`（22 行） | 编译器指认；**同文件的 `apply_review_threshold_to_fields` 被 `advanced.rs:143` 用着，保留** |
+| **三个 `#[allow(dead_code)]`**（`server.rs:25,28,31`） | §4：三者都掩盖活代码，撤销后编译器一次暴露 17 处真死代码 |
+| `server.rs` 再导出列表 24 项 → **10 项** | 14 项只被上面删掉的死模块引用 |
+
+### 三条被编译器纠正的偏差（**方法论的教训**）
+
+1. **裸标识符统计会系统性高估「活的」**：v1 探针把 `compat/**` 的**同名局部函数**与**注释里的名字**都算成引用。
+   实测：`compat/views_core.rs:158` 有它自己的 `classify_environment_risk`、`:1429` 有它自己的 `task_payload`；
+   `web/admin.rs:177` 的注释在说它**复刻**了 `system_status_api_handler`。→ 改用路径限定匹配。
+2. `shared` 的 24 个再导出里实际只有 **10 个**是活的（`AppState`/`api_response`/`api_success`/`now_millis`/`save_store_cover_image`/`disease_treatment_text`/`risk_from_disease_name`/`save_recognition_record_image`/`lookup_session_username`/`username_by_token`）。
+3. O1 被完整印证：不撤属性就看不见这 17 处。
+
+### 验证
+
+`cargo check --all-targets` **exit 0**；`cargo test -- --test-threads=1 compat` **126 passed / 0 failed**；
+告警 **16–18 → 14**，且 14 条**全是既有的**（`compat/*` 9 + `inference/*` 4 + `web/support.rs` 1），**G1 相关清零**。
+
+### 标了「待确认」、**没删**
+
+- `inference/{mod,onnx}.rs` 的 `is_climate_in_range` / `NORMAL_TEMP_RANGE` / `NORMAL_HUMIDITY_RANGE`（4 条告警）—— 不在 G1 文件范围，且 `inference` 是活模块（`AppState` 依赖），不确定是否有别的流要用。
+- `compat/*` 的 9 条 unused —— compat 是活层面，其内部未用 helper 属独立话题。
+- `web/support.rs:35 MESSAGE_LIMIT` —— S2 的文件。
+
+### 两处偏离（已报主线）
+
+1. 动了不在 G1 清单里的文件：`server.rs`（3 属性 + 再导出列表）、`user_routes/{mod,auth}.rs`、`models.rs`、`client/mod.rs` —— 都是**删除后必须同步的引用**，**均非路由改动**（`server.rs` 路由段一行未动、`.nest("/user")` 仍在）。
+2. 每步只跑 `cargo check`（4 秒），**全量 `cargo test` 在单元结束时跑一次**（200 秒）。理由：删除的代码无路由可达，行为不可能变，编译器即定位工具。
+
+### G1 剩余：§2.2 鉴权搬家（下一步）
+
+新建 `src/auth.rs`，把 `ensure_admin` / `ensure_authenticated` / `extract_auth_token` / `now_secs` / `parse_requested_role` 从 `user_routes` 搬过去，让**仍是活代码**的 `handlers_core/{pages,media}.rs` 不再依赖 `user_routes` —— **这是 G2 能删 `/user/*` 的前提（O3）**。本单元已删掉 4 个引用方，搬家前会重新清点 `user_routes` 的外部引用面。
+
+### 第二单元：§2.2 鉴权搬家（已完成）
+
+**新建 `src/auth.rs`**，从 `user_routes/auth.rs` 搬走 5 个项：`now_secs` / `parse_requested_role` /
+`extract_auth_token`（+ 私有 `token_from_cookie`）/ `ensure_authenticated` / `ensure_admin`。
+
+| 步骤 | 做法 |
+|---|---|
+| 4 个**活**调用点 | `handlers_core/{pages,media}.rs`、`handlers_ai/request.rs`、`server/shared.rs` → 改指 `crate::auth::*` |
+| `user_routes` 内部约 10 处 | **一行都不用改**：把 `user_routes/mod.rs` 的再导出改成 `pub(crate) use crate::auth::{...}`；另有 5 个文件是**嵌套导入**（`use super::{auth::{...}, dto::X}`）需单独改指 |
+| 顺手修正 | **`ensure_admin` 从 `app_users` 改读契约表 `"user".is_admin`**。理由：`app_users` 是退役目标，而网页侧 `web::session::{lookup_is_admin, require_admin}` 已统一读 `"user".is_admin`——两处读不同的表会导致「网页登录的管理员打不开后台页面」 |
+
+**✅ 关键判据达成**：搬完后重新清点，`user_routes` 的外部引用面**只剩 1 处** —— `server.rs: crate::user_routes::router`（就是 G2 要删的那个 `.nest("/user")`）。
+**→ G2 可以干净地整棵删掉 `user_routes/**`，不会挂到别的东西。**
+
+验证：`cargo check --all-targets` **exit 0**；`cargo test -- --test-threads=1 compat` **126 passed / 0 failed**；
+告警 **16–18 → 14**，且 14 条**全是既有的**（`compat/*` 9 + `inference/*` 4 + `web/support.rs` 1）。
+
+> **第三次遇到同一种假失败**：本轮先出现 **11 条 `commerce_tests` 失败**，全是夹具比对测试；
+> `commerce.json` / `seed.json` **确被别的流改过**（`git status` 可见）。按 §0.1 的规则先重灌种子 → **126/0**。
+> **代码没有回归。** 这条规则（共享 schema 一红先重灌种子）已连续三次生效，请继续在所有流里执行。
+
+---
+
+## 0.1 判据：**活死怎么判**（G1 实测得出，G2 与 S5 其余部分沿用同一判据）
+
+> **判活死只能用编译器或路径限定引用（`handlers_X::NAME`、`crate::server::handlers_X::NAME`）。
+> 裸名字统计会系统性高估「活的」。**
+
+两个真实反例（G1 用自己的错误换来的）：
+
+| 反例 | 现象 |
+|---|---|
+| `compat/views_core.rs:158` | 定义了**它自己的** `classify_environment_risk`。裸名字统计会把它算成「compat 复用了 `shared.rs` 的同名函数」→ 结论「这项是活的、不能删」。同文件 `:1429` 还有它自己的 `task_payload` |
+| `web/admin.rs:177` | 注释写「与旧 `handlers_core::system_status_api_handler` 逐字段一致」——那是在说它**复刻**了，不是在挂载。裸名字统计把注释也算成引用 |
+
+**为什么这个错误危险**：按错误结论「删」会留下真死代码（保守方向，尚安全）；但**反向使用**——用它判断「这些还被用着、所以不能删」——S5 就会永远删不掉东西。
+
+**G1 已验证的正确做法（G2 直接沿用）**：
+1. 从 `server.rs` / `compat.rs` / `web/*.rs` 的**实际路由注册**里抽取 `handlers_X::NAME` 集合 → 这才是「活」；
+2. 排除注释行（以 `//` / `///` 开头）；
+3. 撤掉 `#[allow(dead_code)]`，用**编译器**逐个指认真死代码；
+4. 每步 `cargo check --all-targets`（它同时验证「路由注册引用的函数是否还存在」）。
+
+**O1 的实证**：撤掉三个属性后，编译器**一次暴露 17 处 never-used**（`shared.rs` 16 + `review.rs` 1）——这是对 S1 那句「保留属性会让日后的真死代码隐身」的**实测印证**，不是引用。
+
+**工具**：`.g1_probe2.py`（路径限定死活判定）、`.s5_probe.py`（shared 再导出的活/死统计），都在仓库外。

@@ -24,7 +24,7 @@ pub(crate) async fn recognition_image_handler(
         return StatusCode::NOT_FOUND.into_response();
     }
 
-    let (_, username) = match crate::user_routes::ensure_authenticated(&state, &headers).await {
+    let (_, username) = match crate::auth::ensure_authenticated(&state, &headers).await {
         Ok(value) => value,
         Err((code, body)) => return (code, axum::Json(body)).into_response(),
     };

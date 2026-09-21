@@ -66,7 +66,7 @@ pub(crate) async fn store_admin_page_handler(
 }
 
 async fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
-    let token = match crate::user_routes::extract_auth_token(headers) {
+    let token = match crate::auth::extract_auth_token(headers) {
         Some(token) => token,
         None => return false,
     };
@@ -75,9 +75,7 @@ async fn has_valid_session(state: &AppState, headers: &HeaderMap) -> bool {
 }
 
 async fn has_admin_session(state: &AppState, headers: &HeaderMap) -> bool {
-    crate::user_routes::ensure_admin(state, headers)
-        .await
-        .is_ok()
+    crate::auth::ensure_admin(state, headers).await.is_ok()
 }
 
 pub(crate) async fn admin_page_handler(
