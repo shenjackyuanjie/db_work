@@ -175,6 +175,13 @@ def bootstrap_django():
 
     call_command("seed_demo_data", verbosity=0)
 
+    # D12：**必须在 dump_seed 之前**错开平局时间戳。
+    # 纯种子态是回放的起点，若它带着平局而录制时的响应已经错开，两边就对不上
+    # （踩过一次：夹具期望 `.805137/.805138`，而 seed.json 里还是同一个微秒）。
+    # 这里的调用同时保证「录制用的库」和「回放用的 seed」是同一份确定化数据。
+    separated = break_tied_timestamps()
+    print(f"[seed] 平局时间戳错开 {separated} 行（D12：让列表顺序确定化）")
+
     ENV.update(
         {
             "django_version": django.get_version(),
@@ -1804,6 +1811,63 @@ def record_case(ctx: Ctx, c: dict) -> dict:
     return entry
 
 
+# --------------------------------------------------------------------------------------
+# D12：连续 `timezone.now()` 可能落在同一微秒，而蓝本 Meta.ordering 没有次级键
+# --------------------------------------------------------------------------------------
+
+# 只处理「夹具实测出现过平局、且列表顺序依赖它」的列，不做全库泛化——
+# 乱改时间会波及「取最新一条」这类**有值语义**的接口（例如温湿度曲线取最新样本）。
+TIE_BREAK_COLUMNS = [
+    ("Task", "created_at"),
+    ("AgentFeedback", "created_at"),
+    ("CitrusProduct", "created_at"),
+    ("CartItem", "updated_at"),
+]
+
+
+def break_tied_timestamps() -> int:
+    """把平局的时间戳按 pk 顺序错开微秒，让列表顺序变成确定性的。返回错开的行数。
+
+    背景：本机时钟粒度使 seed/写入期间连续几次 `timezone.now()` 返回**同一微秒**
+    （实测 3 条 Task 都是 `…985960`、2 条 AgentFeedback 都是 `…008573`）。而蓝本
+    `Task` / `AgentFeedback` 的 `Meta.ordering` 只有 `-created_at`、**没有次级键**，
+    于是平局时的返回顺序取决于存储引擎：SQLite 按 rowid（插入序）、PG 按物理序。
+    夹具把「SQLite 的插入序」烘成了契约 —— 这是数据不自洽，不是实现缺陷。
+
+    真实库里这些时间本是递增的（生产 SQLite 实测 `…731084 / …741941 / …750370`），
+    所以错开微秒是**让测试数据更贴近真实**，而不是迁就某个实现的排序。
+    这些列在夹具的 normalize 里已全量屏蔽，错开不会改变任何被断言的字段值。
+    """
+    from datetime import timedelta
+
+    from django.apps import apps as django_apps
+    from django.db.models import Count
+
+    changed = 0
+    for model_name, column in TIE_BREAK_COLUMNS:
+        model = django_apps.get_model("api", model_name)
+        tied_values = (
+            model.objects.values(column)
+            .annotate(n=Count("pk"))
+            .filter(n__gt=1)
+            .values_list(column, flat=True)
+        )
+        for value in list(tied_values):
+            if value is None:
+                continue
+            pks = list(
+                model.objects.filter(**{column: value})
+                .order_by("pk")
+                .values_list("pk", flat=True)
+            )
+            for offset, pk in enumerate(pks[1:], start=1):
+                model.objects.filter(pk=pk).update(
+                    **{column: value + timedelta(microseconds=offset)}
+                )
+                changed += 1
+    return changed
+
+
 def run_capture(args, routes, refs):
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1834,11 +1898,13 @@ def run_capture(args, routes, refs):
         records: list[dict] = []
         print(f"\n=== domain {domain}（read {len(reads)} / mutation {len(writes)}）===")
         for spec in reads:
+            break_tied_timestamps()  # D12：保证列表顺序确定，见函数注释
             rec = record_case(ctx, spec)
             records.append(rec)
             _log(domain, rec)
         for spec in writes:
             ctx.ensure_tokens()  # 登录/登出会动 token，写类前重建固定 token
+            break_tied_timestamps()
             rec = record_case(ctx, spec)
             ctx.mutation_order.append({
                 "order": len(ctx.mutation_order) + 1,
@@ -2270,7 +2336,21 @@ def build_index(routes, domain_records, ctx, refs, alias_results, signature, see
         },
         "domain_covered": sorted(domain_records.keys()),
         "method_case_capacity": sum(len(e["methods"]) for e in entries),
+        # 口径：`case_count` 只统计落在「path × method 枚举矩阵」内的用例。
+        # 域文件里的**实际录制数**还包含少数探针（例如 `DELETE /api/me`、
+        # `GET /api/orders/<id>/pay` 这类 405 检查），它们探测的方法不在该 path 的
+        # 枚举方法集内，因此不落进任何 path 条目。**权威口径是 `recorded_case_count`**。
         "case_count": sum(e["cases"] for e in entries),
+        "recorded_case_count": sum(len(v) for v in domain_records.values()),
+        "off_matrix_cases": sorted(
+            {r["name"] for records in domain_records.values() for r in records}
+            - {
+                name
+                for e in entries
+                for per_method in e["method_case_counts"]
+                for name in per_method["cases"]
+            }
+        ),
         "covered": len([e for e in entries if e["covered"] and not e["partial"]]),
         "partial": len([e for e in entries if e["partial"]]),
         "blocked": len([e for e in entries if e["blocked"]]),
@@ -2340,7 +2420,9 @@ def build_report(index, domain_records, alias_results, seed_payload):
         f"{index['domain_counts']['orchard_trace']} / commerce "
         f"{index['domain_counts']['commerce']} / agent {index['domain_counts']['agent']}"
         f"（合计 {sum(index['domain_counts'][d] for d in DOMAINS)}）")
-    add(f"- 用例总数：**{index['case_count']}**"
+    add(f"- 用例总数：**{index['recorded_case_count']}**（实际录制）"
+        f" = 矩阵内 **{index['case_count']}** + 矩阵外探针 "
+        f"**{len(index['off_matrix_cases'])}**"
         f"（path×method 上限 {index['method_case_capacity']}）")
     add(f"- covered（有用例且状态码与设计一致）：**{index['covered']} / "
         f"{index['path_count']}**")
@@ -2840,7 +2922,8 @@ def main() -> int:
         print("\n=== 汇总 ===")
         print(f"path={index['path_count']} covered={index['covered']} "
               f"partial={index['partial']} blocked={index['blocked']} "
-              f"cases={index['case_count']}")
+              f"cases={index['recorded_case_count']} "
+              f"(矩阵内 {index['case_count']} + 矩阵外探针 {len(index['off_matrix_cases'])})")
         print(f"alias: checked={index['alias_conclusion']['checked']} "
               f"equal={index['alias_conclusion']['equal']} "
               f"mismatch={len(index['alias_conclusion']['mismatch'])}")
