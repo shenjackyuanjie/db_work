@@ -2,7 +2,29 @@ use crate::models::DiagnosisRecord;
 
 use super::super::{AppState, disease_treatment_text, save_recognition_record_image};
 
-const INSERT_DIAGNOSIS_RECORD_SQL: &str = "INSERT INTO app_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)";
+/// 网页侧识别记录的**正主**：`web_diagnosis_records` 是自研 17 列表 `app_diagnosis_records`
+/// 的改名后继（列完全一致，见 `src/server/bootstrap/web_tables.rs`）。
+/// 网页仪表盘统计与 3D 沙盘的 `latest_diagnosis` 都读它。
+const INSERT_WEB_DIAGNOSIS_SQL: &str = "INSERT INTO web_diagnosis_records (id, timestamp, predicted_class, confidence, is_citrus_leaf, citrus_type, is_healthy, disease_name, severity, treatment_suggestion, preventive_measures, image_quality_warning, username, area, temp, humm, image_path) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)";
+
+/// 契约表（Django `DiseaseRecognitionRecord`，9 列），让 **App 的 `/api/recognition-records`**
+/// 也能读到网页产生的识别记录。
+///
+/// 契约表里没有富字段（`is_citrus_leaf` / `severity` / `temp` / `humm` …），按设计丢弃；
+/// `user_id` 由用户名反查 `"user"`（保留字必须双引号），查不到时为 NULL（列可空）；
+/// `recognition_date` 是 **DATE**，按 `Asia/Shanghai` 取日——与 `store_workspace.rs` 的分桶口径一致。
+const INSERT_CONTRACT_RECOGNITION_SQL: &str = r#"INSERT INTO disease_recognition_record
+        (id, user_id, image, disease_name, area, risk_level, recognition_date, confidence, created_at)
+     VALUES ($1,
+             (SELECT id FROM "user" WHERE username = $2 LIMIT 1),
+             $3, $4, $5, $6,
+             (to_timestamp($7::double precision / 1000) AT TIME ZONE 'Asia/Shanghai')::date,
+             $8, $9)"#;
+
+/// 契约表全是 `VARCHAR(N) NOT NULL`，网页侧的值可能超长——超长会直接 INSERT 报错。
+fn clamp_chars(value: &str, max: usize) -> String {
+    value.chars().take(max).collect()
+}
 
 pub(super) fn save_record_image(record_id: &str, image_data: &str) -> Option<String> {
     match save_recognition_record_image(record_id, image_data) {
@@ -17,11 +39,18 @@ pub(super) fn save_record_image(record_id: &str, image_data: &str) -> Option<Str
     }
 }
 
+/// 一次识别**写两张表**（同一事务）：
+/// 1. `web_diagnosis_records` —— 17 列富字段，供网页仪表盘与 3D 沙盘；
+/// 2. `disease_recognition_record` —— 9 列契约表，供 App 的 `/api/recognition-records`。
+///
+/// **不再写** `app_diagnosis_records`（遗留表，S5 连同 DDL 一起退役）。
 pub(super) async fn store_diagnosis_record(
     state: &AppState,
     record: &DiagnosisRecord,
 ) -> Result<(), sqlx::Error> {
-    sqlx::query(INSERT_DIAGNOSIS_RECORD_SQL)
+    let mut tx = state.db.begin().await?;
+
+    sqlx::query(INSERT_WEB_DIAGNOSIS_SQL)
         .bind(&record.id)
         .bind(record.timestamp as i64)
         .bind(&record.predicted_class)
@@ -39,9 +68,36 @@ pub(super) async fn store_diagnosis_record(
         .bind(record.temp)
         .bind(record.humm)
         .bind(&record.image_path)
-        .execute(&state.db)
-        .await
-        .map(|_| ())
+        .execute(&mut *tx)
+        .await?;
+
+    // 富表主键是 TEXT，契约表是 UUID：能解析就沿用同一个 id，否则新生成一个。
+    let record_uuid = uuid::Uuid::parse_str(&record.id).unwrap_or_else(|_| uuid::Uuid::new_v4());
+    let area = match record.area.as_deref().map(str::trim).unwrap_or_default() {
+        "" => "未指定区域".to_string(),
+        value => clamp_chars(value, 50),
+    };
+    let risk_level = super::super::risk_from_disease_name(&record.disease_name);
+
+    sqlx::query(INSERT_CONTRACT_RECOGNITION_SQL)
+        .bind(record_uuid)
+        .bind(record.username.as_deref())
+        .bind(clamp_chars(
+            record.image_path.as_deref().unwrap_or_default(),
+            100,
+        ))
+        .bind(clamp_chars(&record.disease_name, 100))
+        .bind(area)
+        .bind(clamp_chars(risk_level, 20))
+        .bind(record.timestamp as i64)
+        .bind(record.confidence)
+        .bind(chrono::Utc::now())
+        .execute(&mut *tx)
+        .await?;
+
+    tx.commit().await?;
+
+    Ok(())
 }
 
 pub(super) async fn create_disease_task_if_needed(
