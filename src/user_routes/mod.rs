@@ -16,7 +16,6 @@ mod store_workspace;
 
 pub(crate) use auth::{
     ensure_admin, ensure_authenticated, extract_auth_token, now_secs, parse_requested_role,
-    username_matches_session,
 };
 pub(crate) use dto::{
     ApprovePendingUserRequest, CreateInvitationRequest, OrchardOverviewRequest, PendingPublicUser,

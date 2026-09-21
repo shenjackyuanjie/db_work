@@ -136,22 +136,3 @@ pub(crate) async fn system_status_api_handler(State(state): State<AppState>) -> 
         .into_response(),
     }
 }
-
-pub(crate) async fn api_user_handler(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> Response {
-    if has_valid_session(&state, &headers).await {
-        return crate::user_routes::me_handler(State(state), headers)
-            .await
-            .into_response();
-    }
-
-    api_response(
-        StatusCode::UNAUTHORIZED,
-        401,
-        "authentication required",
-        serde_json::Value::Null,
-    )
-    .into_response()
-}

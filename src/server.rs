@@ -16,29 +16,26 @@ use tracing_subscriber::EnvFilter;
 use crate::client::OpenRouterClient;
 
 pub(crate) mod bootstrap;
-// 下面三个模块里的自研 `/api/*` handler 已在 S1 删掉路由（由契约层同名路径接管），
-// 因此整体变成死代码。用模块级 `allow(dead_code)` 压住告警，避免 60+ 条噪音淹没
-// 后续实施流的真实告警。
+// 下面三个模块曾各带一个 `#[allow(dead_code)]`，依据是「自研 `/api/*` handler 已在 S1 删掉路由，
+// 因此整体变成死代码」。**那个判断是错的**（S5/G1 实测，见 `W2_S5_PLAN.md` §4）：
+//   - `handlers_ai::citrus_disease_advanced_handler` 被 `server.rs:141` 与 `web/orchard.rs:58` **两处**路由；
+//   - `handlers_core` 的 `media::recognition_image_handler` 与 `pages::*` 都被路由
+//     （前者正是 `/media/recognition_records/*`、`/uploads/*` 两条**隐式静态通道**）；
+//   - `shared` 的 `AppState` / `api_response` / `now_millis` 等被 `compat/**`、`web/**` 使用。
 //
-// **S5 删除这些代码时必须把下面三个 `#[allow(dead_code)]` 一起删掉**——
-// 让它们留在此处会让这三个模块里日后的真死代码隐身。
-#[allow(dead_code)]
+// 属性已撤销；三个模块内的**真**死代码已随子模块一起删除（G1 记录见 `W2_S5_PLAN.md`）。
+// 保留属性会让这三个模块里日后的真死代码隐身——不要再加回来。
 pub(crate) mod handlers_ai;
 mod handlers_commerce;
-#[allow(dead_code)]
 pub(crate) mod handlers_core;
 mod handlers_store;
-#[allow(dead_code)]
 mod shared;
 
+// 再导出列表已按「谁真的在用」裁到最小：原先 24 项里有 14 项只被 G1 删掉的死模块引用。
 pub(crate) use shared::{
-    AddTaskRequest, AppState, CompleteTaskRequest, DiseaseTreatmentQuery,
-    GenerateDiseaseTaskRequest, GenerateEnvironmentTaskRequest, TagTemperatureHumidityRequest,
-    TaskRecord, TemperatureHumiditySample, UsernameQuery, api_response, api_success,
-    build_temp_humidity_payload, classify_environment_risk, default_temperature_samples,
-    disease_treatment_text, lookup_session_username, normalize_recognition_record_image_path,
+    AppState, api_response, api_success, disease_treatment_text, lookup_session_username,
     now_millis, risk_from_disease_name, save_recognition_record_image, save_store_cover_image,
-    task_payload, username_by_token,
+    username_by_token,
 };
 
 async fn log_request_path(req: Request<Body>, next: Next) -> Response {

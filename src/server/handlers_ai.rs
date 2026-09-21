@@ -7,14 +7,10 @@
 //! 所以这里统一开到 `pub(crate)`，避免第四次。
 
 mod advanced;
-mod diagnosis;
 mod persistence;
-mod reports;
 mod request;
 mod review;
 
+/// 唯一被路由引用的 AI handler：`server.rs:141`（`/api/citrus-disease-v2`）
+/// 与 `web/orchard.rs:58`（`/web/citrus-disease-v2`）两处都指向它。
 pub(crate) use advanced::citrus_disease_advanced_handler;
-pub(crate) use diagnosis::citrus_disease_handler;
-pub(crate) use reports::{
-    citrus_analyze_handler, generate_fertilization_plan_handler, generate_handler,
-};

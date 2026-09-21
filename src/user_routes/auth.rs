@@ -90,14 +90,6 @@ pub(crate) fn parse_requested_role(text: &str) -> RequestedRole {
     }
 }
 
-/// 历史 API 允许客户端携带 username；现在仅接受与当前会话一致的值。
-pub(crate) fn username_matches_session(requested: Option<&str>, session_username: &str) -> bool {
-    requested
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .is_none_or(|value| value == session_username)
-}
-
 pub(super) fn user_payload(username: &str, created_at: u64) -> serde_json::Value {
     json!({
         "id": username,
@@ -255,10 +247,7 @@ pub(crate) async fn ensure_admin(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        build_login_cookie, hash_password, needs_password_rehash, username_matches_session,
-        verify_password,
-    };
+    use super::{build_login_cookie, hash_password, needs_password_rehash, verify_password};
 
     #[test]
     fn new_password_hash_uses_argon2id_and_verifies() {
@@ -292,13 +281,5 @@ mod tests {
             .expect("cookie header should be text")
             .to_string();
         assert!(production.contains("; Secure"));
-    }
-
-    #[test]
-    fn legacy_username_must_match_current_session() {
-        assert!(username_matches_session(None, "alice"));
-        assert!(username_matches_session(Some(""), "alice"));
-        assert!(username_matches_session(Some(" alice "), "alice"));
-        assert!(!username_matches_session(Some("bob"), "alice"));
     }
 }
