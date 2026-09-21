@@ -18,27 +18,6 @@ pub(crate) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow
             .map_err(|e| anyhow::anyhow!("初始化数据库表失败: {}", e))?;
     }
 
-    sqlx::query("ALTER TABLE app_sessions ADD COLUMN IF NOT EXISTS expires_at BIGINT")
-        .execute(pool)
-        .await
-        .map_err(|e| anyhow::anyhow!("初始化会话过期字段失败: {}", e))?;
-    sqlx::query(
-        "UPDATE app_sessions SET expires_at = created_at + 2592000 WHERE expires_at IS NULL",
-    )
-    .execute(pool)
-    .await
-    .map_err(|e| anyhow::anyhow!("回填会话过期时间失败: {}", e))?;
-    sqlx::query("ALTER TABLE app_sessions ALTER COLUMN expires_at SET NOT NULL")
-        .execute(pool)
-        .await
-        .map_err(|e| anyhow::anyhow!("设置会话过期字段约束失败: {}", e))?;
-    sqlx::query(
-        "CREATE INDEX IF NOT EXISTS idx_app_sessions_expires_at ON app_sessions(expires_at)",
-    )
-    .execute(pool)
-    .await
-    .map_err(|e| anyhow::anyhow!("创建会话过期索引失败: {}", e))?;
-
     // 契约表按外键依赖顺序执行，跨分组的交错顺序不能随意调整：
     // 1. core_tables      —— 建 `user` 及只依赖 `user` 的农事/识别表
     // 2. trace_tables     —— orchard -> fruit_tree_archive / sales_batch -> harvest_archive / trace_event
@@ -58,7 +37,7 @@ pub(crate) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow
     // （`W2_PLAN.md` §3.1(a)）。
     //
     // 三条硬约束，改的时候别踩：
-    // 1. 用 `ALTER ... ADD COLUMN IF NOT EXISTS`，可重复执行（照抄上面 `app_sessions.expires_at` 的写法）；
+    // 1. 用 `ALTER ... ADD COLUMN IF NOT EXISTS`，保证可重复执行（bootstrap 每次启动都会跑）；
     // 2. **不要**把它挪进 `core_tables.rs` 的 `CREATE TABLE` —— 那张表要与 Django `db_table`
     //    逐字对齐，加了列就没法用 Django 的 `dumpdata` 直接把种子灌进来；
     // 3. 它不进任何 DRF 响应（`AuthUser::payload()` 不做改动），也**不要**引入第三个 `role` 值
@@ -77,7 +56,6 @@ pub(crate) async fn init_database(pool: &PgPool, seed_demo_data: bool) -> anyhow
     crate::system_settings::ensure_default_settings(pool).await?;
     if seed_demo_data {
         ensure_orchard_demo_data(pool).await?;
-        ensure_store_demo_data(pool).await?;
     }
 
     Ok(())
@@ -187,63 +165,6 @@ async fn ensure_orchard_demo_data(pool: &PgPool) -> anyhow::Result<()> {
                 .map_err(|e| anyhow::anyhow!("写入示例传感器数据失败: {}", e))?;
             }
         }
-    }
-
-    Ok(())
-}
-
-async fn ensure_store_demo_data(pool: &PgPool) -> anyhow::Result<()> {
-    let now = now_millis() as i64;
-    let demo_products = [
-        (
-            "试吃箱 5 斤",
-            "NAVEL-5KG",
-            "约 5 斤 / 箱",
-            3990,
-            200,
-            "赣南脐橙试吃装，适合首次尝鲜，产地直发。",
-        ),
-        (
-            "家庭箱 10 斤",
-            "NAVEL-10KG",
-            "约 10 斤 / 箱",
-            6990,
-            300,
-            "核心家庭装，现摘现发，甜度高、果味浓。",
-        ),
-        (
-            "礼赠箱 12 枚精品装",
-            "NAVEL-GIFT-12",
-            "12 枚 / 箱",
-            9990,
-            150,
-            "精品果礼赠装，附果园故事卡，适合送礼。",
-        ),
-        (
-            "大果装 10 斤",
-            "NAVEL-LG-10KG",
-            "约 10 斤 / 箱",
-            7990,
-            120,
-            "果径 75mm 以上大果，果肉饱满多汁。",
-        ),
-    ];
-    for (name, sku, unit_label, price_cents, stock, description) in demo_products {
-        sqlx::query(
-            "INSERT INTO store_products (name, sku, unit_label, price_cents, stock_quantity, description, is_active, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, TRUE, $7, $7)
-             ON CONFLICT (sku) DO NOTHING",
-        )
-        .bind(name)
-        .bind(sku)
-        .bind(unit_label)
-        .bind(price_cents)
-        .bind(stock)
-        .bind(description)
-        .bind(now)
-        .execute(pool)
-        .await
-        .map_err(|e| anyhow::anyhow!("写入示例商城商品失败: {}", e))?;
     }
 
     Ok(())

@@ -118,21 +118,32 @@ pub(super) async fn create_disease_task_if_needed(
 
     let task_title = format!("{}治理", record.disease_name);
     let task_description = disease_treatment_text(&record.disease_name).to_string();
-    let task_id = uuid::Uuid::new_v4().to_string();
+    let task_id = uuid::Uuid::new_v4();
+    // `record.timestamp` 是 epoch 毫秒，而契约表 `task.created_at` 是 `TIMESTAMPTZ`。
+    let created_at = chrono::DateTime::from_timestamp_millis(record.timestamp as i64)
+        .unwrap_or_else(chrono::Utc::now);
 
+    // **写契约表 `task`，不再写 `app_tasks`**（S5/G2 的 O5）：
+    // `app_tasks` 是退役目标，而这条路径是**活的**（`-v2` 识别成功后会建治理任务）
+    // —— 先删它的 DDL 会让这里在运行期报 `relation does not exist`（识别成功但 500）。
+    //
+    // 用 `INSERT ... SELECT` 从 `"user"` 解析 `user_id`：契约表的 `user_id` 是 UUID 外键，
+    // 而调用方给的是 username。找不到用户时插 0 行（不报错），行为与旧版「写个悬空 username」等价但不留脏引用。
     sqlx::query(
-        "INSERT INTO app_tasks (id, username, title, description, risk_level, task_type, source, is_completed, created_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+        r#"INSERT INTO task
+             (id, user_id, title, description, risk_level, task_type, source, is_completed,
+              created_at, completed_at)
+           SELECT $1, u.id, $2, $3, $4, $5, $6, FALSE, $7, NULL
+           FROM "user" u WHERE u.username = $8"#,
     )
-    .bind(&task_id)
-    .bind(username)
+    .bind(task_id)
     .bind(&task_title)
     .bind(&task_description)
     .bind("高风险")
     .bind("疾病识别")
     .bind("自动生成")
-    .bind(false)
-    .bind(record.timestamp as i64)
-    .bind(None::<i64>)
+    .bind(created_at)
+    .bind(username)
     .execute(&state.db)
     .await?;
 

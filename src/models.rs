@@ -151,20 +151,6 @@ pub struct ChatApiRequest {
     pub stream: Option<bool>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum RequestedRole {
-    #[default]
-    User,
-    Admin,
-}
-
-impl RequestedRole {
-    pub fn is_admin(&self) -> bool {
-        matches!(self, Self::Admin)
-    }
-}
-
 // 柑橘分析结构化输出（新 schema）
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CitrusAnalysisResult {

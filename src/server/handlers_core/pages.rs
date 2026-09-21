@@ -7,7 +7,7 @@ use axum::{
 };
 use serde_json::json;
 
-use super::super::{AppState, api_response, api_success, username_by_token};
+use super::super::{AppState, username_by_token};
 
 pub(crate) async fn health_handler() -> Response {
     (
@@ -113,24 +113,4 @@ pub(crate) async fn analyze_page_handler(
     }
 
     read_static_page("analyze.html", "病害识别").await
-}
-
-pub(crate) async fn system_status_api_handler(State(state): State<AppState>) -> Response {
-    match load_system_settings(&state.db).await {
-        Ok(settings) => api_success(json!({
-            "open_registration": settings.open_registration,
-            "invite_bypass_enabled": settings.invite_bypass_enabled,
-            "maintenance_mode": settings.maintenance_mode,
-            "default_invite_ttl_seconds": settings.default_invite_ttl_seconds,
-            "confidence_threshold": settings.confidence_threshold,
-            "log_retention_days": settings.log_retention_days,
-        })),
-        Err(err) => api_response(
-            StatusCode::INTERNAL_SERVER_ERROR,
-            500,
-            format!("failed to load system status: {}", err),
-            serde_json::Value::Null,
-        )
-        .into_response(),
-    }
 }

@@ -6,7 +6,6 @@ mod inference;
 mod models;
 mod server;
 mod system_settings;
-mod user_routes;
 mod utils;
 mod web;
 

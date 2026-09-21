@@ -1,6 +1,35 @@
-// 历史表分组：本服务自有的会话/任务/农情/果园沙盘表，以及上一代商城（commerce_*）与
-// 现货商城（store_*）表。这些表名与 Django 契约表无关，保留仅为兼容现有接口，
-// 待契约层切换完成后统一退役。
+// 历史表分组：本服务自有的会话/任务/农情/果园沙盘表与现货商城客服表。
+// 这些表名与 Django 契约表无关；**留着只因为有活的读写方**，逐条理由见下。
+//
+// 仍在用：
+//   - `app_system_settings` / `app_invitations` / `app_pending_users` / `app_admin_audit_logs`
+//     —— 注册审批、后台设置、审计日志（`system_settings.rs`、`web/{admin,session,dashboard}.rs`）
+//   - `app_orchard_trees` / `app_tree_sensor_records` —— 3D 沙盘（`web/orchard.rs`、`bootstrap.rs` 种子）
+//   - `store_support_messages` —— 客服会话（`web/support.rs`）
+//   - `app_diagnosis_records` —— **已无写入方，但仍有读取方**：S2 把识别写入口切到
+//     `web_diagnosis_records`，G2 又把识别图静态通道（`handlers_core/media.rs`）也跟着切过去。
+//     但历史行没搬：现网 `public.app_diagnosis_records` 有 **24 行**（都带
+//     `/media/recognition_records/<uuid>.jpg`），而 `web_diagnosis_records` 在现网还不存在、
+//     首次启动才建且为空 —— 所以 `media.rs` 现在**同时查两张表**（UNION 双表读桥）。
+//     ⚠️ **本表的 DDL 因此不能单独删**：删它必须与 `media.rs` 去掉第二个 EXISTS **同一步**，
+//     否则新库上的识别图通道会直接 `relation does not exist`。
+//     另外它还端着现网的历史行，「历史数据要不要搬进 `web_diagnosis_records`」是 S5 的
+//     `DROP` 脚本要连着裁定的问题。
+//
+// 已退役（S5/G2）：`app_sessions`（G2 step A）、`app_users`、`app_tasks`、
+// `app_temperature_humidity`、`commerce_*`（7 张）、`store_products` / `store_orders` /
+// `store_order_items`。它们的读取方只剩 `user_routes/**`、`handlers_commerce.rs` 与
+// `handlers_store::storefront_handler`，三者都在 G2 一起删了。
+//
+// ⚠️ **上面这段里的表名只出现在注释里**。复核「是否真的退役」时别用裸名字 grep——
+// 那样会命中这条注释，得出「还在用」的错误结论（`W2_S5_PLAN.md` §0.1 记的正是这个坑，
+// 本项目已经栽过三次）。请用「真实 SQL 形态」查：
+//   rg -n 'FROM app_sessions|INTO app_sessions|UPDATE app_sessions|FROM app_tasks|INTO app_tasks' src
+//   （结果应为空；同理 `app_users` / `commerce_orchards` 等）
+// 本文件的事实清单是下面这个数组：只有 8 张表，上面列的那些一个都不在。
+//
+// 注意：这里的 `CREATE TABLE IF NOT EXISTS` 只影响**新建库**，本文件**不写 `DROP TABLE`**；
+// 现网 `public` 的旧表由 S5 的脚本在 `pg_dump` 之后手工执行。
 
 pub(super) const DDL: &[&str] = &[
     r#"CREATE TABLE IF NOT EXISTS store_support_messages (
@@ -12,22 +41,6 @@ pub(super) const DDL: &[&str] = &[
             created_at BIGINT NOT NULL
         )"#,
     r#"CREATE INDEX IF NOT EXISTS idx_store_support_user_id ON store_support_messages(username, id DESC)"#,
-    r#"CREATE TABLE IF NOT EXISTS app_users (
-            username TEXT PRIMARY KEY,
-            password_hash TEXT NOT NULL,
-            is_admin BOOLEAN NOT NULL DEFAULT FALSE,
-            created_at BIGINT NOT NULL,
-            session_token TEXT NULL,
-            latitude DOUBLE PRECISION NULL,
-            longitude DOUBLE PRECISION NULL
-        )"#,
-    r#"CREATE TABLE IF NOT EXISTS app_sessions (
-            token TEXT PRIMARY KEY,
-            username TEXT NOT NULL,
-            created_at BIGINT NOT NULL,
-            expires_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_app_sessions_username ON app_sessions(username)"#,
     r#"CREATE TABLE IF NOT EXISTS app_invitations (
             code TEXT PRIMARY KEY,
             used BOOLEAN NOT NULL DEFAULT FALSE,
@@ -39,27 +52,6 @@ pub(super) const DDL: &[&str] = &[
             created_at BIGINT NOT NULL,
             requested_role TEXT NOT NULL
         )"#,
-    r#"CREATE TABLE IF NOT EXISTS app_tasks (
-            id TEXT PRIMARY KEY,
-            username TEXT NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL,
-            risk_level TEXT NOT NULL,
-            task_type TEXT NOT NULL,
-            source TEXT NOT NULL,
-            is_completed BOOLEAN NOT NULL DEFAULT FALSE,
-            created_at BIGINT NOT NULL,
-            completed_at BIGINT NULL
-        )"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_app_tasks_username_created ON app_tasks(username, created_at DESC)"#,
-    r#"CREATE TABLE IF NOT EXISTS app_temperature_humidity (
-            id BIGSERIAL PRIMARY KEY,
-            username TEXT NULL,
-            timestamp BIGINT NOT NULL,
-            temperature DOUBLE PRECISION NOT NULL,
-            humidity DOUBLE PRECISION NOT NULL
-        )"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_app_temp_humidity_user_time ON app_temperature_humidity(username, timestamp DESC)"#,
     r#"CREATE TABLE IF NOT EXISTS app_diagnosis_records (
             id TEXT PRIMARY KEY,
             timestamp BIGINT NOT NULL,
@@ -120,123 +112,4 @@ pub(super) const DDL: &[&str] = &[
             source TEXT NOT NULL DEFAULT 'sensor'
         )"#,
     r#"CREATE INDEX IF NOT EXISTS idx_app_tree_sensor_records_tag_sampled ON app_tree_sensor_records(tag_serial_number, sampled_at DESC)"#,
-    // Legacy batch-commerce tables remain part of the public API contract.
-    r#"CREATE TABLE IF NOT EXISTS commerce_orchards (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            description TEXT NOT NULL DEFAULT '',
-            location TEXT NOT NULL DEFAULT '',
-            farmer_name TEXT NOT NULL DEFAULT '',
-            cover_image TEXT NULL,
-            is_active BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at BIGINT NOT NULL,
-            updated_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE TABLE IF NOT EXISTS commerce_products (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            sku TEXT NOT NULL UNIQUE,
-            unit_label TEXT NOT NULL,
-            price_cents BIGINT NOT NULL CHECK (price_cents > 0),
-            deposit_cents BIGINT NOT NULL DEFAULT 0 CHECK (deposit_cents >= 0),
-            is_active BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at BIGINT NOT NULL,
-            updated_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE TABLE IF NOT EXISTS commerce_batches (
-            id TEXT PRIMARY KEY,
-            batch_code TEXT NOT NULL UNIQUE,
-            title TEXT NOT NULL,
-            orchard_id BIGINT NOT NULL REFERENCES commerce_orchards(id),
-            status TEXT NOT NULL DEFAULT 'draft',
-            open_at BIGINT NULL,
-            close_at BIGINT NULL,
-            harvest_start_at BIGINT NULL,
-            harvest_end_at BIGINT NULL,
-            ship_at BIGINT NULL,
-            planned_quantity INTEGER NOT NULL CHECK (planned_quantity > 0),
-            is_active BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at BIGINT NOT NULL,
-            updated_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_commerce_batches_status ON commerce_batches(status, is_active, close_at)"#,
-    r#"CREATE TABLE IF NOT EXISTS commerce_batch_products (
-            batch_id TEXT NOT NULL REFERENCES commerce_batches(id) ON DELETE CASCADE,
-            product_id BIGINT NOT NULL REFERENCES commerce_products(id),
-            quota INTEGER NOT NULL CHECK (quota > 0),
-            sold_quantity INTEGER NOT NULL DEFAULT 0 CHECK (sold_quantity >= 0),
-            PRIMARY KEY (batch_id, product_id)
-        )"#,
-    r#"CREATE TABLE IF NOT EXISTS commerce_orders (
-            id TEXT PRIMARY KEY,
-            order_no TEXT NOT NULL UNIQUE,
-            username TEXT NOT NULL REFERENCES app_users(username),
-            batch_id TEXT NOT NULL REFERENCES commerce_batches(id),
-            recipient_name TEXT NOT NULL,
-            recipient_phone TEXT NOT NULL,
-            shipping_address TEXT NOT NULL,
-            payment_status TEXT NOT NULL DEFAULT 'unpaid',
-            status TEXT NOT NULL DEFAULT 'pending_payment',
-            total_cents BIGINT NOT NULL CHECK (total_cents >= 0),
-            deposit_cents BIGINT NOT NULL CHECK (deposit_cents >= 0),
-            created_at BIGINT NOT NULL,
-            updated_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_commerce_orders_user_created ON commerce_orders(username, created_at DESC)"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_commerce_orders_status ON commerce_orders(status, created_at DESC)"#,
-    r#"CREATE TABLE IF NOT EXISTS commerce_order_items (
-            id BIGSERIAL PRIMARY KEY,
-            order_id TEXT NOT NULL REFERENCES commerce_orders(id) ON DELETE CASCADE,
-            product_id BIGINT NOT NULL REFERENCES commerce_products(id),
-            product_name TEXT NOT NULL,
-            unit_label TEXT NOT NULL,
-            quantity INTEGER NOT NULL CHECK (quantity > 0),
-            unit_price_cents BIGINT NOT NULL CHECK (unit_price_cents > 0),
-            unit_deposit_cents BIGINT NOT NULL CHECK (unit_deposit_cents >= 0)
-        )"#,
-    r#"CREATE TABLE IF NOT EXISTS commerce_order_status_logs (
-            id BIGSERIAL PRIMARY KEY,
-            order_id TEXT NOT NULL REFERENCES commerce_orders(id) ON DELETE CASCADE,
-            status TEXT NOT NULL,
-            note TEXT NOT NULL DEFAULT '',
-            actor_username TEXT NULL,
-            created_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_commerce_order_status_logs_order ON commerce_order_status_logs(order_id, created_at DESC)"#,
-    r#"CREATE TABLE IF NOT EXISTS store_products (
-            id BIGSERIAL PRIMARY KEY,
-            name TEXT NOT NULL,
-            sku TEXT NOT NULL UNIQUE,
-            unit_label TEXT NOT NULL,
-            price_cents BIGINT NOT NULL CHECK (price_cents > 0),
-            stock_quantity INTEGER NOT NULL DEFAULT 0 CHECK (stock_quantity >= 0),
-            description TEXT NOT NULL DEFAULT '',
-            cover_image TEXT NULL,
-            is_active BOOLEAN NOT NULL DEFAULT TRUE,
-            created_at BIGINT NOT NULL,
-            updated_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE TABLE IF NOT EXISTS store_orders (
-            id TEXT PRIMARY KEY,
-            order_no TEXT NOT NULL UNIQUE,
-            username TEXT NOT NULL REFERENCES app_users(username),
-            recipient_name TEXT NOT NULL,
-            recipient_phone TEXT NOT NULL,
-            shipping_address TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending_payment',
-            total_cents BIGINT NOT NULL CHECK (total_cents >= 0),
-            created_at BIGINT NOT NULL,
-            updated_at BIGINT NOT NULL
-        )"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_store_orders_user_created ON store_orders(username, created_at DESC)"#,
-    r#"CREATE INDEX IF NOT EXISTS idx_store_orders_status_created ON store_orders(status, created_at DESC)"#,
-    r#"CREATE TABLE IF NOT EXISTS store_order_items (
-            id BIGSERIAL PRIMARY KEY,
-            order_id TEXT NOT NULL REFERENCES store_orders(id) ON DELETE CASCADE,
-            product_id BIGINT NOT NULL REFERENCES store_products(id),
-            product_name TEXT NOT NULL,
-            unit_label TEXT NOT NULL,
-            quantity INTEGER NOT NULL CHECK (quantity > 0),
-            unit_price_cents BIGINT NOT NULL CHECK (unit_price_cents > 0)
-        )"#,
 ];

@@ -1,13 +1,20 @@
+//! 单文件只保留 `/store-images/*` 那条**隐式静态通道**。
+//!
+//! 模块名留着的理由是路由仍叫 `/store-images/{file_name}`、目录仍是 `storage/store_covers/`；
+//! 同文件里的自研商城列表接口（`storefront_handler`，读 `store_products`）已随 G2 的
+//! `/api/store/products` 路由删除——商品数据面在 S4 之后是契约表 `citrus_product`
+//! （前端打 `/api/products` 与 `/web/admin/store/products*`）。
+//!
+//! **不要**因为「只剩一个 handler」就整文件删掉：`citrus_product.cover_image_url` 里存的是
+//! `/store-images/<uuid>.jpg` 这类**数据驱动的路径字符串**，App 与网页都直接 `<img src>` 取它，
+//! 没有 JS fetch 会暴露它的死亡。三条同类通道另两条在 `handlers_core/media.rs`。
+
 use axum::{
     body::Body,
-    extract::{Path, State},
+    extract::Path,
     http::{StatusCode, header},
     response::{IntoResponse, Response},
 };
-use serde_json::json;
-use sqlx::Row;
-
-use crate::server::{AppState, api_response, api_success};
 
 fn valid_cover_file_name(file_name: &str) -> bool {
     let extension = file_name.rsplit('.').next().unwrap_or("");
@@ -48,50 +55,4 @@ pub(crate) async fn store_cover_image_handler(Path(file_name): Path<String>) -> 
         Body::from(bytes),
     )
         .into_response()
-}
-
-pub(crate) async fn storefront_handler(State(state): State<AppState>) -> Response {
-    let rows = match sqlx::query(
-        r#"
-        SELECT id, name, sku, unit_label, price_cents, stock_quantity, description, cover_image
-        FROM store_products
-        WHERE is_active = TRUE
-        ORDER BY id ASC
-        "#,
-    )
-    .fetch_all(&state.db)
-    .await
-    {
-        Ok(rows) => rows,
-        Err(error) => {
-            tracing::error!("加载商城商品失败: {}", error);
-            return api_response(
-                axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-                500,
-                "加载商品数据失败",
-                json!({}),
-            );
-        }
-    };
-
-    let products = rows
-        .into_iter()
-        .map(|row| {
-            json!({
-                "id": row.try_get::<i64, _>("id").unwrap_or_default(),
-                "name": row.try_get::<String, _>("name").unwrap_or_default(),
-                "sku": row.try_get::<String, _>("sku").unwrap_or_default(),
-                "unit_label": row.try_get::<String, _>("unit_label").unwrap_or_default(),
-                "price_cents": row.try_get::<i64, _>("price_cents").unwrap_or_default(),
-                "stock_quantity": row.try_get::<i32, _>("stock_quantity").unwrap_or_default(),
-                "description": row.try_get::<String, _>("description").unwrap_or_default(),
-                "cover_image": row.try_get::<Option<String>, _>("cover_image").unwrap_or(None)
-            })
-        })
-        .collect::<Vec<_>>();
-
-    api_success(json!({
-        "products": products,
-        "generated_at": crate::server::now_millis()
-    }))
 }

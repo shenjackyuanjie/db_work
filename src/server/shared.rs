@@ -1,8 +1,3 @@
-use axum::{
-    Json,
-    http::StatusCode,
-    response::{IntoResponse, Response},
-};
 use base64::Engine;
 use sqlx::{PgPool, Row};
 
@@ -80,50 +75,20 @@ pub(crate) fn save_store_cover_image(mime_type: &str, bytes: &[u8]) -> anyhow::R
     Ok(format!("{STORE_COVER_MEDIA_PREFIX}/{file_name}"))
 }
 
-pub(crate) fn api_response(
-    status: StatusCode,
-    code: u16,
-    message: impl Into<String>,
-    data: serde_json::Value,
-) -> Response {
-    (
-        status,
-        Json(serde_json::json!({
-            "code": code,
-            "message": message.into(),
-            "data": data,
-            "timestamp": now_millis()
-        })),
-    )
-        .into_response()
-}
-
-pub(crate) fn api_success(data: serde_json::Value) -> Response {
-    api_response(StatusCode::OK, 200, "success", data)
-}
-
-/// 会话 token → username 的**双表桥**（过渡态）。
+/// 会话 token → username。
 ///
-/// 先查新表 `auth_token`（网页会话 `/web/session/*` 写在这里），miss 再查正在退役的
-/// `app_sessions`（历史 `/user/*` 会话）。
+/// **只认 `auth_token`**（网页会话 `/web/session/*` 与 App 的 Bearer 都写这张表）：
+/// 原先「先查 `auth_token`、miss 再查 `app_sessions`」的**双表桥**已随 `app_sessions`
+/// 的 DDL 在同一步删掉（S5/G2 的 O4，实测记录见
+/// `tests/fixtures/contract/W2_ADMIN_NOTES.md` §5）。
 ///
-/// 为什么需要它：`/web/*` 复用了 `handlers_ai` 等 legacy handler，而那些 handler 的鉴权
-/// 只认 `app_sessions`。不桥接的话「网页已登录」在这些端点上会变成 401——实测过：
-/// `POST /web/citrus-disease-v2` 带网页 cookie 曾返回 401 `Invalid token`。
-///
-/// **这是临时状态**：S5 统一会话表后只保留 `auth_token` 分支，届时删掉下面
-/// `app_sessions` 那段（见 `tests/fixtures/contract/W2_ADMIN_NOTES.md` 的 S5 待办）。
-///
-/// 注意两张表的过期列类型**不同**，不能混用绑定参数：
-/// `auth_token.expires_at` 是 `TIMESTAMPTZ`（用 SQL 里的 `now()` 比较）；
-/// `app_sessions.expires_at` 是 epoch 秒（用传入的 `now_secs` 比较）。
+/// 注意 `auth_token.key` 是 UUID、`expires_at` 是 `TIMESTAMPTZ`：在 SQL 里用 `now()` 比较，
+/// 不要拿 epoch 秒混绑。
 pub(crate) async fn lookup_session_username(
     pool: &PgPool,
     token: &str,
-    now_secs: i64,
 ) -> Result<Option<String>, sqlx::Error> {
-    // 新表优先。`auth_token.key` 是 UUID：非法 UUID 直接当 miss 而不报错
-    // （历史 `app_sessions` 的 token 也是 UUID 字符串，会顺着走到下面的分支）。
+    // `auth_token.key` 是 UUID：非法 UUID 直接当 miss 而不报错。
     if let Ok(key) = uuid::Uuid::parse_str(token.trim()) {
         let row = sqlx::query(
             r#"SELECT u.username
@@ -141,20 +106,14 @@ pub(crate) async fn lookup_session_username(
         }
     }
 
-    let row = sqlx::query(
-        "SELECT username FROM app_sessions WHERE token = $1 AND expires_at > $2 LIMIT 1",
-    )
-    .bind(token)
-    .bind(now_secs)
-    .fetch_optional(pool)
-    .await?;
-
-    Ok(row.and_then(|row| row.try_get::<String, _>("username").ok()))
+    // S5/G2 的 O4：`app_sessions` 分支已随它的 DDL 一起删除。
+    // 现在**只认** `auth_token`（网页会话 `/web/session/*` 与 App 的 Bearer 都写这张表）。
+    Ok(None)
 }
 
 /// 兼容旧调用点：解析失败一律当 `None`（沿用原有的「吞掉错误」语义）。
 pub(crate) async fn username_by_token(state: &AppState, token: &str) -> Option<String> {
-    lookup_session_username(&state.db, token, crate::auth::now_secs() as i64)
+    lookup_session_username(&state.db, token)
         .await
         .ok()
         .flatten()

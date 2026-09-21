@@ -7,42 +7,23 @@
 //! 但它们原先依赖 `crate::user_routes::*`。而 `user_routes`（`/user/*`）整棵要随 S5 退役，
 //! 所以这层依赖必须先搬走——**这是 G2 能删 `/user/*` 的前提**（见 `W2_S5_PLAN.md` 的 O3）。
 //!
-//! `user_routes/mod.rs` 的再导出已改为指向本模块，因此 `/user/*` 内部那 10 处调用点**不需要改**；
-//! 等 G2 删掉 `user_routes` 时，本模块就是唯一持有者。
+//! `user_routes/mod.rs` 原先用再导出指向本模块，因此 `/user/*` 内部那 10 处调用点不需要改；
+//! G2 把 `/user/*` 整棵删掉之后，本模块就是**唯一**持有者。
 //!
-//! ## 会话来源是**双表桥**（过渡态，S5 收尾）
+//! ## 会话来源只有一张表（G2 之后）
 //!
-//! `lookup_session_username` 先查 `auth_token`（网页会话 `/web/session/*` 写在这里），
-//! miss 再查 `app_sessions`（历史 `/user/*` 会话）。桥的两段与 `app_sessions` 的 DDL
-//! **必须同一步删**（O4）。
+//! `server::lookup_session_username` **只认 `auth_token`**：O4 把原先「先查 `auth_token`、
+//! miss 再查 `app_sessions`」的双表桥第二段与 `app_sessions` 的 DDL 同一步删掉了。
+//! 历史 `/user/*` 会话随之失效——但那条树本身也在同一步整棵删除，没有残留调用方。
 
 use axum::http::{HeaderMap, StatusCode, header};
 use serde_json::json;
 use sqlx::Row;
-use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::models::RequestedRole;
 use crate::server::AppState;
 
 /// 兼容网页的备用通道（`X-Session-Token`）。Cookie 名与 `web::session` 共用 `session_token`。
 const SESSION_HEADER_NAME: &str = "x-session-token";
-
-/// Unix 时间戳（秒）。`lookup_session_username` 的 `app_sessions` 分支按秒比较。
-pub(crate) fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs()
-}
-
-/// 旧 `/user/register` 的 `requested_role` 解析（`admin` / 其它一律 `user`）。
-pub(crate) fn parse_requested_role(text: &str) -> RequestedRole {
-    if text.eq_ignore_ascii_case("admin") {
-        RequestedRole::Admin
-    } else {
-        RequestedRole::User
-    }
-}
 
 fn token_from_cookie(headers: &HeaderMap) -> Option<String> {
     let cookie_header = headers.get(header::COOKIE)?.to_str().ok()?;
@@ -83,9 +64,9 @@ pub(crate) async fn ensure_authenticated(
         }
     };
 
-    // **双表桥**：先 `auth_token`，miss 再查 `app_sessions`。理由与 S5 待办见
-    // `server/shared.rs::lookup_session_username` 的文档注释。
-    let username = crate::server::lookup_session_username(&state.db, &token, now_secs() as i64)
+    // 单表查询（原双表桥的第二段已随 `app_sessions` 的 DDL 一起删除）。
+    // 理由见 `server/shared.rs::lookup_session_username` 的文档注释。
+    let username = crate::server::lookup_session_username(&state.db, &token)
         .await
         .map_err(|err| {
             tracing::error!(%err, "会话查询失败");

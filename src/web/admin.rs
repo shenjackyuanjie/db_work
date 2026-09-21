@@ -174,7 +174,8 @@ macro_rules! admin_or_return {
 
 /// `GET /web/system-status`
 ///
-/// 与旧 `handlers_core::system_status_api_handler`（`handlers_core/pages.rs:120`）
+/// 与旧 `handlers_core::system_status_api_handler`（原在 `handlers_core/pages.rs:120`，
+/// G2 已随 `/api/system-status` 路由一起删除）
 /// **逐字段同形**：同一张 `app_system_settings`、同一个 `load_system_settings`、
 /// 同一组 6 个键、同样是 `api_success` 信封、失败同样回信封。
 ///

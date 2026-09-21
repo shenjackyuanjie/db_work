@@ -27,6 +27,12 @@
     if (url.origin !== location.origin) return null;
     url.pathname = url.pathname.replace(/\.html$/, "");
     if (url.pathname === "/index") url.pathname = "/";
+    // 保留：`/commerce`（旧「开团」入口，已并入现货商城）的 SPA 侧归一化，与 `server.rs` 的
+    // `/commerce` → `/store` 308 重定向是同一决定的两半。仓库内已无任何 html/js 链接到它，
+    // 所以这一行现在是**防御性**的；不能只凭「零引用」删掉，因为 `app-bridge.js:44` 会包住
+    // `pushState` 并把**原生 App 传来的任意同源路径**丢给 `normalize()` —— 那条入口不经过
+    // 服务端，308 覆盖不到。删掉它的后果是：这类跳转退化成整页重载后落到 `/store`（终点相同，
+    // 但会闪一次白屏，且在 iframe 里会额外拉一次 `/app-content/`）。
     if (url.pathname === "/commerce") url.pathname = "/store";
     if (url.pathname === "/store-admin") {
       url.pathname = "/admin";
