@@ -26,7 +26,7 @@ pub(crate) mod bootstrap;
 pub(crate) mod handlers_ai;
 mod handlers_commerce;
 #[allow(dead_code)]
-mod handlers_core;
+pub(crate) mod handlers_core;
 mod handlers_store;
 #[allow(dead_code)]
 mod shared;
