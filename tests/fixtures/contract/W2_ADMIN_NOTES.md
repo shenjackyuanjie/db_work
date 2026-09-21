@@ -121,11 +121,20 @@ miss 再查 `app_sessions`**；`ensure_authenticated` 与 `username_by_token` �
 ⚠️ **双表桥是临时的**：S5 统一会话表后只保留 `auth_token` 分支，删掉 `app_sessions` 那段
 （已登记进 §6 待办）。
 
-### 5.1 仍未桥接的第三处（未改，超出本次授权范围）
+### 5.1 第三处（`user_routes/session.rs:261`）：**裁定不桥接**（不是遗漏）
 
-`src/user_routes/session.rs:261` —— 旧 `/user/validate` 的查询，join 的还是 `app_users`。
-它只服务即将退役的 `/user/validate`；S4-1 把前端全部切到 `/web/session/validate` 后就不影响。
-**但切换过程中若有页面还在调旧路径，会看到「未登录」。** 要不要一起桥接由主线定。
+`src/user_routes/session.rs:261` 是旧 `/user/validate` 的查询，join 的还是 `app_users`。
+
+**裁定：不做。** 理由不是「不重要」，而是**它不会产生用户可见的失败窗口**：
+
+1. `/user/validate` 是退役路径，S4-1 与 S4-3 **正在同时**把所有调用方切到
+   `/web/session/validate`（两组的文件划分覆盖全集）；
+2. **关键：W2 期间不会部署**，所以「新式 cookie + 旧式校验」的混合态**永远不会到达用户**——
+   它只存在于开发机的工作树里，而工作树在同一分钟内就被两组一起补齐；
+3. 若真剩调用方，收尾的集成校验会抓到（验收条款已含「`db/static/**` 里 `/user/validate` 零残留」）。
+
+到那时再桥，比现在凭猜想提前桥更省。**后人不要「顺手」把它也桥了**——
+现在动它只会扩大这次的改动面，而收益为零。
 
 ### 5.2 本环境无法验证「门控通过」那条分支
 
@@ -144,7 +153,15 @@ miss 再查 `app_sessions`**；`ensure_authenticated` 与 `username_by_token` �
 3. 旧路径 `/api/system-status`、`/api/citrus-disease-v2` 在 S4 前端切完之后由 S5 删。
 4. `app_sessions` / `app_users` / `app_diagnosis_records` 的 DDL 退役（`bootstrap/legacy_tables.rs`）。
 5. **双表桥收敛**（§5）：`server::shared::lookup_session_username` 只保留 `auth_token` 分支，
-   删掉 `app_sessions` 那段，并处理 `user_routes/session.rs:261`（§5.1 的第三处）。
+   删掉 `app_sessions` 那段。**双表桥是临时过渡态，不是终态。**
+   （§5.1 的第三处已裁定**不桥接**，不要再把它列为待办。）
+6. **LLM 凭据必须在切换前单独处理**：`config.toml` 的 `[ai].openrouter_api_key` **已失效**
+   （实测 `API Key 无效或已过期 (401): User not found.`），且**代码没有环境变量可以覆盖它**——
+   来源只有 `config.toml` 一处。
+   后果：**所有依赖 LLM 的分支在当前环境无法端到端验证**——门控通过后的高级诊断、
+   `/api/generate` 与施肥方案、智能体的意图识别与摘要，全都跑不通。
+   切换前必须换成有效凭据并重跑这几条链路，否则「验证过」的范围会被误认为包含它们。
+   （本次 ②③ 的验证就是靠绕开这条分支做到的，见 §5.2 与 §8。）
 
 ## 7. 环境坑（都实际踩过）
 
